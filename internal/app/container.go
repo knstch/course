@@ -2,11 +2,13 @@ package app
 
 import (
 	"github.com/knstch/course/internal/app/config"
+	"github.com/knstch/course/internal/app/handlers"
 	"github.com/knstch/course/internal/app/storage"
 )
 
 type Container struct {
-	Storage *storage.Storage
+	Storage  *storage.Storage
+	Handlers *handlers.Handlers
 }
 
 func InitContainer(config *config.Config) (*Container, error) {
@@ -19,7 +21,10 @@ func InitContainer(config *config.Config) (*Container, error) {
 		return nil, err
 	}
 
+	handlers := handlers.NewHandlers(psqlStorage, config)
+
 	return &Container{
-		Storage: psqlStorage,
+		Storage:  psqlStorage,
+		Handlers: handlers,
 	}, nil
 }

@@ -5,6 +5,10 @@ type Credentials struct {
 	Password string `json:"password"`
 }
 
+func NewCredentials() *Credentials {
+	return &Credentials{}
+}
+
 type UserInfo struct {
 	FirstName   string `json:"firstName"`
 	Surname     string `json:"surname"`

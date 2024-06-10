@@ -10,6 +10,7 @@ import (
 
 	"github.com/knstch/course/internal/app"
 	"github.com/knstch/course/internal/app/config"
+	"github.com/knstch/course/internal/app/router"
 )
 
 func main() {
@@ -30,14 +31,14 @@ func run() error {
 
 	config := config.GetConfig()
 
-	_, err = app.InitContainer(config)
+	container, err := app.InitContainer(config)
 	if err != nil {
 		return err
 	}
 
 	srv := http.Server{
 		Addr:    config.Port,
-		Handler: nil,
+		Handler: router.RequestsRouter(container.Handlers),
 	}
 
 	idleConnsClosed := make(chan struct{})

@@ -1,8 +1,8 @@
 package courseerror
 
 type CourseError struct {
-	Error error
-	Code  int
+	Error error `json:"error"`
+	Code  int   `json:"code"`
 }
 
 func CreateError(err error, code int) *CourseError {

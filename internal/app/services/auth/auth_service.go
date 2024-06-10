@@ -2,8 +2,6 @@ package auth
 
 import (
 	"context"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -15,9 +13,10 @@ import (
 
 type Authentificater interface {
 	RegisterUser(ctx context.Context, email, password string) (*uint, *courseError.CourseError)
-	FillUserProfile(ctx context.Context, firstName, surname string, phoneNumber int) *courseError.CourseError // вынести в другой сервис
-	SignIn(ctx context.Context, email, password string) *courseError.CourseError
-	ChangePasssword(ctx context.Context, oldPassword, newPassword string) *courseError.CourseError
+	StoreToken(ctx context.Context, token *string, id *uint) *courseError.CourseError
+	// FillUserProfile(ctx context.Context, firstName, surname string, phoneNumber int) *courseError.CourseError // вынести в другой сервис
+	SignIn(ctx context.Context, email, password string) (*uint, *string, *courseError.CourseError)
+	// ChangePasssword(ctx context.Context, oldPassword, newPassword string) *courseError.CourseError // вынести в другой сервис
 }
 
 type AuthService struct {
@@ -32,14 +31,14 @@ type Claims struct {
 	UserID string
 }
 
-func NewAuthService(authentificater Authentificater, config *config.Config) *AuthService {
-	return &AuthService{
+func NewAuthService(authentificater Authentificater, config *config.Config) AuthService {
+	return AuthService{
 		Authentificater: authentificater,
 		secret:          config.Secret,
 	}
 }
 
-func (auth *AuthService) Register(ctx context.Context, credentials *entity.Credentials) (*uint, *courseError.CourseError) {
+func (auth AuthService) Register(ctx context.Context, credentials *entity.Credentials) (*string, *courseError.CourseError) {
 	if err := validation.NewCredentialsToValidate(credentials).Validate(ctx); err != nil {
 		return nil, err
 	}
@@ -49,10 +48,19 @@ func (auth *AuthService) Register(ctx context.Context, credentials *entity.Crede
 		return nil, err
 	}
 
-	return userId, nil
+	token, err := auth.mintJWT(*userId, "basic")
+	if err != nil {
+		return nil, err
+	}
+
+	if err := auth.Authentificater.StoreToken(ctx, token, userId); err != nil {
+		return nil, err
+	}
+
+	return token, nil
 }
 
-func (auth *AuthService) mintJWT(id uint, subscriptionType string) (*string, *courseError.CourseError) {
+func (auth AuthService) mintJWT(id uint, subscriptionType string) (*string, *courseError.CourseError) {
 	timeNow := time.Now()
 	authToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"iat":              timeNow.Unix(),
@@ -69,42 +77,52 @@ func (auth *AuthService) mintJWT(id uint, subscriptionType string) (*string, *co
 	return &signedAuthToken, nil
 }
 
-func (auth *AuthService) FillProfile(ctx context.Context, userInfo *entity.UserInfo) *courseError.CourseError {
-	if err := validation.NewUserInfoToValidate(userInfo).Validate(ctx); err != nil {
-		return err
-	}
+// func (auth *AuthService) FillProfile(ctx context.Context, userInfo *entity.UserInfo) *courseError.CourseError {
+// 	if err := validation.NewUserInfoToValidate(userInfo).Validate(ctx); err != nil {
+// 		return err
+// 	}
 
-	trimedPhoneNumber := strings.TrimPrefix(userInfo.PhoneNumber, "+")
+// 	trimedPhoneNumber := strings.TrimPrefix(userInfo.PhoneNumber, "+")
 
-	digitsPhoneNumber, _ := strconv.Atoi(trimedPhoneNumber)
+// 	digitsPhoneNumber, _ := strconv.Atoi(trimedPhoneNumber)
 
-	if err := auth.Authentificater.FillUserProfile(ctx, userInfo.FirstName, userInfo.Surname, digitsPhoneNumber); err != nil {
-		return err
-	}
+// 	if err := auth.Authentificater.FillUserProfile(ctx, userInfo.FirstName, userInfo.Surname, digitsPhoneNumber); err != nil {
+// 		return err
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
-func (auth *AuthService) LogIn(ctx context.Context, credentials *entity.Credentials) *courseError.CourseError {
+func (auth AuthService) LogIn(ctx context.Context, credentials *entity.Credentials) (*string, *courseError.CourseError) {
 	if err := validation.NewSignInCredentials(credentials).Validate(ctx); err != nil {
-		return err
+		return nil, err
 	}
 
-	if err := auth.Authentificater.SignIn(ctx, credentials.Email, credentials.Password); err != nil {
-		return err
+	userId, subType, err := auth.Authentificater.SignIn(ctx, credentials.Email, credentials.Password)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	token, err := auth.mintJWT(*userId, *subType)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := auth.Authentificater.StoreToken(ctx, token, userId); err != nil {
+		return nil, err
+	}
+
+	return token, nil
 }
 
-func (auth *AuthService) EditPassword(ctx context.Context, passwords *entity.Passwords) *courseError.CourseError {
-	if err := validation.NewPasswordToValidate(passwords.NewPassword).ValidatePassword(ctx); err != nil {
-		return err
-	}
+// func (auth *AuthService) EditPassword(ctx context.Context, passwords *entity.Passwords) *courseError.CourseError {
+// 	if err := validation.NewPasswordToValidate(passwords.NewPassword).ValidatePassword(ctx); err != nil {
+// 		return err
+// 	}
 
-	if err := auth.Authentificater.ChangePasssword(ctx, passwords.OldPassword, passwords.NewPassword); err != nil {
-		return err
-	}
+// 	if err := auth.Authentificater.ChangePasssword(ctx, passwords.OldPassword, passwords.NewPassword); err != nil {
+// 		return err
+// 	}
 
-	return nil
-}
+// 	return nil
+// }

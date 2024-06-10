@@ -32,8 +32,8 @@ func (user *User) SetStatusUnverified() *User {
 	return user
 }
 
-func (user *User) AddSubscriptionId(id uint) *User {
-	user.SubscriptionId = id
+func (user *User) AddSubscriptionId(id *uint) *User {
+	user.SubscriptionId = *id
 	return user
 }
 
@@ -78,4 +78,23 @@ type AccessToken struct {
 	UserId    uint   `gorm:"not null"`
 	Token     string `gorm:"not null"`
 	Available bool   `gorm:"not null"`
+}
+
+func CreateNewAccessToken() *AccessToken {
+	return &AccessToken{}
+}
+
+func (accessToken *AccessToken) AddUsedId(id *uint) *AccessToken {
+	accessToken.UserId = *id
+	return accessToken
+}
+
+func (accessToken *AccessToken) AddToken(token *string) *AccessToken {
+	accessToken.Token = *token
+	return accessToken
+}
+
+func (accessToken *AccessToken) SetStatusAvailable() *AccessToken {
+	accessToken.Available = true
+	return accessToken
 }

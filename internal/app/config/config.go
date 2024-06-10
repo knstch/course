@@ -11,9 +11,10 @@ import (
 )
 
 type Config struct {
-	Port   string `envconfig:"PORT"`
-	DSN    string `envconfig:"DSN"`
-	Secret string `envconfig:"SECRET"`
+	Port      string `envconfig:"PORT"`
+	DSN       string `envconfig:"DSN"`
+	Secret    string `envconfig:"SECRET"`
+	JwtSecret string `envconfig:"JWT_SECRET"`
 }
 
 var (
