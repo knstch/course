@@ -10,7 +10,7 @@ type Container struct {
 }
 
 func InitContainer(config *config.Config) (*Container, error) {
-	psqlStorage, err := storage.NewStorage(config.DSN)
+	psqlStorage, err := storage.NewStorage(config.DSN, config.Secret)
 	if err != nil {
 		return nil, err
 	}
