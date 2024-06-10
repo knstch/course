@@ -14,6 +14,7 @@ import (
 var (
 	errRegistingUser = errors.New("ошибка при регистрации пользователя")
 	errEmailIsBusy   = errors.New("пользователь с таким email уже существует")
+	errUserNotFound  = errors.New("пользователь не найден")
 )
 
 type Storage struct {
@@ -111,17 +112,16 @@ func (storage *Storage) StoreToken(ctx context.Context, token *string, id *uint)
 func (storage *Storage) SignIn(ctx context.Context, email, password string) (*uint, *string, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password+storage.secret), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, nil, courseError.CreateError(err, 11020)
-	}
-
 	credentials := dto.CreateNewCredentials()
-	if err := tx.Where("email = ? AND password = ?", email, hashedPassword).First(&credentials).Error; err != nil {
+	if err := tx.Where("email = ?", email).First(&credentials).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil, courseError.CreateError(err, 11002)
 		}
 		return nil, nil, courseError.CreateError(err, 10002)
+	}
+
+	if !storage.verifyPassword(credentials.Password, password) {
+		return nil, nil, courseError.CreateError(errUserNotFound, 11002)
 	}
 
 	user := dto.CreateNewUser()
@@ -139,4 +139,12 @@ func (storage *Storage) SignIn(ctx context.Context, email, password string) (*ui
 	}
 
 	return &user.ID, &subscription.SubscriptionType, nil
+}
+
+func (storage *Storage) verifyPassword(hashedPassword, password string) bool {
+	if err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password+storage.secret)); err != nil {
+		return false
+	}
+
+	return true
 }

@@ -12,8 +12,8 @@ func RequestsRouter(h *handlers.Handlers) *gin.Engine {
 	v1 := api.Group("/v1")
 
 	auth := v1.Group("auth")
-	auth.POST("/register", h.SignIn)
-	auth.POST("login", h.SignIn)
+	auth.POST("/register", h.SignUp)
+	auth.POST("/login", h.SignIn)
 
 	return router
 }

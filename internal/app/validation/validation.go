@@ -58,7 +58,7 @@ func (cr *CredentialsToValidate) Validate(ctx context.Context) *courseerror.Cour
 
 func validatePassword(password string) validation.RuleFunc {
 	return func(value interface{}) error {
-		if len([]rune(password)) <= 8 {
+		if len([]rune(password)) < 8 {
 			return fmt.Errorf("пароль должен содержать как миниум 8 символов")
 		}
 

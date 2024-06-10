@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -69,8 +70,9 @@ func (auth AuthService) mintJWT(id uint, subscriptionType string) (*string, *cou
 		"subscriptionType": subscriptionType,
 	})
 
-	signedAuthToken, err := authToken.SignedString(auth.secret)
+	signedAuthToken, err := authToken.SignedString([]byte(auth.secret))
 	if err != nil {
+		fmt.Println("ERR: ", err.Error())
 		return nil, courseError.CreateError(err, 11010)
 	}
 
