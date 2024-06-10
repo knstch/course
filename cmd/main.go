@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"path/filepath"
 
+	"github.com/knstch/course/internal/app"
 	"github.com/knstch/course/internal/app/config"
 )
 
@@ -28,6 +29,11 @@ func run() error {
 	}
 
 	config := config.GetConfig()
+
+	_, err = app.InitContainer(config)
+	if err != nil {
+		return err
+	}
 
 	srv := http.Server{
 		Addr:    config.Port,
