@@ -18,6 +18,7 @@ func RequestsRouter(h *handlers.Handlers) *gin.Engine {
 	email := auth.Group("email")
 	email.Use(h.WithCookieAuth())
 	email.POST("/verification", h.Verification)
+	email.POST("/newConfirmKey", h.SendNewCode)
 
 	return router
 }

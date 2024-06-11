@@ -11,7 +11,9 @@ import (
 )
 
 var (
-	errEmailNotFoundInCtx = errors.New("почта не найдена в контексте")
+	errEmailNotFoundInCtx              = errors.New("почта не найдена в контексте")
+	errVerificationStatusNotFoundInCtx = errors.New("статус верификации не найден в контексте")
+	errUserEmailIsAlreadyVerified      = errors.New("почта пользователя уже верифицирована")
 )
 
 func (h *Handlers) SignUp(ctx *gin.Context) {
@@ -33,7 +35,7 @@ func (h *Handlers) SignUp(ctx *gin.Context) {
 
 	ctx.SetCookie("auth", *token, 432000, "/", h.address, true, true)
 
-	ctx.Status(http.StatusOK)
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("пользователь зарегистрирован", true))
 }
 
 func (h *Handlers) SignIn(ctx *gin.Context) {
@@ -55,7 +57,7 @@ func (h *Handlers) SignIn(ctx *gin.Context) {
 
 	ctx.SetCookie("auth", *token, 432000, "/", h.address, true, true)
 
-	ctx.Status(http.StatusOK)
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("доступ разрешен", true))
 }
 
 func (h *Handlers) Verification(ctx *gin.Context) {
@@ -71,6 +73,17 @@ func (h *Handlers) Verification(ctx *gin.Context) {
 		return
 	}
 
+	verified, ok := ctx.Get("verified")
+	if !ok {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errVerificationStatusNotFoundInCtx, 11005))
+		return
+	}
+
+	if verified.(bool) {
+		ctx.JSON(http.StatusBadRequest, courseError.CreateError(errUserEmailIsAlreadyVerified, 11008))
+		return
+	}
+
 	token, err := h.authService.VerifyEmail(ctx, confirmCode.Code, userId.(uint))
 	if err != nil {
 		if err.Code == 11003 || err.Code == 11004 {
@@ -83,9 +96,16 @@ func (h *Handlers) Verification(ctx *gin.Context) {
 
 	ctx.SetCookie("auth", *token, 432000, "/", h.address, true, true)
 
-	ctx.JSON(http.StatusOK, map[string]bool{
-		"verified": true,
-	})
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("email верифицирован", true))
+}
+
+func (h *Handlers) SendNewCode(ctx *gin.Context) {
+	if err := h.authService.SendNewCofirmationCode(ctx); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("код успешно отправлен", true))
 }
 
 func (h *Handlers) WithCookieAuth() gin.HandlerFunc {

@@ -32,3 +32,15 @@ type ConfirmCode struct {
 func NewConfirmCodeEntity() *ConfirmCode {
 	return &ConfirmCode{}
 }
+
+type SuccessResponse struct {
+	Message string `json:"message"`
+	Status  bool   `json:"status"`
+}
+
+func CreateSuccessResponse(message string, status bool) *SuccessResponse {
+	return &SuccessResponse{
+		Message: message,
+		Status:  status,
+	}
+}

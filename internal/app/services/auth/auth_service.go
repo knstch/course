@@ -111,7 +111,7 @@ func (auth AuthService) VerifyEmail(ctx context.Context, code int, userId uint) 
 		return nil, courseError.CreateError(ErrBadConfirmCode, 11003)
 	}
 
-	if err := auth.redis.Del("userId").Err(); err != nil {
+	if err := auth.redis.Del(fmt.Sprint(userId)).Err(); err != nil {
 		return nil, courseError.CreateError(err, 10033)
 	}
 
@@ -134,6 +134,33 @@ func (auth AuthService) VerifyEmail(ctx context.Context, code int, userId uint) 
 	}
 
 	return token, nil
+}
+
+func (auth AuthService) SendNewCofirmationCode(ctx context.Context) *courseError.CourseError {
+	confimCode := auth.generateEmailConfirmCode()
+
+	code, err := auth.redis.Get(fmt.Sprint(ctx.Value("userId").(uint))).Result()
+	if err != nil {
+		if !errors.Is(err, redis.Nil) {
+			return courseError.CreateError(ErrConfirmCodeNotFound, 11004)
+		}
+	}
+
+	if code != "" {
+		if err := auth.redis.Del(fmt.Sprint(ctx.Value("userId").(uint))).Err(); err != nil {
+			return courseError.CreateError(err, 10033)
+		}
+	}
+
+	if err := auth.redis.Set(fmt.Sprint(ctx.Value("userId").(uint)), confimCode, 15*time.Minute).Err(); err != nil {
+		return courseError.CreateError(err, 10031)
+	}
+
+	if err := auth.sendConfirmEmail(confimCode); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (auth AuthService) mintJWT(id uint, subscriptionType string, verified bool) (*string, *courseError.CourseError) {

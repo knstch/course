@@ -203,8 +203,7 @@ func (storage *Storage) VerifyUser(ctx context.Context, userId uint) (*string, *
 
 	subscription := dto.CreateNewSubscription()
 
-	if err := tx.
-		Joins("JOIN users ON users.id = ?", userId).
+	if err := tx.Joins("JOIN users ON users.id = ?", userId).
 		Where("subscriptions.id = users.subscription_id").
 		First(&subscription).Error; err != nil {
 		tx.Rollback()
@@ -214,6 +213,7 @@ func (storage *Storage) VerifyUser(ctx context.Context, userId uint) (*string, *
 	if err := tx.Exec(`UPDATE "credentials" SET "verified" = ?
 		WHERE credentials.id = (SELECT credentials_id 
 		FROM "users" WHERE id = ?)`, true, userId).Error; err != nil {
+		tx.Rollback()
 		return nil, courseError.CreateError(err, 11002)
 	}
 
