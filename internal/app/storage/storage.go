@@ -127,7 +127,7 @@ func (storage *Storage) StoreToken(ctx context.Context, token *string, id *uint)
 	return nil
 }
 
-func (storage *Storage) SignIn(ctx context.Context, email, password string) (*uint, *string, *bool, *courseError.CourseError) {
+func (storage *Storage) SignIn(ctx context.Context, email, password string) (userId *uint, subType *string, verified *bool, err *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	credentials := dto.CreateNewCredentials()
