@@ -2,9 +2,11 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
+	"github.com/go-redis/redis"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/knstch/course/internal/app/config"
 	courseError "github.com/knstch/course/internal/app/course_error"
@@ -15,12 +17,16 @@ import (
 type Authentificater interface {
 	RegisterUser(ctx context.Context, email, password string) (*uint, *courseError.CourseError)
 	StoreToken(ctx context.Context, token *string, id *uint) *courseError.CourseError
-	SignIn(ctx context.Context, email, password string) (*uint, *string, *courseError.CourseError)
+	SignIn(ctx context.Context, email, password string) (*uint, *string, *bool, *courseError.CourseError)
+	VerifyUser(ctx context.Context, userId uint) (*string, *courseError.CourseError)
+	DisableTokens(ctx context.Context, userId uint) *courseError.CourseError
 }
 
 type AuthService struct {
-	Authentificater Authentificater
-	secret          string
+	Authentificater       Authentificater
+	secret                string
+	redis                 *redis.Client
+	redisEmailChannelName string
 }
 
 type Claims struct {
@@ -30,10 +36,17 @@ type Claims struct {
 	UserID string
 }
 
-func NewAuthService(authentificater Authentificater, config *config.Config) AuthService {
+var (
+	ErrConfirmCodeNotFound = errors.New("код не найден")
+	ErrBadConfirmCode      = errors.New("код подтверждения не найден")
+)
+
+func NewAuthService(authentificater Authentificater, config *config.Config, client *redis.Client) AuthService {
 	return AuthService{
-		Authentificater: authentificater,
-		secret:          config.Secret,
+		Authentificater:       authentificater,
+		secret:                config.Secret,
+		redis:                 client,
+		redisEmailChannelName: config.RedisEmailChannelName,
 	}
 }
 
@@ -47,7 +60,7 @@ func (auth AuthService) Register(ctx context.Context, credentials *entity.Creden
 		return nil, err
 	}
 
-	token, err := auth.mintJWT(*userId, "basic")
+	token, err := auth.mintJWT(*userId, "basic", false)
 	if err != nil {
 		return nil, err
 	}
@@ -56,21 +69,77 @@ func (auth AuthService) Register(ctx context.Context, credentials *entity.Creden
 		return nil, err
 	}
 
+	confimCode := auth.generateEmailConfirmCode()
+
+	if err := auth.redis.Set(fmt.Sprint(*userId), confimCode, 15*time.Minute).Err(); err != nil {
+		return nil, courseError.CreateError(err, 10031)
+	}
+
+	if err := auth.sendConfirmEmail(confimCode); err != nil {
+		return nil, err
+	}
+
 	return token, nil
 }
 
-func (auth AuthService) mintJWT(id uint, subscriptionType string) (*string, *courseError.CourseError) {
+func (auth AuthService) sendConfirmEmail(code uint) *courseError.CourseError {
+	if code == 1111 {
+		return nil
+	}
+	return nil
+}
+
+func (auth AuthService) generateEmailConfirmCode() uint {
+	return 1111
+}
+
+func (auth AuthService) VerifyEmail(ctx context.Context, code int, userId uint) (*string, *courseError.CourseError) {
+	if err := validation.NewConfirmCodeToValidate(code).Validate(ctx); err != nil {
+		return nil, err
+	}
+
+	codeFromRedis, err := auth.redis.Get(fmt.Sprint(userId)).Result()
+	if err != nil {
+		return nil, courseError.CreateError(ErrConfirmCodeNotFound, 11004)
+	}
+
+	if fmt.Sprint(code) != codeFromRedis {
+		return nil, courseError.CreateError(ErrBadConfirmCode, 11003)
+	}
+
+	subType, verificationErr := auth.Authentificater.VerifyUser(ctx, userId)
+	if verificationErr != nil {
+		return nil, verificationErr
+	}
+
+	if err := auth.Authentificater.DisableTokens(ctx, userId); err != nil {
+		return nil, err
+	}
+
+	token, mintError := auth.mintJWT(userId, *subType, true)
+	if mintError != nil {
+		return nil, courseError.CreateError(mintError.Error, 11010)
+	}
+
+	if err := auth.Authentificater.StoreToken(ctx, token, &userId); err != nil {
+		return nil, err
+	}
+
+	return token, nil
+}
+
+func (auth AuthService) mintJWT(id uint, subscriptionType string, verified bool) (*string, *courseError.CourseError) {
 	timeNow := time.Now()
 	authToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"iat":              timeNow.Unix(),
 		"exp":              timeNow.Add(30 * 24 * time.Hour).Unix(),
 		"userId":           id,
+		"verified":         verified,
 		"subscriptionType": subscriptionType,
 	})
 
 	signedAuthToken, err := authToken.SignedString([]byte(auth.secret))
 	if err != nil {
-		fmt.Println("ERR: ", err.Error())
 		return nil, courseError.CreateError(err, 11010)
 	}
 
@@ -82,12 +151,12 @@ func (auth AuthService) LogIn(ctx context.Context, credentials *entity.Credentia
 		return nil, err
 	}
 
-	userId, subType, err := auth.Authentificater.SignIn(ctx, credentials.Email, credentials.Password)
+	userId, subType, verified, err := auth.Authentificater.SignIn(ctx, credentials.Email, credentials.Password)
 	if err != nil {
 		return nil, err
 	}
 
-	token, err := auth.mintJWT(*userId, *subType)
+	token, err := auth.mintJWT(*userId, *subType, *verified)
 	if err != nil {
 		return nil, err
 	}

@@ -8,3 +8,10 @@ services:
       POSTGRES_DB: course
     ports:
       - 1488:5432
+  redis:
+    image: redis
+    environment:
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: password
+    ports:
+      - "6379:6379"

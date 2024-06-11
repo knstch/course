@@ -125,41 +125,41 @@ func (storage *Storage) StoreToken(ctx context.Context, token *string, id *uint)
 	return nil
 }
 
-func (storage *Storage) SignIn(ctx context.Context, email, password string) (*uint, *string, *courseError.CourseError) {
+func (storage *Storage) SignIn(ctx context.Context, email, password string) (*uint, *string, *bool, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	credentials := dto.CreateNewCredentials()
 	if err := tx.Where("email = ?", email).First(&credentials).Error; err != nil {
 		tx.Rollback()
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil, courseError.CreateError(err, 11002)
+			return nil, nil, nil, courseError.CreateError(err, 11002)
 		}
-		return nil, nil, courseError.CreateError(err, 10002)
+		return nil, nil, nil, courseError.CreateError(err, 10002)
 	}
 
 	if !storage.verifyPassword(credentials.Password, password) {
 		tx.Rollback()
-		return nil, nil, courseError.CreateError(errUserNotFound, 11002)
+		return nil, nil, nil, courseError.CreateError(errUserNotFound, 11002)
 	}
 
 	user := dto.CreateNewUser()
 	if err := tx.Where("credentials_id = ?", credentials.ID).First(&user).Error; err != nil {
 		tx.Rollback()
-		return nil, nil, courseError.CreateError(err, 10002)
+		return nil, nil, nil, courseError.CreateError(err, 10002)
 	}
 
 	subscription := dto.CreateNewSubscription()
 	if err := tx.Where("id = ?", user.SubscriptionId).First(&subscription).Error; err != nil {
 		tx.Rollback()
-		return nil, nil, courseError.CreateError(err, 10002)
+		return nil, nil, nil, courseError.CreateError(err, 10002)
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return nil, nil, courseError.CreateError(err, 10010)
+		return nil, nil, nil, courseError.CreateError(err, 10010)
 	}
 
-	return &user.ID, &subscription.SubscriptionType, nil
+	return &user.ID, &subscription.SubscriptionType, &user.Verified, nil
 }
 
 func (storage *Storage) verifyPassword(hashedPassword, password string) bool {
@@ -191,6 +191,43 @@ func (storage *Storage) FillUserProfile(ctx context.Context, firstName, surname 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
 		return courseError.CreateError(err, 10010)
+	}
+
+	return nil
+}
+
+func (storage *Storage) VerifyUser(ctx context.Context, userId uint) (*string, *courseError.CourseError) {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	subscription := dto.CreateNewSubscription()
+
+	if err := tx.Table("subscriptions").
+		Table("users").
+		Joins("JOIN subscriptions ON subscriptions.id = users.subscription_id").
+		Where("users.id = ?", userId).First(&subscription).Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 11002)
+	}
+
+	if err := tx.Where("id = ?", userId).Update("verified", true).Error; err != nil {
+		tx.Rollback()
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, courseError.CreateError(errUserNotFound, 11002)
+		}
+		return nil, courseError.CreateError(err, 11002)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 10010)
+	}
+
+	return &subscription.SubscriptionType, nil
+}
+
+func (storage *Storage) DisableTokens(ctx context.Context, userId uint) *courseError.CourseError {
+	if err := storage.db.WithContext(ctx).Where("user_id = ?", userId).Update("available", false).Error; err != nil {
+		return courseError.CreateError(err, 10003)
 	}
 
 	return nil

@@ -11,10 +11,15 @@ import (
 )
 
 type Config struct {
-	Port      string `envconfig:"PORT"`
-	DSN       string `envconfig:"DSN"`
-	Secret    string `envconfig:"SECRET"`
-	JwtSecret string `envconfig:"JWT_SECRET"`
+	Port                  string `envconfig:"PORT"`
+	DSN                   string `envconfig:"DSN"`
+	Secret                string `envconfig:"SECRET"`
+	JwtSecret             string `envconfig:"JWT_SECRET"`
+	RedisPort             string `envconfig:"REDIS_PORT"`
+	RedisPassword         string `envconfig:"REDIS_PASSWORD"`
+	RedisEmailChannelName string `envconfig:"REDIS_EMAIL_CHANNEL_NAME"`
+	RedisDSN              string `envconfig:"REDIS_DSN"`
+	Address               string `envconfig:"ADDRESS"`
 }
 
 var (

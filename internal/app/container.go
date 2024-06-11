@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/go-redis/redis"
 	"github.com/knstch/course/internal/app/config"
 	"github.com/knstch/course/internal/app/handlers"
 	"github.com/knstch/course/internal/app/storage"
@@ -21,7 +22,14 @@ func InitContainer(config *config.Config) (*Container, error) {
 		return nil, err
 	}
 
-	handlers := handlers.NewHandlers(psqlStorage, config)
+	dsnRedis, err := redis.ParseURL(config.RedisDSN)
+	if err != nil {
+		return nil, err
+	}
+
+	redisClient := redis.NewClient(dsnRedis)
+
+	handlers := handlers.NewHandlers(psqlStorage, config, redisClient)
 
 	return &Container{
 		Storage:  psqlStorage,

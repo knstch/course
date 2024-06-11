@@ -25,6 +25,8 @@ const (
 
 	errPasswordIsNil = "пароль обязателен"
 	errBadPassword   = "пароль должен содержать как миниум 8 символов и включать в себя как минимум 1 цифру"
+
+	errBadConfirmCode = "код верификации передан неверно"
 )
 
 var (
@@ -186,6 +188,29 @@ func (email *EmailToValidate) Validate(ctx context.Context) *courseerror.CourseE
 		validation.Field(&email.email,
 			validation.Required.Error(errEmailIsNil),
 			validation.Match(emailRegex).Error(errBadEmail),
+		),
+	); err != nil {
+		return courseerror.CreateError(err, 400)
+	}
+
+	return nil
+}
+
+type ConfirmCodeToValidate struct {
+	code int
+}
+
+func NewConfirmCodeToValidate(code int) *ConfirmCodeToValidate {
+	return &ConfirmCodeToValidate{
+		code: code,
+	}
+}
+
+func (code *ConfirmCodeToValidate) Validate(ctx context.Context) *courseerror.CourseError {
+	if err := validation.ValidateStructWithContext(ctx, code,
+		validation.Field(&code.code,
+			validation.Min(1000).Error(errBadConfirmCode),
+			validation.Max(9999).Error(errBadConfirmCode),
 		),
 	); err != nil {
 		return courseerror.CreateError(err, 400)

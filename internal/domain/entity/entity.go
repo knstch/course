@@ -24,3 +24,11 @@ type Emails struct {
 	OldEmail string `json:"oldEmail"`
 	NewEmail string `json:"newEmail"`
 }
+
+type ConfirmCode struct {
+	Code int `json:"code"`
+}
+
+func NewConfirmCodeEntity() *ConfirmCode {
+	return &ConfirmCode{}
+}
