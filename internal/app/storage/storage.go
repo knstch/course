@@ -15,6 +15,7 @@ var (
 	errRegistingUser = errors.New("ошибка при регистрации пользователя")
 	errEmailIsBusy   = errors.New("пользователь с таким email уже существует")
 	errUserNotFound  = errors.New("пользователь не найден")
+	errTokenNotFound = errors.New("токен не найден")
 )
 
 type Storage struct {
@@ -230,8 +231,34 @@ func (storage *Storage) VerifyUser(ctx context.Context, userId uint) (*string, *
 }
 
 func (storage *Storage) DisableTokens(ctx context.Context, userId uint) *courseError.CourseError {
-	if err := storage.db.WithContext(ctx).Where("user_id = ?", userId).Update("available", false).Error; err != nil {
+	if err := storage.db.WithContext(ctx).
+		Table("access_tokens").
+		Where("user_id = ?", userId).
+		Update("available", false).Error; err != nil {
 		return courseError.CreateError(err, 10003)
+	}
+
+	return nil
+}
+
+func (storage *Storage) DisableToken(ctx context.Context, token string) *courseError.CourseError {
+	if err := storage.db.WithContext(ctx).
+		Table("access_tokens").
+		Where("token = ?", token).Update("available", false).Error; err != nil {
+		return courseError.CreateError(err, 10003)
+	}
+
+	return nil
+}
+
+func (storage *Storage) CheckAccessToken(ctx context.Context, token string) *courseError.CourseError {
+	accessToken := dto.CreateNewAccessToken()
+
+	if err := storage.db.WithContext(ctx).Where("token = ?", token).First(&accessToken).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return courseError.CreateError(errTokenNotFound, 11006)
+		}
+		return courseError.CreateError(err, 10002)
 	}
 
 	return nil

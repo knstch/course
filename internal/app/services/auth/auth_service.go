@@ -20,6 +20,8 @@ type Authentificater interface {
 	SignIn(ctx context.Context, email, password string) (*uint, *string, *bool, *courseError.CourseError)
 	VerifyUser(ctx context.Context, userId uint) (*string, *courseError.CourseError)
 	DisableTokens(ctx context.Context, userId uint) *courseError.CourseError
+	DisableToken(ctx context.Context, token string) *courseError.CourseError
+	CheckAccessToken(ctx context.Context, token string) *courseError.CourseError
 }
 
 type AuthService struct {
@@ -31,9 +33,11 @@ type AuthService struct {
 
 type Claims struct {
 	jwt.RegisteredClaims
-	Iat    int
-	Exp    int
-	UserID string
+	Iat              int
+	Exp              int
+	UserID           string
+	Verified         bool
+	SubscriptionType string
 }
 
 var (
@@ -170,4 +174,38 @@ func (auth AuthService) LogIn(ctx context.Context, credentials *entity.Credentia
 	}
 
 	return token, nil
+}
+
+func (auth AuthService) ValidateAccessToken(ctx context.Context, token *string) *courseError.CourseError {
+	if err := auth.Authentificater.CheckAccessToken(ctx, *token); err != nil {
+		return nil
+	}
+
+	return nil
+}
+
+func (auth AuthService) DecodeToken(ctx context.Context, tokenString string) (*Claims, *courseError.CourseError) {
+	claims := &Claims{}
+
+	_, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, nil
+		}
+		return []byte(auth.secret), nil
+	})
+	if err != nil {
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			if err := auth.Authentificater.DisableToken(ctx, tokenString); err != nil {
+				return nil, err
+			}
+			return nil, courseError.CreateError(err, 11007)
+		}
+		return nil, courseError.CreateError(err, 11011)
+	}
+
+	if claims.UserID == "" {
+		return nil, courseError.CreateError(err, 11007)
+	}
+
+	return claims, nil
 }
