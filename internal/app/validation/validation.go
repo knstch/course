@@ -170,3 +170,26 @@ func (password *PasswordToValidate) ValidatePassword(ctx context.Context) *cours
 
 	return nil
 }
+
+type EmailToValidate struct {
+	email string
+}
+
+func NewEmailToValidate(email string) *EmailToValidate {
+	return &EmailToValidate{
+		email: email,
+	}
+}
+
+func (email *EmailToValidate) Validate(ctx context.Context) *courseerror.CourseError {
+	if err := validation.ValidateStructWithContext(ctx, email,
+		validation.Field(&email.email,
+			validation.Required.Error(errEmailIsNil),
+			validation.Match(emailRegex).Error(errBadEmail),
+		),
+	); err != nil {
+		return courseerror.CreateError(err, 400)
+	}
+
+	return nil
+}

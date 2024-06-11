@@ -15,9 +15,7 @@ import (
 type Authentificater interface {
 	RegisterUser(ctx context.Context, email, password string) (*uint, *courseError.CourseError)
 	StoreToken(ctx context.Context, token *string, id *uint) *courseError.CourseError
-	// FillUserProfile(ctx context.Context, firstName, surname string, phoneNumber int) *courseError.CourseError // вынести в другой сервис
 	SignIn(ctx context.Context, email, password string) (*uint, *string, *courseError.CourseError)
-	// ChangePasssword(ctx context.Context, oldPassword, newPassword string) *courseError.CourseError // вынести в другой сервис
 }
 
 type AuthService struct {
@@ -79,22 +77,6 @@ func (auth AuthService) mintJWT(id uint, subscriptionType string) (*string, *cou
 	return &signedAuthToken, nil
 }
 
-// func (auth *AuthService) FillProfile(ctx context.Context, userInfo *entity.UserInfo) *courseError.CourseError {
-// 	if err := validation.NewUserInfoToValidate(userInfo).Validate(ctx); err != nil {
-// 		return err
-// 	}
-
-// 	trimedPhoneNumber := strings.TrimPrefix(userInfo.PhoneNumber, "+")
-
-// 	digitsPhoneNumber, _ := strconv.Atoi(trimedPhoneNumber)
-
-// 	if err := auth.Authentificater.FillUserProfile(ctx, userInfo.FirstName, userInfo.Surname, digitsPhoneNumber); err != nil {
-// 		return err
-// 	}
-
-// 	return nil
-// }
-
 func (auth AuthService) LogIn(ctx context.Context, credentials *entity.Credentials) (*string, *courseError.CourseError) {
 	if err := validation.NewSignInCredentials(credentials).Validate(ctx); err != nil {
 		return nil, err
@@ -116,15 +98,3 @@ func (auth AuthService) LogIn(ctx context.Context, credentials *entity.Credentia
 
 	return token, nil
 }
-
-// func (auth *AuthService) EditPassword(ctx context.Context, passwords *entity.Passwords) *courseError.CourseError {
-// 	if err := validation.NewPasswordToValidate(passwords.NewPassword).ValidatePassword(ctx); err != nil {
-// 		return err
-// 	}
-
-// 	if err := auth.Authentificater.ChangePasssword(ctx, passwords.OldPassword, passwords.NewPassword); err != nil {
-// 		return err
-// 	}
-
-// 	return nil
-// }

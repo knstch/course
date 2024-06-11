@@ -33,6 +33,16 @@ func NewStorage(dsn, secret string) (*Storage, error) {
 	}, nil
 }
 
+func newUserProfileUpdate(firstName, surname string, phoneNumber int) map[string]interface{} {
+	updates := make(map[string]interface{}, 3)
+
+	updates["phone_number"] = phoneNumber
+	updates["first_name"] = firstName
+	updates["surname"] = surname
+
+	return updates
+}
+
 func (storage *Storage) Automigrate() error {
 	if err := storage.db.AutoMigrate(
 		&dto.User{},
@@ -60,11 +70,13 @@ func (storage *Storage) RegisterUser(ctx context.Context, email, password string
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			credentials.AddEmail(email).AddPassword(string(hashedPassword))
 			if err := tx.Create(&credentials).Error; err != nil {
+				tx.Rollback()
 				return nil, courseError.CreateError(errRegistingUser, 10001)
 			}
 
 			subscription := dto.CreateNewSubscription().AddSubscriptionType("basic")
 			if err := tx.Create(&subscription).Error; err != nil {
+				tx.Rollback()
 				return nil, courseError.CreateError(errRegistingUser, 10001)
 			}
 
@@ -74,10 +86,12 @@ func (storage *Storage) RegisterUser(ctx context.Context, email, password string
 				SetStatusUnverified()
 
 			if err := tx.Create(&user).Error; err != nil {
+				tx.Rollback()
 				return nil, courseError.CreateError(errRegistingUser, 10001)
 			}
 
 			if err := tx.Commit().Error; err != nil {
+				tx.Rollback()
 				return nil, courseError.CreateError(err, 10010)
 			}
 
@@ -99,10 +113,12 @@ func (storage *Storage) StoreToken(ctx context.Context, token *string, id *uint)
 		SetStatusAvailable()
 
 	if err := tx.Create(&accessToken).Error; err != nil {
+		tx.Rollback()
 		return courseError.CreateError(err, 10001)
 	}
 
 	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
 		return courseError.CreateError(err, 10010)
 	}
 
@@ -114,6 +130,7 @@ func (storage *Storage) SignIn(ctx context.Context, email, password string) (*ui
 
 	credentials := dto.CreateNewCredentials()
 	if err := tx.Where("email = ?", email).First(&credentials).Error; err != nil {
+		tx.Rollback()
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil, courseError.CreateError(err, 11002)
 		}
@@ -121,20 +138,24 @@ func (storage *Storage) SignIn(ctx context.Context, email, password string) (*ui
 	}
 
 	if !storage.verifyPassword(credentials.Password, password) {
+		tx.Rollback()
 		return nil, nil, courseError.CreateError(errUserNotFound, 11002)
 	}
 
 	user := dto.CreateNewUser()
 	if err := tx.Where("credentials_id = ?", credentials.ID).First(&user).Error; err != nil {
+		tx.Rollback()
 		return nil, nil, courseError.CreateError(err, 10002)
 	}
 
 	subscription := dto.CreateNewSubscription()
 	if err := tx.Where("id = ?", user.SubscriptionId).First(&subscription).Error; err != nil {
+		tx.Rollback()
 		return nil, nil, courseError.CreateError(err, 10002)
 	}
 
 	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
 		return nil, nil, courseError.CreateError(err, 10010)
 	}
 
@@ -147,4 +168,30 @@ func (storage *Storage) verifyPassword(hashedPassword, password string) bool {
 	}
 
 	return true
+}
+
+func (storage *Storage) FillUserProfile(ctx context.Context, firstName, surname string, phoneNumber int, userId uint) *courseError.CourseError {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	user := dto.CreateNewUser()
+
+	if err := tx.Where("id = ?", userId).First(&user).Error; err != nil {
+		tx.Rollback()
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return courseError.CreateError(err, 11101)
+		}
+		return courseError.CreateError(err, 10002)
+	}
+
+	if err := tx.Where("id = ?", userId).Updates(newUserProfileUpdate(firstName, surname, phoneNumber)).Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10003)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10010)
+	}
+
+	return nil
 }

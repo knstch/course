@@ -19,3 +19,8 @@ type Passwords struct {
 	OldPassword string `json:"oldPassword"`
 	NewPassword string `json:"newPassword"`
 }
+
+type Emails struct {
+	OldEmail string `json:"oldEmail"`
+	NewEmail string `json:"newEmail"`
+}

@@ -10,7 +10,7 @@ type User struct {
 	gorm.Model
 	FirstName      string
 	Surname        string
-	Verified       bool `gorm:"not null"`
+	Verified       bool `gorm:"not null, default:false"`
 	Credentials    Credentials
 	CredentialsId  *uint `gorm:"not null"`
 	Subscription   Subscription
