@@ -10,7 +10,6 @@ type User struct {
 	gorm.Model
 	FirstName      string
 	Surname        string
-	Verified       bool `gorm:"not null, default:false"`
 	Credentials    Credentials
 	CredentialsId  *uint `gorm:"not null"`
 	Subscription   Subscription
@@ -27,11 +26,6 @@ func (user *User) AddCredentialsId(id *uint) *User {
 	return user
 }
 
-func (user *User) SetStatusUnverified() *User {
-	user.Verified = false
-	return user
-}
-
 func (user *User) AddSubscriptionId(id *uint) *User {
 	user.SubscriptionId = *id
 	return user
@@ -41,10 +35,16 @@ type Credentials struct {
 	gorm.Model
 	Email    string `gorm:"not null"`
 	Password string `gorm:"not null"`
+	Verified bool   `gorm:"not null, default:false"`
 }
 
 func CreateNewCredentials() *Credentials {
 	return &Credentials{}
+}
+
+func (cr *Credentials) SetStatusUnverified() *Credentials {
+	cr.Verified = false
+	return cr
 }
 
 func (cr *Credentials) AddEmail(email string) *Credentials {

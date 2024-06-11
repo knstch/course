@@ -68,7 +68,9 @@ func (storage *Storage) RegisterUser(ctx context.Context, email, password string
 
 	if err := tx.Where("email = ?", email).First(&credentials).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			credentials.AddEmail(email).AddPassword(string(hashedPassword))
+			credentials.AddEmail(email).
+				AddPassword(string(hashedPassword)).
+				SetStatusUnverified()
 			if err := tx.Create(&credentials).Error; err != nil {
 				tx.Rollback()
 				return nil, courseError.CreateError(errRegistingUser, 10001)
@@ -82,8 +84,7 @@ func (storage *Storage) RegisterUser(ctx context.Context, email, password string
 
 			user := dto.CreateNewUser().
 				AddCredentialsId(&credentials.ID).
-				AddSubscriptionId(&subscription.ID).
-				SetStatusUnverified()
+				AddSubscriptionId(&subscription.ID)
 
 			if err := tx.Create(&user).Error; err != nil {
 				tx.Rollback()
@@ -159,7 +160,7 @@ func (storage *Storage) SignIn(ctx context.Context, email, password string) (*ui
 		return nil, nil, nil, courseError.CreateError(err, 10010)
 	}
 
-	return &user.ID, &subscription.SubscriptionType, &user.Verified, nil
+	return &user.ID, &subscription.SubscriptionType, &credentials.Verified, nil
 }
 
 func (storage *Storage) verifyPassword(hashedPassword, password string) bool {
@@ -209,7 +210,10 @@ func (storage *Storage) VerifyUser(ctx context.Context, userId uint) (*string, *
 		return nil, courseError.CreateError(err, 11002)
 	}
 
-	if err := tx.Where("id = ?", userId).Update("verified", true).Error; err != nil {
+	if err := tx.Table("credentials").
+		Table("users").
+		Joins("JOIN credentials ON credentials.id = users.credentials_id").
+		Where("id = ?", userId).Update("verified", true).Error; err != nil {
 		tx.Rollback()
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, courseError.CreateError(errUserNotFound, 11002)

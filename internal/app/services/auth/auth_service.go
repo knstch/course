@@ -107,6 +107,10 @@ func (auth AuthService) VerifyEmail(ctx context.Context, code int, userId uint) 
 		return nil, courseError.CreateError(ErrBadConfirmCode, 11003)
 	}
 
+	if err := auth.redis.Del("userId").Err(); err != nil {
+		return nil, courseError.CreateError(err, 10033)
+	}
+
 	subType, verificationErr := auth.Authentificater.VerifyUser(ctx, userId)
 	if verificationErr != nil {
 		return nil, verificationErr
