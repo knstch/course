@@ -205,7 +205,7 @@ func (auth AuthService) LogIn(ctx context.Context, credentials *entity.Credentia
 
 func (auth AuthService) ValidateAccessToken(ctx context.Context, token *string) *courseError.CourseError {
 	if err := auth.Authentificater.CheckAccessToken(ctx, *token); err != nil {
-		return nil
+		return err
 	}
 
 	return nil

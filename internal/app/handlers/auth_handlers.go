@@ -14,12 +14,13 @@ var (
 	errEmailNotFoundInCtx              = errors.New("почта не найдена в контексте")
 	errVerificationStatusNotFoundInCtx = errors.New("статус верификации не найден в контексте")
 	errUserEmailIsAlreadyVerified      = errors.New("почта пользователя уже верифицирована")
+	errUserNotAuthentificated          = errors.New("пользователь не авторизован")
 )
 
 func (h *Handlers) SignUp(ctx *gin.Context) {
 	credentials := entity.NewCredentials()
 	if err := ctx.ShouldBindJSON(&credentials); err != nil {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(err, 10101))
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
 		return
 	}
 
@@ -41,7 +42,7 @@ func (h *Handlers) SignUp(ctx *gin.Context) {
 func (h *Handlers) SignIn(ctx *gin.Context) {
 	credentials := entity.NewCredentials()
 	if err := ctx.ShouldBindJSON(&credentials); err != nil {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(err, 10101))
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
 		return
 	}
 
@@ -63,7 +64,7 @@ func (h *Handlers) SignIn(ctx *gin.Context) {
 func (h *Handlers) Verification(ctx *gin.Context) {
 	confirmCode := entity.NewConfirmCodeEntity()
 	if err := ctx.ShouldBindJSON(&confirmCode); err != nil {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(err, 10101))
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
 		return
 	}
 
@@ -112,7 +113,7 @@ func (h *Handlers) WithCookieAuth() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		cookie, err := ctx.Request.Cookie("auth")
 		if err != nil {
-			ctx.AbortWithStatusJSON(http.StatusForbidden, courseError.CreateError(err, 403))
+			ctx.AbortWithStatusJSON(http.StatusForbidden, courseError.CreateError(errUserNotAuthentificated, 11009))
 			return
 		}
 

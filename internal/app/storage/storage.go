@@ -134,7 +134,7 @@ func (storage *Storage) SignIn(ctx context.Context, email, password string) (use
 	if err := tx.Where("email = ?", email).First(&credentials).Error; err != nil {
 		tx.Rollback()
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil, nil, courseError.CreateError(err, 11002)
+			return nil, nil, nil, courseError.CreateError(errUserNotFound, 11002)
 		}
 		return nil, nil, nil, courseError.CreateError(err, 10002)
 	}
@@ -249,7 +249,7 @@ func (storage *Storage) DisableToken(ctx context.Context, token string) *courseE
 func (storage *Storage) CheckAccessToken(ctx context.Context, token string) *courseError.CourseError {
 	accessToken := dto.CreateNewAccessToken()
 
-	if err := storage.db.WithContext(ctx).Where("token = ?", token).First(&accessToken).Error; err != nil {
+	if err := storage.db.WithContext(ctx).Where("token = ? AND available = ?", token, true).First(&accessToken).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return courseError.CreateError(errTokenNotFound, 11006)
 		}

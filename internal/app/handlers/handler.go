@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"errors"
+
 	"github.com/go-redis/redis"
 	"github.com/knstch/course/internal/app/config"
 	"github.com/knstch/course/internal/app/services/auth"
@@ -18,3 +20,7 @@ func NewHandlers(storage *storage.Storage, config *config.Config, redisClient *r
 		address:     config.Address,
 	}
 }
+
+var (
+	errBrokenJSON = errors.New("запрос передан в неверном формате")
+)
