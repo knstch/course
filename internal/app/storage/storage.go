@@ -203,22 +203,17 @@ func (storage *Storage) VerifyUser(ctx context.Context, userId uint) (*string, *
 
 	subscription := dto.CreateNewSubscription()
 
-	if err := tx.Table("subscriptions").
-		Table("users").
-		Joins("JOIN subscriptions ON subscriptions.id = users.subscription_id").
-		Where("users.id = ?", userId).First(&subscription).Error; err != nil {
+	if err := tx.
+		Joins("JOIN users ON users.id = ?", userId).
+		Where("subscriptions.id = users.subscription_id").
+		First(&subscription).Error; err != nil {
 		tx.Rollback()
 		return nil, courseError.CreateError(err, 11002)
 	}
 
-	if err := tx.Table("credentials").
-		Table("users").
-		Joins("JOIN credentials ON credentials.id = users.credentials_id").
-		Where("id = ?", userId).Update("verified", true).Error; err != nil {
-		tx.Rollback()
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, courseError.CreateError(errUserNotFound, 11002)
-		}
+	if err := tx.Exec(`UPDATE "credentials" SET "verified" = ?
+		WHERE credentials.id = (SELECT credentials_id 
+		FROM "users" WHERE id = ?)`, true, userId).Error; err != nil {
 		return nil, courseError.CreateError(err, 11002)
 	}
 

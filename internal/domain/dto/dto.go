@@ -14,7 +14,7 @@ type User struct {
 	CredentialsId  *uint `gorm:"not null"`
 	Subscription   Subscription
 	SubscriptionId uint
-	PhoneNumber    uint
+	PhoneNumber    *uint
 }
 
 func CreateNewUser() *User {

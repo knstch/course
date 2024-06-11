@@ -10,8 +10,9 @@ services:
       - 1488:5432
   redis:
     image: redis
-    environment:
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: password
     ports:
       - "6379:6379"
+    environment:
+      REDIS_PASSWORD: password
+      REDIS_USERNAME: admin
+    command: ["redis-server", "--requirepass", "password"]

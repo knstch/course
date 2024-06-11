@@ -35,7 +35,7 @@ type Claims struct {
 	jwt.RegisteredClaims
 	Iat              int
 	Exp              int
-	UserID           string
+	UserID           uint
 	Verified         bool
 	SubscriptionType string
 }
@@ -203,7 +203,7 @@ func (auth AuthService) DecodeToken(ctx context.Context, tokenString string) (*C
 		return nil, courseError.CreateError(err, 11011)
 	}
 
-	if claims.UserID == "" {
+	if claims.UserID == 0 {
 		return nil, courseError.CreateError(err, 11007)
 	}
 

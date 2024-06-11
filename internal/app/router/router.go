@@ -15,9 +15,9 @@ func RequestsRouter(h *handlers.Handlers) *gin.Engine {
 	auth.POST("/register", h.SignUp)
 	auth.POST("/login", h.SignIn)
 
-	email := auth.Group("/email")
+	email := auth.Group("email")
 	email.Use(h.WithCookieAuth())
-	auth.POST("/verification", h.Verification)
+	email.POST("/verification", h.Verification)
 
 	return router
 }

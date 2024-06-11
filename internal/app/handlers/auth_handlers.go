@@ -111,7 +111,7 @@ func (h *Handlers) WithCookieAuth() gin.HandlerFunc {
 				ctx.AbortWithStatusJSON(http.StatusForbidden, err)
 				return
 			}
-			ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, tokenError)
 			return
 		}
 

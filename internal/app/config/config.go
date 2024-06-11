@@ -15,7 +15,7 @@ type Config struct {
 	DSN                   string `envconfig:"DSN"`
 	Secret                string `envconfig:"SECRET"`
 	JwtSecret             string `envconfig:"JWT_SECRET"`
-	RedisPort             string `envconfig:"REDIS_PORT"`
+	RedisAddress          string `envconfig:"REDIS_ADDRESS"`
 	RedisPassword         string `envconfig:"REDIS_PASSWORD"`
 	RedisEmailChannelName string `envconfig:"REDIS_EMAIL_CHANNEL_NAME"`
 	RedisDSN              string `envconfig:"REDIS_DSN"`
