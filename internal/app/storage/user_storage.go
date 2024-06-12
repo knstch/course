@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"errors"
+	"strings"
 
 	courseError "github.com/knstch/course/internal/app/course_error"
 	"github.com/knstch/course/internal/domain/dto"
@@ -49,6 +50,7 @@ func (storage *Storage) ChangePasssword(ctx context.Context, oldPassword, newPas
 	if err := tx.Joins("JOIN users ON users.id = ?", userId).
 		Where("credentials.id = users.credentials_id").
 		First(&credentials).Error; err != nil {
+		tx.Rollback()
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return courseError.CreateError(errUserNotFound, 11002)
 		}
@@ -56,20 +58,68 @@ func (storage *Storage) ChangePasssword(ctx context.Context, oldPassword, newPas
 	}
 
 	if oldPassword == newPassword {
+		tx.Rollback()
 		return courseError.CreateError(errOldAndNewPasswordsEqual, 11103)
 	}
 
 	if !storage.verifyPassword(credentials.Password, oldPassword) {
+		tx.Rollback()
 		return courseError.CreateError(errBadPassword, 11104)
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword+storage.secret), bcrypt.DefaultCost)
 	if err != nil {
+		tx.Rollback()
 		return courseError.CreateError(err, 11020)
 	}
 
 	if err := tx.Model(dto.Credentials{}).Where("id = ?", credentials.ID).Update("password", hashedPassword).Error; err != nil {
+		tx.Rollback()
 		return courseError.CreateError(err, 10003)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10010)
+	}
+
+	return nil
+}
+
+func (storage *Storage) ChangeEmail(ctx context.Context, newEmail string, userId uint) *courseError.CourseError {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	oldCredentials := dto.CreateNewCredentials()
+
+	// unverifiedEmails := []dto.Credentials{}
+	// if err := tx.Joins("JOIN users ON users.id = ?", userId).
+	// 	Where("credentials.id = users.credentials_id AND verified = ?", false).Find(&unverifiedEmails).Error; err != nil {
+	// 	tx.Rollback()
+	// 	return courseError.CreateError(err, 10002)
+	// }
+
+	// if len(unverifiedEmails) > 0 {
+	// 	tx.Rollback()
+	// 	return courseError.CreateError()
+	// }
+
+	if err := tx.Joins("JOIN users ON users.id = ?", userId).
+		Where("credentials.id = users.credentials_id AND verified = ?", true).
+		First(&oldCredentials).Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 11002)
+	}
+
+	newCredentials := dto.CreateNewCredentials().
+		AddPassword(oldCredentials.Password).
+		AddEmail(newEmail).SetStatusUnverified()
+
+	if err := tx.Create(&newCredentials).Error; err != nil {
+		tx.Rollback()
+		if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+			return courseError.CreateError(errEmailIsBusy, 11001)
+		}
+		return courseError.CreateError(err, 10001)
 	}
 
 	if err := tx.Commit().Error; err != nil {

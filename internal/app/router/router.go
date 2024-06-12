@@ -24,6 +24,8 @@ func RequestsRouter(h *handlers.Handlers) *gin.Engine {
 	profile.Use(h.WithCookieAuth())
 	profile.PATCH("/editProfile", h.ManageProfile)
 	profile.PATCH("/editPassword", h.ManagePassword)
+	profile.POST("/editEmail", h.ManageEmail)
+	profile.POST("/confirmEmailChange", h.ConfirmEmailChange)
 
 	return router
 }

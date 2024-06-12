@@ -10,6 +10,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/knstch/course/internal/app/config"
 	courseError "github.com/knstch/course/internal/app/course_error"
+	"github.com/knstch/course/internal/app/services/email"
 	"github.com/knstch/course/internal/app/validation"
 	"github.com/knstch/course/internal/domain/entity"
 )
@@ -18,17 +19,17 @@ type Authentificater interface {
 	RegisterUser(ctx context.Context, email, password string) (*uint, *courseError.CourseError)
 	StoreToken(ctx context.Context, token *string, id *uint) *courseError.CourseError
 	SignIn(ctx context.Context, email, password string) (*uint, *bool, *courseError.CourseError)
-	VerifyEmail(ctx context.Context, userId uint) *courseError.CourseError
+	VerifyEmail(ctx context.Context, userId uint, isEdit bool) *courseError.CourseError
 	DisableTokens(ctx context.Context, userId uint) *courseError.CourseError
 	DisableToken(ctx context.Context, token string) *courseError.CourseError
 	CheckAccessToken(ctx context.Context, token string) *courseError.CourseError
 }
 
 type AuthService struct {
-	Authentificater       Authentificater
-	secret                string
-	redis                 *redis.Client
-	redisEmailChannelName string
+	Authentificater Authentificater
+	secret          string
+	redis           *redis.Client
+	emailService    *email.EmailService
 }
 
 type Claims struct {
@@ -41,16 +42,17 @@ type Claims struct {
 }
 
 var (
-	ErrConfirmCodeNotFound = errors.New("код не найден")
-	ErrBadConfirmCode      = errors.New("код подтверждения не найден")
+	ErrConfirmCodeNotFound    = errors.New("код не найден")
+	ErrBadConfirmCode         = errors.New("код подтверждения не найден")
+	ErrEmailIsAlreadyVerified = errors.New("почта уже подтвеждена")
 )
 
-func NewAuthService(authentificater Authentificater, config *config.Config, client *redis.Client) AuthService {
+func NewAuthService(authentificater Authentificater, config *config.Config, client *redis.Client, emailService *email.EmailService) AuthService {
 	return AuthService{
-		Authentificater:       authentificater,
-		secret:                config.Secret,
-		redis:                 client,
-		redisEmailChannelName: config.RedisEmailChannelName,
+		Authentificater: authentificater,
+		secret:          config.Secret,
+		redis:           client,
+		emailService:    emailService,
 	}
 }
 
@@ -73,13 +75,7 @@ func (auth AuthService) Register(ctx context.Context, credentials *entity.Creden
 		return nil, err
 	}
 
-	confimCode := auth.generateEmailConfirmCode()
-
-	if err := auth.redis.Set(fmt.Sprint(*userId), confimCode, 15*time.Minute).Err(); err != nil {
-		return nil, courseError.CreateError(err, 10031)
-	}
-
-	if err := auth.sendConfirmEmail(confimCode); err != nil {
+	if err := auth.emailService.SendConfirmCode(userId, &credentials.Email); err != nil {
 		return nil, err
 	}
 
@@ -115,7 +111,7 @@ func (auth AuthService) VerifyEmail(ctx context.Context, code int, userId uint) 
 		return nil, courseError.CreateError(err, 10033)
 	}
 
-	verificationErr := auth.Authentificater.VerifyEmail(ctx, userId)
+	verificationErr := auth.Authentificater.VerifyEmail(ctx, userId, false)
 	if verificationErr != nil {
 		return nil, verificationErr
 	}

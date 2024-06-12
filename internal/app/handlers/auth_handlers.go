@@ -101,6 +101,17 @@ func (h *Handlers) Verification(ctx *gin.Context) {
 }
 
 func (h *Handlers) SendNewCode(ctx *gin.Context) {
+	verified, ok := ctx.Get("verified")
+	if !ok {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errVerificationStatusNotFoundInCtx, 11005))
+		return
+	}
+
+	if verified.(bool) {
+		ctx.JSON(http.StatusBadRequest, courseError.CreateError(errUserEmailIsAlreadyVerified, 11008))
+		return
+	}
+
 	if err := h.authService.SendNewCofirmationCode(ctx); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
 		return

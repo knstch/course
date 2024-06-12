@@ -1,8 +1,10 @@
 package storage
 
 import (
+	"context"
 	"errors"
 
+	courseError "github.com/knstch/course/internal/app/course_error"
 	"github.com/knstch/course/internal/domain/dto"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -49,6 +51,47 @@ func (storage *Storage) Automigrate() error {
 		&dto.AccessToken{},
 	); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (storage *Storage) VerifyEmail(ctx context.Context, userId uint, isEdit bool) *courseError.CourseError {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	if isEdit {
+		oldCredentials := dto.CreateNewCredentials()
+
+		if err := tx.Joins("JOIN users ON users.id = ?", userId).
+			Where("credentials.id = users.credentials_id AND verified = ?", true).
+			First(&oldCredentials).Error; err != nil {
+			tx.Rollback()
+			return courseError.CreateError(err, 11002)
+		}
+
+		if err := tx.Exec(`UPDATE "users" SET credentials_id = 
+			(SELECT id FROM "credentials" WHERE verified = ? 
+			ORDER BY created_at DESC LIMIT 1) WHERE id = ?`, false, userId).Error; err != nil {
+			tx.Rollback()
+			return courseError.CreateError(err, 11002)
+		}
+
+		if err := tx.Where("id = ?", oldCredentials.ID).Delete(&dto.Credentials{}).Error; err != nil {
+			tx.Rollback()
+			return courseError.CreateError(err, 10004)
+		}
+	}
+
+	if err := tx.Exec(`UPDATE "credentials" SET "verified" = ?
+		WHERE credentials.id = (SELECT credentials_id 
+		FROM "users" WHERE id = ?) AND verified = ?`, true, userId, false).Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 11002)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10010)
 	}
 
 	return nil

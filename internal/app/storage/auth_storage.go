@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"errors"
+	"strings"
 
 	courseError "github.com/knstch/course/internal/app/course_error"
 	"github.com/knstch/course/internal/domain/dto"
@@ -13,43 +14,37 @@ import (
 func (storage *Storage) RegisterUser(ctx context.Context, email, password string) (*uint, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
 
-	credentials := dto.CreateNewCredentials()
-
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password+storage.secret), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, courseError.CreateError(err, 11020)
 	}
 
-	if err := tx.Where("email = ?", email).First(&credentials).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			credentials.AddEmail(email).
-				AddPassword(string(hashedPassword)).
-				SetStatusUnverified()
-			if err := tx.Create(&credentials).Error; err != nil {
-				tx.Rollback()
-				return nil, courseError.CreateError(errRegistingUser, 10001)
-			}
+	credentials := dto.CreateNewCredentials().AddEmail(email).
+		AddPassword(string(hashedPassword)).
+		SetStatusUnverified()
 
-			user := dto.CreateNewUser().
-				AddCredentialsId(&credentials.ID)
-
-			if err := tx.Create(&user).Error; err != nil {
-				tx.Rollback()
-				return nil, courseError.CreateError(errRegistingUser, 10001)
-			}
-
-			if err := tx.Commit().Error; err != nil {
-				tx.Rollback()
-				return nil, courseError.CreateError(err, 10010)
-			}
-
-			return &user.ID, nil
+	if err := tx.Create(&credentials).Error; err != nil {
+		tx.Rollback()
+		if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+			return nil, courseError.CreateError(errEmailIsBusy, 11001)
 		}
-
-		return nil, courseError.CreateError(err, 10002)
+		return nil, courseError.CreateError(errRegistingUser, 10001)
 	}
 
-	return nil, courseError.CreateError(errEmailIsBusy, 11001)
+	user := dto.CreateNewUser().
+		AddCredentialsId(&credentials.ID)
+
+	if err := tx.Create(&user).Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(errRegistingUser, 10001)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 10010)
+	}
+
+	return &user.ID, nil
 }
 
 func (storage *Storage) StoreToken(ctx context.Context, token *string, id *uint) *courseError.CourseError {
@@ -110,30 +105,6 @@ func (storage *Storage) verifyPassword(hashedPassword, password string) bool {
 	}
 
 	return true
-}
-
-func (storage *Storage) VerifyEmail(ctx context.Context, userId uint) *courseError.CourseError {
-	tx := storage.db.WithContext(ctx).Begin()
-
-	if err := tx.Exec(`DELETE FROM credentials WHERE verified = ? 
-		AND credentials.id = (SELECT credentials_id FROM "users" WHERE id = ?)`, true, userId).Error; err != nil {
-		tx.Rollback()
-		return courseError.CreateError(err, 10004)
-	}
-
-	if err := tx.Exec(`UPDATE "credentials" SET "verified" = ?
-		WHERE credentials.id = (SELECT credentials_id 
-		FROM "users" WHERE id = ?) AND verified = ?`, true, userId, false).Error; err != nil {
-		tx.Rollback()
-		return courseError.CreateError(err, 11002)
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return courseError.CreateError(err, 10010)
-	}
-
-	return nil
 }
 
 func (storage *Storage) DisableTokens(ctx context.Context, userId uint) *courseError.CourseError {

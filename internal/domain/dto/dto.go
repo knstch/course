@@ -11,6 +11,7 @@ type User struct {
 	Credentials   Credentials
 	CredentialsId *uint `gorm:"not null"`
 	PhoneNumber   *uint
+	Active        bool `gorm:"not null;default:true"`
 }
 
 func CreateNewUser() *User {
@@ -24,9 +25,9 @@ func (user *User) AddCredentialsId(id *uint) *User {
 
 type Credentials struct {
 	gorm.Model
-	Email    string `gorm:"not null"`
+	Email    string `gorm:"not null;unique"`
 	Password string `gorm:"not null"`
-	Verified bool   `gorm:"not null, default:false"`
+	Verified bool   `gorm:"not null;default:false"`
 }
 
 func CreateNewCredentials() *Credentials {
@@ -58,11 +59,6 @@ type Course struct {
 func CreateNewCourse() *Course {
 	return &Course{}
 }
-
-// func (subscription *Subscription) AddSubscriptionType(subscriptionType string) *Subscription {
-// 	subscription.SubscriptionType = subscriptionType
-// 	return subscription
-// }
 
 type AccessToken struct {
 	gorm.Model

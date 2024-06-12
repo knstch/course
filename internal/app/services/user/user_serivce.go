@@ -2,10 +2,14 @@ package user
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 
+	"github.com/go-redis/redis"
 	courseError "github.com/knstch/course/internal/app/course_error"
+	"github.com/knstch/course/internal/app/services/email"
 	"github.com/knstch/course/internal/app/validation"
 	"github.com/knstch/course/internal/domain/entity"
 )
@@ -13,18 +17,28 @@ import (
 type Profiler interface {
 	FillUserProfile(ctx context.Context, firstName, surname string, phoneNumber int, userId uint) *courseError.CourseError
 	ChangePasssword(ctx context.Context, oldPassword, newPassword string, userId uint) *courseError.CourseError
-	// ChangeEmail(ctx context.Context, newEmail string) *courseError.CourseError
+	ChangeEmail(ctx context.Context, newEmail string, userId uint) *courseError.CourseError
+	VerifyEmail(ctx context.Context, userId uint, isEdit bool) *courseError.CourseError
 }
 
 type UserService struct {
-	Profiler Profiler
+	Profiler     Profiler
+	emailService *email.EmailService
+	redis        *redis.Client
 }
 
-func NewUserService(profiler Profiler) UserService {
+func NewUserService(profiler Profiler, emailService *email.EmailService, redis *redis.Client) UserService {
 	return UserService{
-		Profiler: profiler,
+		Profiler:     profiler,
+		emailService: emailService,
+		redis:        redis,
 	}
 }
+
+var (
+	ErrConfirmCodeNotFound = errors.New("код не найден")
+	ErrBadConfirmCode      = errors.New("код подтверждения не найден")
+)
 
 func (user UserService) FillProfile(ctx context.Context, userInfo *entity.UserInfo, userId uint) *courseError.CourseError {
 	if err := validation.NewUserInfoToValidate(userInfo).Validate(ctx); err != nil {
@@ -54,14 +68,43 @@ func (user UserService) EditPassword(ctx context.Context, passwords *entity.Pass
 	return nil
 }
 
-// func (user UserService) EditEmail(ctx context.Context, emails entity.Emails) *courseError.CourseError {
-// 	if err := validation.NewEmailToValidate(emails.NewEmail).Validate(ctx); err != nil {
-// 		return err
-// 	}
+func (user UserService) EditEmail(ctx context.Context, email entity.Email, userId uint) *courseError.CourseError {
+	if err := validation.NewEmailToValidate(email.NewEmail).Validate(ctx); err != nil {
+		return err
+	}
 
-// 	if err := user.Profiler.ChangeEmail(ctx, emails.NewEmail); err != nil {
-// 		return err
-// 	}
+	if err := user.Profiler.ChangeEmail(ctx, email.NewEmail, userId); err != nil {
+		return err
+	}
 
-// 	return nil
-// }
+	if err := user.emailService.SendConfirmCode(&userId, &email.NewEmail); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (user UserService) ConfirmEditEmail(ctx context.Context, confirmCode *entity.ConfirmCode, userId uint) *courseError.CourseError {
+	if err := validation.NewConfirmCodeToValidate(confirmCode.Code).Validate(ctx); err != nil {
+		return err
+	}
+
+	codeFromRedis, err := user.redis.Get(fmt.Sprint(userId)).Result()
+	if err != nil {
+		return courseError.CreateError(ErrConfirmCodeNotFound, 11004)
+	}
+
+	if fmt.Sprint(confirmCode.Code) != codeFromRedis {
+		return courseError.CreateError(ErrBadConfirmCode, 11003)
+	}
+
+	if err := user.redis.Del(fmt.Sprint(userId)).Err(); err != nil {
+		return courseError.CreateError(err, 10033)
+	}
+
+	if err := user.Profiler.VerifyEmail(ctx, userId, true); err != nil {
+		return err
+	}
+
+	return nil
+}

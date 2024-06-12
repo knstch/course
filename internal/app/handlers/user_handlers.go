@@ -59,3 +59,57 @@ func (h *Handlers) ManagePassword(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("пароль успешно изменен", true))
 }
+
+func (h *Handlers) ManageEmail(ctx *gin.Context) {
+	email := entity.CreateNewEmail()
+	if err := ctx.ShouldBindJSON(&email); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
+		return
+	}
+
+	userId, ok := ctx.Get("userId")
+	if !ok {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errEmailNotFoundInCtx, 11005))
+		return
+	}
+
+	if err := h.userService.EditEmail(ctx, *email, userId.(uint)); err != nil {
+		if err.Code == 400 || err.Code == 11002 || err.Code == 11001 {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			return
+		}
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("код успешнот отправлен", true))
+}
+
+func (h *Handlers) ConfirmEmailChange(ctx *gin.Context) {
+	confirmCode := entity.NewConfirmCodeEntity()
+	if err := ctx.ShouldBindJSON(&confirmCode); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
+		return
+	}
+
+	userId, ok := ctx.Get("userId")
+	if !ok {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errEmailNotFoundInCtx, 11005))
+		return
+	}
+
+	if err := h.userService.ConfirmEditEmail(ctx, confirmCode, userId.(uint)); err != nil {
+		if err.Code == 400 || err.Code == 11002 {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			return
+		}
+		if err.Code == 11003 {
+			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
+			return
+		}
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("почта успешно изменена", true))
+}

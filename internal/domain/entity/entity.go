@@ -28,8 +28,12 @@ func CreateNewPasswords() *Passwords {
 	return &Passwords{}
 }
 
-type Emails struct {
+type Email struct {
 	NewEmail string `json:"newEmail"`
+}
+
+func CreateNewEmail() *Email {
+	return &Email{}
 }
 
 type ConfirmCode struct {
