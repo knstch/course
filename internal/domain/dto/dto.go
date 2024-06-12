@@ -1,20 +1,16 @@
 package dto
 
 import (
-	"time"
-
 	"gorm.io/gorm"
 )
 
 type User struct {
 	gorm.Model
-	FirstName      string
-	Surname        string
-	Credentials    Credentials
-	CredentialsId  *uint `gorm:"not null"`
-	Subscription   Subscription
-	SubscriptionId uint
-	PhoneNumber    *uint
+	FirstName     string
+	Surname       string
+	Credentials   Credentials
+	CredentialsId *uint `gorm:"not null"`
+	PhoneNumber   *uint
 }
 
 func CreateNewUser() *User {
@@ -23,11 +19,6 @@ func CreateNewUser() *User {
 
 func (user *User) AddCredentialsId(id *uint) *User {
 	user.CredentialsId = id
-	return user
-}
-
-func (user *User) AddSubscriptionId(id *uint) *User {
-	user.SubscriptionId = *id
 	return user
 }
 
@@ -57,20 +48,21 @@ func (cr *Credentials) AddPassword(password string) *Credentials {
 	return cr
 }
 
-type Subscription struct {
+type Course struct {
 	gorm.Model
-	SubscriptionType string
-	DueTo            *time.Time
+	User   User
+	UserId uint
+	Name   string
 }
 
-func CreateNewSubscription() *Subscription {
-	return &Subscription{}
+func CreateNewCourse() *Course {
+	return &Course{}
 }
 
-func (subscription *Subscription) AddSubscriptionType(subscriptionType string) *Subscription {
-	subscription.SubscriptionType = subscriptionType
-	return subscription
-}
+// func (subscription *Subscription) AddSubscriptionType(subscriptionType string) *Subscription {
+// 	subscription.SubscriptionType = subscriptionType
+// 	return subscription
+// }
 
 type AccessToken struct {
 	gorm.Model

@@ -17,8 +17,8 @@ import (
 type Authentificater interface {
 	RegisterUser(ctx context.Context, email, password string) (*uint, *courseError.CourseError)
 	StoreToken(ctx context.Context, token *string, id *uint) *courseError.CourseError
-	SignIn(ctx context.Context, email, password string) (*uint, *string, *bool, *courseError.CourseError)
-	VerifyUser(ctx context.Context, userId uint) (*string, *courseError.CourseError)
+	SignIn(ctx context.Context, email, password string) (*uint, *bool, *courseError.CourseError)
+	VerifyUser(ctx context.Context, userId uint) *courseError.CourseError
 	DisableTokens(ctx context.Context, userId uint) *courseError.CourseError
 	DisableToken(ctx context.Context, token string) *courseError.CourseError
 	CheckAccessToken(ctx context.Context, token string) *courseError.CourseError
@@ -64,7 +64,7 @@ func (auth AuthService) Register(ctx context.Context, credentials *entity.Creden
 		return nil, err
 	}
 
-	token, err := auth.mintJWT(*userId, "basic", false)
+	token, err := auth.mintJWT(*userId, false)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (auth AuthService) VerifyEmail(ctx context.Context, code int, userId uint) 
 		return nil, courseError.CreateError(err, 10033)
 	}
 
-	subType, verificationErr := auth.Authentificater.VerifyUser(ctx, userId)
+	verificationErr := auth.Authentificater.VerifyUser(ctx, userId)
 	if verificationErr != nil {
 		return nil, verificationErr
 	}
@@ -124,7 +124,7 @@ func (auth AuthService) VerifyEmail(ctx context.Context, code int, userId uint) 
 		return nil, err
 	}
 
-	token, mintError := auth.mintJWT(userId, *subType, true)
+	token, mintError := auth.mintJWT(userId, true)
 	if mintError != nil {
 		return nil, courseError.CreateError(mintError.Error, 11010)
 	}
@@ -163,14 +163,13 @@ func (auth AuthService) SendNewCofirmationCode(ctx context.Context) *courseError
 	return nil
 }
 
-func (auth AuthService) mintJWT(id uint, subscriptionType string, verified bool) (*string, *courseError.CourseError) {
+func (auth AuthService) mintJWT(id uint, verified bool) (*string, *courseError.CourseError) {
 	timeNow := time.Now()
 	authToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"iat":              timeNow.Unix(),
-		"exp":              timeNow.Add(30 * 24 * time.Hour).Unix(),
-		"userId":           id,
-		"verified":         verified,
-		"subscriptionType": subscriptionType,
+		"iat":      timeNow.Unix(),
+		"exp":      timeNow.Add(30 * 24 * time.Hour).Unix(),
+		"userId":   id,
+		"verified": verified,
 	})
 
 	signedAuthToken, err := authToken.SignedString([]byte(auth.secret))
@@ -186,12 +185,12 @@ func (auth AuthService) LogIn(ctx context.Context, credentials *entity.Credentia
 		return nil, err
 	}
 
-	userId, subType, verified, err := auth.Authentificater.SignIn(ctx, credentials.Email, credentials.Password)
+	userId, verified, err := auth.Authentificater.SignIn(ctx, credentials.Email, credentials.Password)
 	if err != nil {
 		return nil, err
 	}
 
-	token, err := auth.mintJWT(*userId, *subType, *verified)
+	token, err := auth.mintJWT(*userId, *verified)
 	if err != nil {
 		return nil, err
 	}

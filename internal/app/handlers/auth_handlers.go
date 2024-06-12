@@ -138,7 +138,6 @@ func (h *Handlers) WithCookieAuth() gin.HandlerFunc {
 
 		ctx.Set("userId", payload.UserID)
 		ctx.Set("verified", payload.Verified)
-		ctx.Set("subscriptionType", payload.SubscriptionType)
 
 		ctx.Next()
 	}
