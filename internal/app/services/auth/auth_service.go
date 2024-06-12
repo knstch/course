@@ -18,7 +18,7 @@ type Authentificater interface {
 	RegisterUser(ctx context.Context, email, password string) (*uint, *courseError.CourseError)
 	StoreToken(ctx context.Context, token *string, id *uint) *courseError.CourseError
 	SignIn(ctx context.Context, email, password string) (*uint, *bool, *courseError.CourseError)
-	VerifyUser(ctx context.Context, userId uint) *courseError.CourseError
+	VerifyEmail(ctx context.Context, userId uint) *courseError.CourseError
 	DisableTokens(ctx context.Context, userId uint) *courseError.CourseError
 	DisableToken(ctx context.Context, token string) *courseError.CourseError
 	CheckAccessToken(ctx context.Context, token string) *courseError.CourseError
@@ -115,7 +115,7 @@ func (auth AuthService) VerifyEmail(ctx context.Context, code int, userId uint) 
 		return nil, courseError.CreateError(err, 10033)
 	}
 
-	verificationErr := auth.Authentificater.VerifyUser(ctx, userId)
+	verificationErr := auth.Authentificater.VerifyEmail(ctx, userId)
 	if verificationErr != nil {
 		return nil, verificationErr
 	}

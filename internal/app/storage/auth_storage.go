@@ -112,7 +112,7 @@ func (storage *Storage) verifyPassword(hashedPassword, password string) bool {
 	return true
 }
 
-func (storage *Storage) VerifyUser(ctx context.Context, userId uint) *courseError.CourseError {
+func (storage *Storage) VerifyEmail(ctx context.Context, userId uint) *courseError.CourseError {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	if err := tx.Exec(`DELETE FROM credentials WHERE verified = ? 
