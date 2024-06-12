@@ -37,7 +37,7 @@ func run() error {
 	}
 
 	srv := http.Server{
-		Addr:    config.Port,
+		Addr:    ":" + config.Port,
 		Handler: router.RequestsRouter(container.Handlers),
 	}
 
