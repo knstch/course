@@ -120,6 +120,52 @@ func (h *Handlers) SendNewCode(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("код успешно отправлен", true))
 }
 
+func (h *Handlers) SendRecoverPasswordCode(ctx *gin.Context) {
+	email := entity.CreateEmail()
+	if err := ctx.ShouldBindJSON(&email); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
+		return
+	}
+
+	if err := h.authService.SendPasswordRecoverRequest(ctx, email.Email); err != nil {
+		if err.Code == 400 {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			return
+		}
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("код для восстановления успешно отправлен", true))
+}
+
+func (h *Handlers) SetNewPassword(ctx *gin.Context) {
+	recoverCredentials := entity.NewPasswordRecoverCredentials()
+	if err := ctx.ShouldBindJSON(&recoverCredentials); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
+		return
+	}
+
+	if err := h.authService.RecoverPassword(ctx, *recoverCredentials); err != nil {
+		if err.Code == 400 {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			return
+		}
+		if err.Code == 11003 {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			return
+		}
+		if err.Code == 11004 {
+			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
+			return
+		}
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("пароль успешно восстановлен", true))
+}
+
 func (h *Handlers) WithCookieAuth() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		cookie, err := ctx.Request.Cookie("auth")

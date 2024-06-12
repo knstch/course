@@ -91,18 +91,6 @@ func (storage *Storage) ChangeEmail(ctx context.Context, newEmail string, userId
 
 	oldCredentials := dto.CreateNewCredentials()
 
-	// unverifiedEmails := []dto.Credentials{}
-	// if err := tx.Joins("JOIN users ON users.id = ?", userId).
-	// 	Where("credentials.id = users.credentials_id AND verified = ?", false).Find(&unverifiedEmails).Error; err != nil {
-	// 	tx.Rollback()
-	// 	return courseError.CreateError(err, 10002)
-	// }
-
-	// if len(unverifiedEmails) > 0 {
-	// 	tx.Rollback()
-	// 	return courseError.CreateError()
-	// }
-
 	if err := tx.Joins("JOIN users ON users.id = ?", userId).
 		Where("credentials.id = users.credentials_id AND verified = ?", true).
 		First(&oldCredentials).Error; err != nil {

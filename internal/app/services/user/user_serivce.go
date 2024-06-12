@@ -68,7 +68,7 @@ func (user UserService) EditPassword(ctx context.Context, passwords *entity.Pass
 	return nil
 }
 
-func (user UserService) EditEmail(ctx context.Context, email entity.Email, userId uint) *courseError.CourseError {
+func (user UserService) EditEmail(ctx context.Context, email entity.NewEmail, userId uint) *courseError.CourseError {
 	if err := validation.NewEmailToValidate(email.NewEmail).Validate(ctx); err != nil {
 		return err
 	}

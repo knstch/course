@@ -42,3 +42,17 @@ func (email EmailService) sendConfirmEmail(code uint, emailToSend *string) *cour
 	}
 	return nil
 }
+
+func (email EmailService) SendPasswordRecoverConfirmCode(emailToSend string) *courseError.CourseError {
+	confirmCode := email.generateEmailConfirmCode()
+
+	if err := email.sendConfirmEmail(confirmCode, &emailToSend); err != nil {
+		return err
+	}
+
+	if err := email.redis.Set(emailToSend, confirmCode, 15*time.Minute).Err(); err != nil {
+		return courseError.CreateError(err, 10031)
+	}
+
+	return nil
+}

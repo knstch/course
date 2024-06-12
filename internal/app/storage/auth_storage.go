@@ -140,3 +140,23 @@ func (storage *Storage) CheckAccessToken(ctx context.Context, token string) *cou
 
 	return nil
 }
+
+func (storage *Storage) RecoverPassword(ctx context.Context, email, password string) *courseError.CourseError {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password+storage.secret), bcrypt.DefaultCost)
+	if err != nil {
+		return courseError.CreateError(err, 11020)
+	}
+
+	if err := tx.Model(&dto.Credentials{}).Where("email = ?", email).Update("password", hashedPassword).Error; err != nil {
+		return courseError.CreateError(err, 10003)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10010)
+	}
+
+	return nil
+}

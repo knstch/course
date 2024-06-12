@@ -23,6 +23,7 @@ type Authentificater interface {
 	DisableTokens(ctx context.Context, userId uint) *courseError.CourseError
 	DisableToken(ctx context.Context, token string) *courseError.CourseError
 	CheckAccessToken(ctx context.Context, token string) *courseError.CourseError
+	RecoverPassword(ctx context.Context, email, password string) *courseError.CourseError
 }
 
 type AuthService struct {
@@ -230,4 +231,41 @@ func (auth AuthService) DecodeToken(ctx context.Context, tokenString string) (*C
 	}
 
 	return claims, nil
+}
+
+func (auth AuthService) SendPasswordRecoverRequest(ctx context.Context, email string) *courseError.CourseError {
+	if err := validation.NewEmailToValidate(email).Validate(ctx); err != nil {
+		return err
+	}
+
+	if err := auth.emailService.SendPasswordRecoverConfirmCode(email); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (auth AuthService) RecoverPassword(ctx context.Context, passwordRecover entity.PasswordRecoverCredentials) *courseError.CourseError {
+	if err := validation.NewPasswordRecoverCredentialsToValidate(passwordRecover).Validate(ctx); err != nil {
+		return err
+	}
+
+	codeFromRedis, err := auth.redis.Get(passwordRecover.Email).Result()
+	if err != nil {
+		return courseError.CreateError(ErrConfirmCodeNotFound, 11004)
+	}
+
+	if fmt.Sprint(passwordRecover.Code) != codeFromRedis {
+		return courseError.CreateError(ErrBadConfirmCode, 11003)
+	}
+
+	if err := auth.redis.Del(passwordRecover.Email).Err(); err != nil {
+		return courseError.CreateError(err, 10033)
+	}
+
+	if err := auth.Authentificater.RecoverPassword(ctx, passwordRecover.Email, passwordRecover.Password); err != nil {
+		return err
+	}
+
+	return nil
 }

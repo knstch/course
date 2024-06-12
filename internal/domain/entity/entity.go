@@ -28,12 +28,12 @@ func CreateNewPasswords() *Passwords {
 	return &Passwords{}
 }
 
-type Email struct {
+type NewEmail struct {
 	NewEmail string `json:"newEmail"`
 }
 
-func CreateNewEmail() *Email {
-	return &Email{}
+func CreateNewEmail() *NewEmail {
+	return &NewEmail{}
 }
 
 type ConfirmCode struct {
@@ -54,4 +54,22 @@ func CreateSuccessResponse(message string, status bool) *SuccessResponse {
 		Message: message,
 		Success: status,
 	}
+}
+
+type PasswordRecoverCredentials struct {
+	Email    string `json:"email"`
+	Code     int    `json:"code"`
+	Password string `json:"password"`
+}
+
+func NewPasswordRecoverCredentials() *PasswordRecoverCredentials {
+	return &PasswordRecoverCredentials{}
+}
+
+type Email struct {
+	Email string `json:"email"`
+}
+
+func CreateEmail() *Email {
+	return &Email{}
 }

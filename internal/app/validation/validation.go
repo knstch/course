@@ -193,6 +193,7 @@ func (email *EmailToValidate) Validate(ctx context.Context) *courseerror.CourseE
 		validation.Field(&email.email,
 			validation.Required.Error(errEmailIsNil),
 			validation.Match(emailRegex).Error(errBadEmail),
+			validation.RuneLength(5, 40).Error(errBadEmail),
 		),
 	); err != nil {
 		return courseerror.CreateError(err, 400)
@@ -214,6 +215,43 @@ func NewConfirmCodeToValidate(code int) *ConfirmCodeToValidate {
 func (code *ConfirmCodeToValidate) Validate(ctx context.Context) *courseerror.CourseError {
 	if err := validation.ValidateStructWithContext(ctx, code,
 		validation.Field(&code.code,
+			validation.Min(1000).Error(errBadConfirmCode),
+			validation.Max(9999).Error(errBadConfirmCode),
+		),
+	); err != nil {
+		return courseerror.CreateError(err, 400)
+	}
+
+	return nil
+}
+
+type PasswordRecoverCredentials struct {
+	Email    string
+	Password string
+	Code     int
+}
+
+func NewPasswordRecoverCredentialsToValidate(credentials entity.PasswordRecoverCredentials) *PasswordRecoverCredentials {
+	return &PasswordRecoverCredentials{
+		Email:    credentials.Email,
+		Password: credentials.Password,
+		Code:     credentials.Code,
+	}
+}
+
+func (credentials *PasswordRecoverCredentials) Validate(ctx context.Context) *courseerror.CourseError {
+	if err := validation.ValidateStructWithContext(ctx, credentials,
+		validation.Field(&credentials.Email,
+			validation.Required.Error(errEmailIsNil),
+			validation.Match(emailRegex).Error(errBadEmail),
+			validation.RuneLength(5, 40).Error(errBadEmail),
+		),
+		validation.Field(&credentials.Password,
+			validation.Required.Error(errPasswordIsNil),
+			validation.Match(passwordRegex).Error(errPasswordContainsBadSymbols),
+			validation.By(validatePassword(credentials.Password)),
+		),
+		validation.Field(&credentials.Code,
 			validation.Min(1000).Error(errBadConfirmCode),
 			validation.Max(9999).Error(errBadConfirmCode),
 		),
