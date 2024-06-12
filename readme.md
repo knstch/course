@@ -38,3 +38,6 @@ UserService - 11100
 Ошибка минта JWT - 11010
 Ошибка декодинга токена - 11011
 Ошибка хеширования - 11020
+
+Build:
+docker compose -f docker-compose-local.yml up -d --build --remove-orphans

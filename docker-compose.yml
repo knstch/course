@@ -1,18 +1,21 @@
 version: '3'
 services:
-  db:
-    image: postgres
+  app:
+    container_name: course
+    restart: always
+    build:
+      context: .
+      dockerfile: docker/go/go.Dockerfile
+      args:
+        PORT: ${PORT}
+    image: course-app:latest
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: course
+      - TZ=Asia/Novosibirsk
     ports:
-      - 1488:5432
-  redis:
-    image: redis
-    ports:
-      - "6379:6379"
-    environment:
-      REDIS_PASSWORD: password
-      REDIS_USERNAME: admin
-    command: ["redis-server", "--requirepass", "password"]
+      - ${PORT}:${PORT}
+    networks:
+      - network_ext
+networks:
+  network_ext:
+    name: course-net
+    driver: bridge

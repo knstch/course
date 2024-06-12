@@ -1,0 +1,54 @@
+include:
+  - docker-compose.yml
+
+services:
+  postgres:
+    container_name: course-postgres
+    restart: always
+    build:
+      context: ./docker/postgres
+      dockerfile: postgres.Dockerfile
+      shm_size: '256m'
+    image: course-postgres:latest
+    volumes:
+      - pg_data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: course
+      # PGDATA: "/var/lib/postgresql/data/"
+      TZ: "Asia/Novosibirsk"
+    healthcheck:
+      test: ["CMD", "pg_isready"]
+      interval: 30s
+      timeout: 2s
+      retries: 2
+      start_period: 5s
+    networks:
+      - network_ext
+    ports:
+      - ${PG_PORT:-5432}:5432
+  redis:
+    container_name: course-redis
+    restart: always
+    build:
+      context: ./docker/redis
+      dockerfile: redis.Dockerfile
+      args:
+        REDIS_PASSWORD: ${REDIS_PASSWORD}
+    image: course-redis:latest
+    ports:
+      - "6379:6379"
+    environment:
+      REDIS_PASSWORD: password
+      REDIS_USERNAME: admin
+    volumes:
+      - redis_data:/data
+    command: ["redis-server", "--requirepass", "password"]
+    networks:
+      - network_ext
+volumes:
+  pg_data:
+    name: course-pg_data
+  redis_data:
+    name: course-redis_data

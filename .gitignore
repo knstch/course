@@ -2,3 +2,4 @@ api
 .env
 go.mod
 go.sum
+vendor/
