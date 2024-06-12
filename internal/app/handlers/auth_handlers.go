@@ -87,8 +87,12 @@ func (h *Handlers) Verification(ctx *gin.Context) {
 
 	token, err := h.authService.VerifyEmail(ctx, confirmCode.Code, userId.(uint))
 	if err != nil {
-		if err.Code == 11003 || err.Code == 11004 {
+		if err.Code == 11003 {
 			ctx.AbortWithStatusJSON(http.StatusForbidden, err)
+			return
+		}
+		if err.Code == 11004 {
+			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
 			return
 		}
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
