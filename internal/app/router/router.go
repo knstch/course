@@ -20,5 +20,10 @@ func RequestsRouter(h *handlers.Handlers) *gin.Engine {
 	email.POST("/verification", h.Verification)
 	email.GET("/newConfirmKey", h.SendNewCode)
 
+	profile := v1.Group("profile")
+	profile.Use(h.WithCookieAuth())
+	profile.PATCH("/editProfile", h.ManageProfile)
+	profile.PATCH("/editPassword", h.ManagePassword)
+
 	return router
 }

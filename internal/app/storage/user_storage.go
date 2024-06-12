@@ -11,7 +11,8 @@ import (
 )
 
 var (
-	errBadPassword = errors.New("пароль передан неверно")
+	errBadPassword             = errors.New("старый пароль передан неверно")
+	errOldAndNewPasswordsEqual = errors.New("новый и старый пароль не могут совпадать")
 )
 
 func (storage *Storage) FillUserProfile(ctx context.Context, firstName, surname string, phoneNumber int, userId uint) *courseError.CourseError {
@@ -27,7 +28,7 @@ func (storage *Storage) FillUserProfile(ctx context.Context, firstName, surname 
 		return courseError.CreateError(err, 10002)
 	}
 
-	if err := tx.Where("id = ?", userId).Updates(newUserProfileUpdate(firstName, surname, phoneNumber)).Error; err != nil {
+	if err := tx.Model(&dto.User{}).Where("id = ?", userId).Updates(newUserProfileUpdate(firstName, surname, phoneNumber)).Error; err != nil {
 		tx.Rollback()
 		return courseError.CreateError(err, 10003)
 	}
@@ -54,8 +55,12 @@ func (storage *Storage) ChangePasssword(ctx context.Context, oldPassword, newPas
 		return courseError.CreateError(err, 10002)
 	}
 
+	if oldPassword == newPassword {
+		return courseError.CreateError(errOldAndNewPasswordsEqual, 11103)
+	}
+
 	if !storage.verifyPassword(credentials.Password, oldPassword) {
-		return courseError.CreateError(errBadPassword, 11102)
+		return courseError.CreateError(errBadPassword, 11104)
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword+storage.secret), bcrypt.DefaultCost)
@@ -63,8 +68,13 @@ func (storage *Storage) ChangePasssword(ctx context.Context, oldPassword, newPas
 		return courseError.CreateError(err, 11020)
 	}
 
-	if err := tx.Where("id = ?", credentials.ID).Update("password", hashedPassword).Error; err != nil {
+	if err := tx.Model(dto.Credentials{}).Where("id = ?", credentials.ID).Update("password", hashedPassword).Error; err != nil {
 		return courseError.CreateError(err, 10003)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10010)
 	}
 
 	return nil

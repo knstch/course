@@ -18,19 +18,19 @@ type CredentialsToValidate struct {
 
 const (
 	emailPattern    = `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
-	passwordPattern = `^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$`
+	passwordPattern = `^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};:"\\|,.<>\/?]*$`
 
-	errEmailIsNil = "email обязательно"
-	errBadEmail   = "email передан неправильно"
-
-	errPasswordIsNil = "пароль обязателен"
-	errBadPassword   = "пароль должен содержать как миниум 8 символов и включать в себя как минимум 1 цифру"
-
-	errBadConfirmCode = "код верификации передан неверно"
+	errEmailIsNil                 = "email обязательно"
+	errBadEmail                   = "email передан неправильно"
+	errPasswordIsNil              = "пароль обязателен"
+	errBadPassword                = "пароль должен содержать как миниум 8 символов и включать в себя как минимум 1 цифру"
+	errBadConfirmCode             = "код верификации передан неверно"
+	errPasswordContainsBadSymbols = "пароль может содержать только латинские буквы, спец. символы и цифры"
 )
 
 var (
-	emailRegex = regexp.MustCompile(emailPattern)
+	emailRegex    = regexp.MustCompile(emailPattern)
+	passwordRegex = regexp.MustCompile(passwordPattern)
 )
 
 func NewCredentialsToValidate(credentials *entity.Credentials) *CredentialsToValidate {
@@ -49,6 +49,7 @@ func (cr *CredentialsToValidate) Validate(ctx context.Context) *courseerror.Cour
 		),
 		validation.Field(&cr.Password,
 			validation.Required.Error(errPasswordIsNil),
+			validation.Match(passwordRegex).Error(errPasswordContainsBadSymbols),
 			validation.By(validatePassword(cr.Password)),
 		),
 	); err != nil {
@@ -93,7 +94,7 @@ type UserInfoToValidate struct {
 }
 
 var (
-	phoneRegex = regexp.MustCompile(`^\+?\d{10}$`)
+	phoneRegex = regexp.MustCompile(`^\+?\d{1,20}$`)
 )
 
 func NewUserInfoToValidate(userInfo *entity.UserInfo) *UserInfoToValidate {
@@ -108,13 +109,16 @@ func (user *UserInfoToValidate) Validate(ctx context.Context) *courseerror.Cours
 	if err := validation.ValidateStructWithContext(ctx, user,
 		validation.Field(&user.firstName,
 			validation.Required.Error("имя не может быть пустым"),
+			validation.RuneLength(1, 20).Error("имя передано в неверном формате"),
 		),
 		validation.Field(&user.surname,
 			validation.Required.Error("фамилия не может быть пустой"),
+			validation.RuneLength(1, 20).Error("фамилия передана в неверном формате"),
 		),
 		validation.Field(&user.phoneNumber,
 			validation.Required.Error("номер телефона не может быть пустым"),
 			validation.Match(phoneRegex).Error("номер телефона передан неверно, введите его в фромате 79123456789"),
+			validation.RuneLength(1, 20).Error("номер телефона передан в неверном формате"),
 		),
 	); err != nil {
 		return courseerror.CreateError(err, 400)
@@ -164,6 +168,7 @@ func (password *PasswordToValidate) ValidatePassword(ctx context.Context) *cours
 	if err := validation.ValidateStructWithContext(ctx, password,
 		validation.Field(&password.password,
 			validation.Required.Error(errPasswordIsNil),
+			validation.Match(passwordRegex).Error(errPasswordContainsBadSymbols),
 			validation.By(validatePassword(password.password)),
 		),
 	); err != nil {

@@ -138,7 +138,7 @@ func (storage *Storage) VerifyEmail(ctx context.Context, userId uint) *courseErr
 
 func (storage *Storage) DisableTokens(ctx context.Context, userId uint) *courseError.CourseError {
 	if err := storage.db.WithContext(ctx).
-		Table("access_tokens").
+		Model(dto.AccessToken{}).
 		Where("user_id = ?", userId).
 		Update("available", false).Error; err != nil {
 		return courseError.CreateError(err, 10003)
@@ -149,7 +149,7 @@ func (storage *Storage) DisableTokens(ctx context.Context, userId uint) *courseE
 
 func (storage *Storage) DisableToken(ctx context.Context, token string) *courseError.CourseError {
 	if err := storage.db.WithContext(ctx).
-		Table("access_tokens").
+		Model(dto.AccessToken{}).
 		Where("token = ?", token).Update("available", false).Error; err != nil {
 		return courseError.CreateError(err, 10003)
 	}

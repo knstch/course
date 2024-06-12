@@ -15,13 +15,20 @@ type UserInfo struct {
 	PhoneNumber string `json:"phoneNumber"`
 }
 
+func NewUserInfo() *UserInfo {
+	return &UserInfo{}
+}
+
 type Passwords struct {
 	OldPassword string `json:"oldPassword"`
 	NewPassword string `json:"newPassword"`
 }
 
+func CreateNewPasswords() *Passwords {
+	return &Passwords{}
+}
+
 type Emails struct {
-	OldEmail string `json:"oldEmail"`
 	NewEmail string `json:"newEmail"`
 }
 
@@ -35,12 +42,12 @@ func NewConfirmCodeEntity() *ConfirmCode {
 
 type SuccessResponse struct {
 	Message string `json:"message"`
-	Status  bool   `json:"status"`
+	Success bool   `json:"success"`
 }
 
 func CreateSuccessResponse(message string, status bool) *SuccessResponse {
 	return &SuccessResponse{
 		Message: message,
-		Status:  status,
+		Success: status,
 	}
 }

@@ -13,15 +13,15 @@ import (
 type Profiler interface {
 	FillUserProfile(ctx context.Context, firstName, surname string, phoneNumber int, userId uint) *courseError.CourseError
 	ChangePasssword(ctx context.Context, oldPassword, newPassword string, userId uint) *courseError.CourseError
-	ChangeEmail(ctx context.Context, oldEmail, newEmail string) *courseError.CourseError
+	// ChangeEmail(ctx context.Context, newEmail string) *courseError.CourseError
 }
 
 type UserService struct {
 	Profiler Profiler
 }
 
-func NewUserService(profiler Profiler) *UserService {
-	return &UserService{
+func NewUserService(profiler Profiler) UserService {
+	return UserService{
 		Profiler: profiler,
 	}
 }
@@ -54,14 +54,14 @@ func (user UserService) EditPassword(ctx context.Context, passwords *entity.Pass
 	return nil
 }
 
-func (user UserService) EditEmail(ctx context.Context, emails entity.Emails) *courseError.CourseError {
-	if err := validation.NewEmailToValidate(emails.NewEmail).Validate(ctx); err != nil {
-		return err
-	}
+// func (user UserService) EditEmail(ctx context.Context, emails entity.Emails) *courseError.CourseError {
+// 	if err := validation.NewEmailToValidate(emails.NewEmail).Validate(ctx); err != nil {
+// 		return err
+// 	}
 
-	if err := user.Profiler.ChangeEmail(ctx, emails.OldEmail, emails.NewEmail); err != nil {
-		return err
-	}
+// 	if err := user.Profiler.ChangeEmail(ctx, emails.NewEmail); err != nil {
+// 		return err
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
