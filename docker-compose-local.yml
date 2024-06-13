@@ -13,7 +13,7 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql/data/
     environment:
-      POSTGRES_USER: admin
+      POSTGRES_USER: course
       POSTGRES_PASSWORD: password
       # POSTGRES_DB: course
       # PGDATA: "/var/lib/postgresql/data/"
