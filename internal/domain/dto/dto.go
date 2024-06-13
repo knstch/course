@@ -25,10 +25,13 @@ type Photo struct {
 	Path string
 }
 
-func CreateNewPhoto(path string) *Photo {
-	return &Photo{
-		Path: path,
-	}
+func CreateNewPhoto() *Photo {
+	return &Photo{}
+}
+
+func (photo *Photo) AddPath(path string) *Photo {
+	photo.Path = path
+	return photo
 }
 
 func (user *User) AddCredentialsId(id *uint) *User {
@@ -62,17 +65,6 @@ func (cr *Credentials) AddPassword(password string) *Credentials {
 	return cr
 }
 
-type Course struct {
-	gorm.Model
-	User   User
-	UserId uint
-	Name   string
-}
-
-func CreateNewCourse() *Course {
-	return &Course{}
-}
-
 type AccessToken struct {
 	gorm.Model
 	User      User
@@ -98,4 +90,30 @@ func (accessToken *AccessToken) AddToken(token *string) *AccessToken {
 func (accessToken *AccessToken) SetStatusAvailable() *AccessToken {
 	accessToken.Available = true
 	return accessToken
+}
+
+type UsersCourse struct {
+	gorm.Model
+	UserId   *uint
+	User     User
+	CourseId *uint
+	Course   Course
+}
+
+func NewUsersCourse() *UsersCourse {
+	return &UsersCourse{}
+}
+
+type Course struct {
+	gorm.Model
+	Name string
+	Cost uint
+}
+
+func CreateNewCourse() *Course {
+	return &Course{}
+}
+
+func CreateNewCourses() []Course {
+	return []Course{}
 }

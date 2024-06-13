@@ -1,5 +1,7 @@
 package entity
 
+import "github.com/knstch/course/internal/domain/dto"
+
 type Credentials struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -82,4 +84,68 @@ type CdnResponse struct {
 
 func NewCdnResponse() *CdnResponse {
 	return &CdnResponse{}
+}
+
+type UserCourses struct {
+	Id   uint   `json:"id"`
+	Name string `json:"name"`
+}
+
+type UserData struct {
+	FirstName       string        `json:"firstName"`
+	Surname         string        `json:"surname"`
+	PhoneNumber     uint          `json:"phoneNumber"`
+	Photo           string        `json:"photo"`
+	Email           string        `json:"email"`
+	IsEmailVerified bool          `json:"isEmailVerified"`
+	Courses         []UserCourses `json:"courses"`
+}
+
+func CreateNewUserData() *UserData {
+	return &UserData{}
+}
+
+func (user *UserData) AddFirstName(name string) *UserData {
+	user.FirstName = name
+	return user
+}
+
+func (user *UserData) AddSurname(surname string) *UserData {
+	user.Surname = surname
+	return user
+}
+
+func (user *UserData) AddPhoneNumber(phoneNumber *uint) *UserData {
+	if phoneNumber != nil {
+		user.PhoneNumber = *phoneNumber
+	}
+	return user
+}
+
+func (user *UserData) AddPhoto(photo string) *UserData {
+	user.Photo = photo
+	return user
+}
+
+func (user *UserData) AddEmail(email string) *UserData {
+	user.Email = email
+	return user
+}
+
+func (user *UserData) AddEmailVerifiedStatus(verified bool) *UserData {
+	user.IsEmailVerified = verified
+	return user
+}
+
+func (user *UserData) AddCourses(courses []dto.Course) *UserData {
+	user.Courses = make([]UserCourses, 0, len(courses))
+	for _, v := range courses {
+		course := UserCourses{
+			Id:   v.ID,
+			Name: v.Name,
+		}
+		user.Courses = append(user.Courses, course)
+	}
+
+	return user
 }

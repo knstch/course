@@ -29,6 +29,7 @@ func RequestsRouter(h *handlers.Handlers) *gin.Engine {
 	profile.POST("/editEmail", h.ManageEmail)
 	profile.POST("/confirmEmailChange", h.ConfirmEmailChange)
 	profile.POST("/setPhoto", h.ChangeProfilePhoto)
+	profile.GET("/getUser", h.GetUser)
 
 	return router
 }

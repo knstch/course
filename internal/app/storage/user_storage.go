@@ -7,6 +7,7 @@ import (
 
 	courseError "github.com/knstch/course/internal/app/course_error"
 	"github.com/knstch/course/internal/domain/dto"
+	"github.com/knstch/course/internal/domain/entity"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -123,7 +124,7 @@ func (storage *Storage) SetPhoto(ctx context.Context, path string) *courseError.
 
 	userId := ctx.Value("userId").(uint)
 
-	photo := dto.CreateNewPhoto(path)
+	photo := dto.CreateNewPhoto().AddPath(path)
 	if err := tx.Create(&photo).Error; err != nil {
 		return courseError.CreateError(err, 10001)
 	}
@@ -138,4 +139,51 @@ func (storage *Storage) SetPhoto(ctx context.Context, path string) *courseError.
 	}
 
 	return nil
+}
+
+func (storage *Storage) RetreiveUserData(ctx context.Context) (*entity.UserData, *courseError.CourseError) {
+	tx := storage.db.WithContext(ctx).Begin()
+	userData := entity.CreateNewUserData()
+
+	userId := ctx.Value("userId").(uint)
+
+	user := dto.CreateNewUser()
+	if err := tx.Where("id = ?", userId).First(&user).Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 10002)
+	}
+	userData.AddFirstName(user.FirstName).
+		AddSurname(user.Surname).
+		AddPhoneNumber(user.PhoneNumber)
+
+	photo := dto.CreateNewPhoto()
+	if err := tx.Where("id = ?", user.PhotoId).First(&photo).Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 10002)
+	}
+	userData.AddPhoto(photo.Path)
+
+	credentials := dto.CreateNewCredentials()
+	if err := tx.Where("id = ?", user.CredentialsId).First(&credentials).Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 10002)
+	}
+	userData.AddEmail(credentials.Email)
+	userData.AddEmailVerifiedStatus(credentials.Verified)
+
+	courses := dto.CreateNewCourses()
+	if err := tx.Exec(`SELECT * FROM courses WHERE id 
+	IN (SELECT course_id FROM users_courses WHERE user_id = ?)`, userId).
+		Find(&courses).Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 10002)
+	}
+	userData.AddCourses(courses)
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 10010)
+	}
+
+	return userData, nil
 }

@@ -48,6 +48,7 @@ type Profiler interface {
 	ChangeEmail(ctx context.Context, newEmail string, userId uint) *courseError.CourseError
 	VerifyEmail(ctx context.Context, userId uint, isEdit bool) *courseError.CourseError
 	SetPhoto(ctx context.Context, path string) *courseError.CourseError
+	RetreiveUserData(ctx context.Context) (*entity.UserData, *courseError.CourseError)
 }
 
 type UserService struct {
@@ -223,4 +224,13 @@ func (user UserService) SendPhoto(ctx context.Context, file *multipart.File, fil
 	}
 
 	return nil
+}
+
+func (user UserService) GetUserInfo(ctx context.Context) (*entity.UserData, *courseError.CourseError) {
+	userData, err := user.Profiler.RetreiveUserData(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return userData, nil
 }

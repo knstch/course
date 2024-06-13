@@ -136,3 +136,13 @@ func (h *Handlers) ChangeProfilePhoto(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("фото успешно обновлено", true))
 }
+
+func (h *Handlers) GetUser(ctx *gin.Context) {
+	user, err := h.userService.GetUserInfo(ctx)
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, user)
+}
