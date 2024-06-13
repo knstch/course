@@ -12,10 +12,23 @@ type User struct {
 	CredentialsId *uint `gorm:"not null"`
 	PhoneNumber   *uint
 	Active        bool `gorm:"not null;default:true"`
+	PhotoId       *uint
+	Photo         Photo
 }
 
 func CreateNewUser() *User {
 	return &User{}
+}
+
+type Photo struct {
+	gorm.Model
+	Path string
+}
+
+func CreateNewPhoto(path string) *Photo {
+	return &Photo{
+		Path: path,
+	}
 }
 
 func (user *User) AddCredentialsId(id *uint) *User {

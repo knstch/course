@@ -113,3 +113,26 @@ func (h *Handlers) ConfirmEmailChange(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("почта успешно изменена", true))
 }
+
+func (h *Handlers) ChangeProfilePhoto(ctx *gin.Context) {
+	file, header, err := ctx.Request.FormFile("file")
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(err, 400))
+		return
+	}
+
+	if err := h.userService.AddPhoto(ctx, header, &file); err != nil {
+		if err.Code == 11105 {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			return
+		}
+		if err.Code == 11050 {
+			ctx.AbortWithStatusJSON(http.StatusForbidden, err)
+			return
+		}
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("фото успешно обновлено", true))
+}

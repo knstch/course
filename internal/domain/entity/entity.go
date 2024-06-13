@@ -73,3 +73,13 @@ type Email struct {
 func CreateEmail() *Email {
 	return &Email{}
 }
+
+type CdnResponse struct {
+	Path string  `json:"path"`
+	Code int     `json:"code"`
+	Err  *string `json:"error,omitempty"`
+}
+
+func NewCdnResponse() *CdnResponse {
+	return &CdnResponse{}
+}

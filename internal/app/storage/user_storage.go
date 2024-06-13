@@ -117,3 +117,25 @@ func (storage *Storage) ChangeEmail(ctx context.Context, newEmail string, userId
 
 	return nil
 }
+
+func (storage *Storage) SetPhoto(ctx context.Context, path string) *courseError.CourseError {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	userId := ctx.Value("userId").(uint)
+
+	photo := dto.CreateNewPhoto(path)
+	if err := tx.Create(&photo).Error; err != nil {
+		return courseError.CreateError(err, 10001)
+	}
+
+	if err := tx.Model(&dto.User{}).Where("id = ?", userId).Update("photo_id", photo.ID).Error; err != nil {
+		return courseError.CreateError(err, 10003)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10010)
+	}
+
+	return nil
+}
