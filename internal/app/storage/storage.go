@@ -52,6 +52,7 @@ func (storage *Storage) Automigrate() error {
 		&dto.Photo{},
 		&dto.UsersCourse{},
 		&dto.Course{},
+		&dto.Lesson{},
 	); err != nil {
 		return err
 	}

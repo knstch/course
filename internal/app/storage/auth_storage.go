@@ -11,6 +11,10 @@ import (
 	"gorm.io/gorm"
 )
 
+var (
+	errUserInactive = errors.New("пользователь неактивен, обратитесь к администратору")
+)
+
 func (storage *Storage) RegisterUser(ctx context.Context, email, password string) (*uint, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
 
@@ -89,6 +93,11 @@ func (storage *Storage) SignIn(ctx context.Context, email, password string) (use
 	if err := tx.Where("credentials_id = ?", credentials.ID).First(&user).Error; err != nil {
 		tx.Rollback()
 		return nil, nil, courseError.CreateError(err, 10002)
+	}
+
+	if !user.Active {
+		tx.Rollback()
+		return nil, nil, courseError.CreateError(errUserInactive, 11010)
 	}
 
 	if err := tx.Commit().Error; err != nil {

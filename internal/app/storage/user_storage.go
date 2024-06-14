@@ -158,8 +158,10 @@ func (storage *Storage) RetreiveUserData(ctx context.Context) (*entity.UserData,
 
 	photo := dto.CreateNewPhoto()
 	if err := tx.Where("id = ?", user.PhotoId).First(&photo).Error; err != nil {
-		tx.Rollback()
-		return nil, courseError.CreateError(err, 10002)
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			tx.Rollback()
+			return nil, courseError.CreateError(err, 10002)
+		}
 	}
 	userData.AddPhoto(photo.Path)
 

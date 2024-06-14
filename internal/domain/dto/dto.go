@@ -106,8 +106,11 @@ func NewUsersCourse() *UsersCourse {
 
 type Course struct {
 	gorm.Model
-	Name string
-	Cost uint
+	Name          string `gorm:"not null"`
+	Description   string `gorm:"not null"`
+	PreviewImgUrl string `gorm:"not null"`
+	Cost          uint   `gorm:"not null"`
+	Discount      *uint
 }
 
 func CreateNewCourse() *Course {
@@ -116,4 +119,15 @@ func CreateNewCourse() *Course {
 
 func CreateNewCourses() []Course {
 	return []Course{}
+}
+
+type Lesson struct {
+	gorm.Model
+	CourseId      uint   `gorm:"not null"`
+	Course        Course `gorm:"not null"`
+	Name          string `gorm:"not null"`
+	Description   string `gorm:"not null"`
+	PreviewImgUrl string `gorm:"not null"`
+	VideoUrl      string `gorm:"not null"`
+	Position      uint   `gorm:"not null"`
 }
