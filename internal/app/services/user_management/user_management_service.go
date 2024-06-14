@@ -13,7 +13,10 @@ type UserManagementService struct {
 }
 
 type UserManager interface {
-	GetAllUserData(ctx context.Context, firstName, surname, phoneNumber, email, active, isVerified, courseName, page, limit string) ([]entity.UserDataAdmin, *courseError.CourseError)
+	GetAllUserData(ctx context.Context,
+		firstName, surname, phoneNumber, email, active, isVerified, courseName, page, limit string) (
+		*entity.UserDataWithPagination, *courseError.CourseError)
+	DisableUser(ctx context.Context, userId int) *courseError.CourseError
 }
 
 func NewUserManagementService(userManager UserManager) UserManagementService {
@@ -23,7 +26,8 @@ func NewUserManagementService(userManager UserManager) UserManagementService {
 }
 
 func (user UserManagementService) GetAllUserData(ctx context.Context,
-	firstName, surname, phoneNumber, email, active, isVerified, courseName, page, limit string) ([]entity.UserDataAdmin, *courseError.CourseError) {
+	firstName, surname, phoneNumber, email, active, isVerified, courseName, page, limit string) (
+	*entity.UserDataWithPagination, *courseError.CourseError) {
 
 	if err := validation.NewUserFiltersToValidate(firstName, surname, phoneNumber, email, active, isVerified, page, limit).Validate(ctx); err != nil {
 		return nil, err
@@ -35,4 +39,16 @@ func (user UserManagementService) GetAllUserData(ctx context.Context,
 	}
 
 	return userData, nil
+}
+
+func (user UserManagementService) DeactivateUser(ctx context.Context, userId int) *courseError.CourseError {
+	if err := validation.NewIdToValidate(userId).Validate(ctx); err != nil {
+		return err
+	}
+
+	if err := user.manager.DisableUser(ctx, userId); err != nil {
+		return err
+	}
+
+	return nil
 }

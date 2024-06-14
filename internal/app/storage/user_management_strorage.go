@@ -9,7 +9,9 @@ import (
 	"github.com/knstch/course/internal/domain/entity"
 )
 
-func (storage *Storage) GetAllUserData(ctx context.Context, firstName, surname, phoneNumber, email, active, isVerified, courseName, page, limit string) ([]entity.UserDataAdmin, *courseError.CourseError) {
+func (storage *Storage) GetAllUserData(ctx context.Context,
+	firstName, surname, phoneNumber, email, active, isVerified, courseName, page,
+	limit string) (*entity.UserDataWithPagination, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	var (
@@ -107,5 +109,34 @@ func (storage *Storage) GetAllUserData(ctx context.Context, firstName, surname, 
 		return nil, courseError.CreateError(err, 10010)
 	}
 
-	return usersEntity, nil
+	return &entity.UserDataWithPagination{
+		Pagination: entity.Pagination{
+			Page:       pageInt,
+			Limit:      limitInt,
+			TotalCount: len(usersEntity),
+			PagesCount: len(usersEntity) / limitInt,
+		},
+		Users: usersEntity,
+	}, nil
+}
+
+func (storage *Storage) DisableUser(ctx context.Context, userId int) *courseError.CourseError {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	if err := tx.Model(&dto.User{}).Where("id = ?", userId).Update("active", false).Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10003)
+	}
+
+	if err := tx.Model(&dto.AccessToken{}).Where("user_id = ?", userId).Update("available", false).Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10003)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10010)
+	}
+
+	return nil
 }

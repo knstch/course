@@ -150,6 +150,18 @@ func (user *UserData) AddCourses(courses []dto.Course) *UserData {
 	return user
 }
 
+type Pagination struct {
+	Page       int `json:"page"`
+	Limit      int `json:"limit"`
+	TotalCount int `json:"totalCount"`
+	PagesCount int `json:"pagesCount"`
+}
+
+type UserDataWithPagination struct {
+	Pagination Pagination      `json:"pagination"`
+	Users      []UserDataAdmin `json:"users"`
+}
+
 type UserDataAdmin struct {
 	Id          uint          `json:"id"`
 	FirstName   string        `json:"firstName"`
@@ -201,4 +213,12 @@ func (user *UserDataAdmin) AddPhoto(photo *dto.Photo) *UserDataAdmin {
 	user.Photo = &photo.Path
 
 	return user
+}
+
+type Id struct {
+	Id int `json:"id"`
+}
+
+func NewId() *Id {
+	return &Id{}
 }

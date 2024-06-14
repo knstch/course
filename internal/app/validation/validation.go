@@ -37,6 +37,9 @@ const (
 	errLimitIsNil    = "лимит обязателен"
 	errLimitIsNotInt = "лимит передан не как число"
 	errLimitIsBad    = "значение лимит не может быть меньше 1"
+
+	errBadId      = "id не может быть меньше 1"
+	errFieldIsNil = "поле не может быть пустым"
 )
 
 var (
@@ -385,4 +388,27 @@ func validatePage(page string) validation.RuleFunc {
 
 		return nil
 	}
+}
+
+type IdToValidate struct {
+	Id int
+}
+
+func NewIdToValidate(id int) *IdToValidate {
+	return &IdToValidate{
+		Id: id,
+	}
+}
+
+func (id *IdToValidate) Validate(ctx context.Context) *courseerror.CourseError {
+	if err := validation.ValidateStructWithContext(ctx, id,
+		validation.Field(&id.Id,
+			validation.Min(1).Error(errBadId),
+			validation.Required.Error(errFieldIsNil),
+		),
+	); err != nil {
+		return courseerror.CreateError(err, 400)
+	}
+
+	return nil
 }
