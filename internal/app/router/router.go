@@ -35,6 +35,7 @@ func RequestsRouter(h *handlers.Handlers) *gin.Engine {
 	admin.GET("/users", h.FindUsersByFilters)
 	admin.POST("/ban", h.BanUser)
 	admin.GET("/user", h.GetUserById)
+	admin.POST("/createCourse", h.CreateNewCourse)
 
 	return router
 }

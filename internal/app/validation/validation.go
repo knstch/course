@@ -22,6 +22,7 @@ const (
 	emailPattern    = `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
 	passwordPattern = `^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};:"\\|,.<>\/?]*$`
 	lettersPattern  = `^\p{L}+$`
+	fileNamePattern = `\.(.+)$`
 
 	errEmailIsNil                 = "email обязательно"
 	errBadEmail                   = "email передан неправильно"
@@ -39,9 +40,13 @@ const (
 	errLimitIsNotInt = "лимит передан не как число"
 	errLimitIsBad    = "значение лимит не может быть меньше 1"
 
-	errBadId      = "id не может быть меньше 1"
+	errBadValue   = "значение не может быть меньше 1"
 	errFieldIsNil = "поле не может быть пустым"
 	errIdIsNil    = "ИД обязательно"
+
+	errCourseNameIsTooBig        = "название курса слишком большое, ограничение в 100 символов"
+	errCourseDescriptionIsTooBig = "описание курса слишком большое, ограничение в 2000 символов"
+	errValueTooSmall             = "значение не может быть ниже 1"
 )
 
 var (
@@ -49,14 +54,26 @@ var (
 	passwordRegex = regexp.MustCompile(passwordPattern)
 	lettersRegex  = regexp.MustCompile(lettersPattern)
 
+	fileExtRegex = regexp.MustCompile(fileNamePattern)
+
 	bools = []string{
 		"true",
 		"false",
 	}
 
+	allowedImgExtentions = []string{
+		"jpeg",
+		"jpg",
+		"png",
+		"JPEG",
+		"JPG",
+		"PNG",
+	}
+
 	boolsInterfaces = stringSliceTOInterfaceSlice(bools)
 
-	errIdNotInt = errors.New("ИД передан не как число")
+	errValueNotInt = errors.New("значение передано не как число")
+	errBadFile     = errors.New("загруженный файл имеет неверный формат")
 )
 
 func NewCredentialsToValidate(credentials *entity.Credentials) *CredentialsToValidate {
@@ -407,7 +424,7 @@ func NewIdToValidate(id int) *IdToValidate {
 func (id *IdToValidate) Validate(ctx context.Context) *courseerror.CourseError {
 	if err := validation.ValidateStructWithContext(ctx, id,
 		validation.Field(&id.Id,
-			validation.Min(1).Error(errBadId),
+			validation.Min(1).Error(errBadValue),
 			validation.Required.Error(errFieldIsNil),
 		),
 	); err != nil {
@@ -435,11 +452,11 @@ func idValidator(id string) validation.RuleFunc {
 
 		idInt, err := strconv.Atoi(id)
 		if err != nil {
-			return errIdNotInt
+			return errValueNotInt
 		}
 
 		if idInt < 0 {
-			return fmt.Errorf(errBadId)
+			return fmt.Errorf(errBadValue)
 		}
 
 		return nil
@@ -456,4 +473,125 @@ func (i *StringIdToValidate) Validate(ctx context.Context) *courseerror.CourseEr
 	}
 
 	return nil
+}
+
+type ImgExtToValidate struct {
+	FileName string
+}
+
+func NewImgExtToValidate(fileName string) *ImgExtToValidate {
+	return &ImgExtToValidate{
+		FileName: fileName,
+	}
+}
+
+func extValidator(fileName string) validation.RuleFunc {
+	return func(value interface{}) error {
+		var fileExtention string
+		matches := fileExtRegex.FindStringSubmatch(fileName)
+		if len(matches) > 1 {
+			fileExtention = matches[1]
+		} else {
+			return errBadFile
+		}
+
+		var isExtApproved bool
+		for _, v := range allowedImgExtentions {
+			if v == fileExtention {
+				isExtApproved = true
+				break
+			}
+		}
+
+		if !isExtApproved {
+			return errBadFile
+		}
+
+		return nil
+	}
+}
+
+func (img *ImgExtToValidate) Validate(ctx context.Context) *courseerror.CourseError {
+	if err := validation.ValidateStructWithContext(ctx, img,
+		validation.Field(&img.FileName,
+			validation.By(extValidator(img.FileName)),
+		),
+	); err != nil {
+		return courseerror.CreateError(err, 400)
+	}
+
+	return nil
+}
+
+type CourseToValidate struct {
+	Name        string
+	Description string
+	PreviewExt  string
+	Cost        string
+	Discount    string
+}
+
+func NewCourseToValidate(name, description, previewExt, cost, discount string) *CourseToValidate {
+	return &CourseToValidate{
+		Name:        name,
+		Description: description,
+		PreviewExt:  previewExt,
+		Cost:        cost,
+		Discount:    discount,
+	}
+}
+
+func (course *CourseToValidate) Validate(ctx context.Context) *courseerror.CourseError {
+	if err := validation.ValidateStructWithContext(ctx, course,
+		validation.Field(&course.Name,
+			validation.Required.Error(errFieldIsNil),
+			validation.RuneLength(1, 100).Error(errCourseNameIsTooBig),
+		),
+		validation.Field(&course.Description,
+			validation.Required.Error(errFieldIsNil),
+			validation.RuneLength(1, 2000).Error(errCourseDescriptionIsTooBig),
+		),
+		validation.Field(&course.PreviewExt,
+			validation.Required.Error(errFieldIsNil),
+			validation.By(extValidator(course.PreviewExt)),
+		),
+		validation.Field(&course.Cost,
+			validation.By(costValidator(course.Cost, false)),
+		),
+		validation.Field(&course.Discount,
+			validation.By(costValidator(course.Discount, true)),
+		),
+	); err != nil {
+		return courseerror.CreateError(err, 400)
+	}
+
+	return nil
+}
+
+func costValidator(cost string, isDiscount bool) validation.RuleFunc {
+	return func(value interface{}) error {
+		if isDiscount && (cost == "" || cost == "0") {
+			return nil
+		}
+
+		if cost == "" {
+			return fmt.Errorf(errFieldIsNil)
+		}
+
+		if cost != "0" {
+			costInt, err := strconv.Atoi(cost)
+			if err != nil {
+				return errValueNotInt
+			}
+
+			if costInt < 0 {
+				return fmt.Errorf(errBadValue)
+			}
+		}
+		if !isDiscount && cost == "" {
+			return fmt.Errorf(errFieldIsNil)
+		}
+
+		return nil
+	}
 }

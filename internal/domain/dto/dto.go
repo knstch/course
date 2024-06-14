@@ -1,6 +1,8 @@
 package dto
 
 import (
+	"strconv"
+
 	"gorm.io/gorm"
 )
 
@@ -119,6 +121,36 @@ type Course struct {
 
 func CreateNewCourse() *Course {
 	return &Course{}
+}
+
+func (course *Course) AddName(name string) *Course {
+	course.Name = name
+	return course
+}
+
+func (course *Course) AddDescription(description string) *Course {
+	course.Description = description
+	return course
+}
+
+func (course *Course) AddPreviewImg(path string) *Course {
+	course.PreviewImgUrl = path
+	return course
+}
+
+func (course *Course) AddCost(cost string) *Course {
+	intCost, _ := strconv.Atoi(cost)
+	course.Cost = uint(intCost)
+	return course
+}
+
+func (course *Course) AddDiscount(discount string) *Course {
+	if discount != "" {
+		intDiscount, _ := strconv.Atoi(discount)
+		uintDiscount := uint(intDiscount)
+		course.Discount = &uintDiscount
+	}
+	return course
 }
 
 func CreateNewCourses() []Course {

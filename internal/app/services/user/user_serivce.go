@@ -9,37 +9,15 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
-	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/go-redis/redis"
 	courseError "github.com/knstch/course/internal/app/course_error"
+	cdnerrors "github.com/knstch/course/internal/app/services/cdn_errors"
 	"github.com/knstch/course/internal/app/services/email"
 	"github.com/knstch/course/internal/app/validation"
 	"github.com/knstch/course/internal/domain/entity"
-)
-
-const (
-	fileNamePattern = `\.(.+)$`
-)
-
-var (
-	fileExtRegex = regexp.MustCompile(fileNamePattern)
-
-	errBadFile          = errors.New("загруженный файл имеет неверный формат")
-	errFailedAuth       = errors.New("ошибка авторизации, неверный API ключ или отсутствует userId")
-	errCdnFailture      = errors.New("ошибка в CDN")
-	errCdnNotResponding = errors.New("CDN не отвечает")
-
-	allowedPhotoFormats = map[string]bool{
-		"jpeg": true,
-		"jpg":  true,
-		"png":  true,
-		"JPEG": true,
-		"JPG":  true,
-		"PNG":  true,
-	}
 )
 
 type Profiler interface {
@@ -145,46 +123,42 @@ func (user UserService) ConfirmEditEmail(ctx context.Context, confirmCode *entit
 	return nil
 }
 
-func (user UserService) AddPhoto(ctx context.Context, formFileName *multipart.FileHeader, file *multipart.File) *courseError.CourseError {
-	var fileExtention string
-	matches := fileExtRegex.FindStringSubmatch(formFileName.Filename)
-	if len(matches) > 1 {
-		fileExtention = matches[1]
-	} else {
-		return courseError.CreateError(errBadFile, 11105)
+func (user UserService) AddPhoto(ctx context.Context, formFileHeader *multipart.FileHeader, file *multipart.File) *courseError.CourseError {
+	if err := validation.NewImgExtToValidate(formFileHeader.Filename).Validate(ctx); err != nil {
+		return err
 	}
 
-	_, ok := allowedPhotoFormats[fileExtention]
-	if !ok {
-		return courseError.CreateError(errBadFile, 11105)
+	path, err := user.sendPhoto(ctx, file, formFileHeader.Filename)
+	if err != nil {
+		return err
 	}
 
-	if err := user.SendPhoto(ctx, file, formFileName.Filename); err != nil {
+	if err := user.Profiler.SetPhoto(ctx, *path); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (user UserService) SendPhoto(ctx context.Context, file *multipart.File, fileName string) *courseError.CourseError {
+func (user UserService) sendPhoto(ctx context.Context, file *multipart.File, fileName string) (*string, *courseError.CourseError) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
 	formFile, err := writer.CreateFormFile("file", fileName)
 	if err != nil {
-		return courseError.CreateError(err, 11031)
+		return nil, courseError.CreateError(err, 11031)
 	}
 
 	_, err = io.Copy(formFile, *file)
 	if err != nil {
-		return courseError.CreateError(err, 11042)
+		return nil, courseError.CreateError(err, 11042)
 	}
 
 	writer.Close()
 
 	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%v/upload", user.CdnHost), body)
 	if err != nil {
-		return courseError.CreateError(err, 11040)
+		return nil, courseError.CreateError(err, 11040)
 	}
 
 	req.Header.Add("API-KEY", user.CdnApiKey)
@@ -193,37 +167,33 @@ func (user UserService) SendPhoto(ctx context.Context, file *multipart.File, fil
 
 	resp, err := user.client.Do(req)
 	if err != nil {
-		return courseError.CreateError(errCdnNotResponding, 11041)
+		return nil, courseError.CreateError(cdnerrors.ErrCdnNotResponding, 11041)
 	}
 	defer resp.Body.Close()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return courseError.CreateError(err, 11042)
+		return nil, courseError.CreateError(err, 11042)
 	}
 
 	cdnResponse := entity.NewCdnResponse()
 	if err := json.Unmarshal(respBody, &cdnResponse); err != nil {
-		return courseError.CreateError(err, 10101)
+		return nil, courseError.CreateError(err, 10101)
 	}
 
 	if cdnResponse.Err != nil {
 		if cdnResponse.Code == 403 {
-			return courseError.CreateError(errFailedAuth, 11050)
+			return nil, courseError.CreateError(cdnerrors.ErrFailedAuth, 11050)
 		}
 		if cdnResponse.Code == 400 {
-			return courseError.CreateError(errBadFile, 11105)
+			return nil, courseError.CreateError(cdnerrors.ErrBadFile, 11105)
 		}
 		if cdnResponse.Code == 1000 {
-			return courseError.CreateError(errCdnFailture, 11051)
+			return nil, courseError.CreateError(cdnerrors.ErrCdnFailture, 11051)
 		}
 	}
 
-	if err := user.Profiler.SetPhoto(ctx, cdnResponse.Path); err != nil {
-		return err
-	}
-
-	return nil
+	return &cdnResponse.Path, nil
 }
 
 func (user UserService) GetUserInfo(ctx context.Context) (*entity.UserData, *courseError.CourseError) {

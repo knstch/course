@@ -122,7 +122,7 @@ func (h *Handlers) ChangeProfilePhoto(ctx *gin.Context) {
 	}
 
 	if err := h.userService.AddPhoto(ctx, header, &file); err != nil {
-		if err.Code == 11105 {
+		if err.Code == 400 {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
 			return
 		}
