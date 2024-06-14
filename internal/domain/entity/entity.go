@@ -149,3 +149,56 @@ func (user *UserData) AddCourses(courses []dto.Course) *UserData {
 
 	return user
 }
+
+type UserDataAdmin struct {
+	Id          uint          `json:"id"`
+	FirstName   string        `json:"firstName"`
+	Surname     string        `json:"surname"`
+	PhoneNumber uint          `json:"phoneNumber"`
+	Active      bool          `json:"active"`
+	Email       string        `json:"email"`
+	IsVerified  bool          `json:"isVerified"`
+	Photo       *string       `json:"photoPath,omitempty"`
+	Courses     []UserCourses `json:"courses"`
+}
+
+func CreateUserDataAdmin(user dto.User) *UserDataAdmin {
+	var userData UserDataAdmin
+
+	if user.PhoneNumber != nil {
+		userData.PhoneNumber = *user.PhoneNumber
+	}
+
+	userData.Id = user.ID
+	userData.FirstName = user.FirstName
+	userData.Surname = user.Surname
+	userData.Active = user.Active
+
+	return &userData
+}
+
+func (user *UserDataAdmin) AddCourses(courses []dto.Course) *UserDataAdmin {
+	user.Courses = make([]UserCourses, 0, len(courses))
+	for _, v := range courses {
+		course := UserCourses{
+			Id:   v.ID,
+			Name: v.Name,
+		}
+		user.Courses = append(user.Courses, course)
+	}
+
+	return user
+}
+
+func (user *UserDataAdmin) AddCredentials(credentials *dto.Credentials) *UserDataAdmin {
+	user.IsVerified = credentials.Verified
+	user.Email = credentials.Email
+
+	return user
+}
+
+func (user *UserDataAdmin) AddPhoto(photo *dto.Photo) *UserDataAdmin {
+	user.Photo = &photo.Path
+
+	return user
+}

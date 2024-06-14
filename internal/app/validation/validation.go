@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"strconv"
 	"unicode"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
@@ -19,6 +20,7 @@ type CredentialsToValidate struct {
 const (
 	emailPattern    = `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
 	passwordPattern = `^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};:"\\|,.<>\/?]*$`
+	lettersPattern  = `^\p{L}+$`
 
 	errEmailIsNil                 = "email обязательно"
 	errBadEmail                   = "email передан неправильно"
@@ -26,11 +28,28 @@ const (
 	errBadPassword                = "пароль должен содержать как миниум 8 символов и включать в себя как минимум 1 цифру"
 	errBadConfirmCode             = "код верификации передан неверно"
 	errPasswordContainsBadSymbols = "пароль может содержать только латинские буквы, спец. символы и цифры"
+	errFieldAcceptsOnlyLetters    = "допустимы только буквы"
+	errBadBool                    = "допустимы значения только true/fasle"
+
+	errPageIsBad     = "номер страницы не может быть меньше 0"
+	errPageIsNil     = "номер страницы обязателен"
+	errPageNotInt    = "номер страницы передан не как число"
+	errLimitIsNil    = "лимит обязателен"
+	errLimitIsNotInt = "лимит передан не как число"
+	errLimitIsBad    = "значение лимит не может быть меньше 1"
 )
 
 var (
 	emailRegex    = regexp.MustCompile(emailPattern)
 	passwordRegex = regexp.MustCompile(passwordPattern)
+	lettersRegex  = regexp.MustCompile(lettersPattern)
+
+	bools = []string{
+		"true",
+		"false",
+	}
+
+	boolsInterfaces = stringSliceTOInterfaceSlice(bools)
 )
 
 func NewCredentialsToValidate(credentials *entity.Credentials) *CredentialsToValidate {
@@ -110,10 +129,12 @@ func (user *UserInfoToValidate) Validate(ctx context.Context) *courseerror.Cours
 		validation.Field(&user.firstName,
 			validation.Required.Error("имя не может быть пустым"),
 			validation.RuneLength(1, 20).Error("имя передано в неверном формате"),
+			validation.Match(lettersRegex).Error(errFieldAcceptsOnlyLetters),
 		),
 		validation.Field(&user.surname,
 			validation.Required.Error("фамилия не может быть пустой"),
 			validation.RuneLength(1, 20).Error("фамилия передана в неверном формате"),
+			validation.Match(lettersRegex).Error(errFieldAcceptsOnlyLetters),
 		),
 		validation.Field(&user.phoneNumber,
 			validation.Required.Error("номер телефона не может быть пустым"),
@@ -260,4 +281,108 @@ func (credentials *PasswordRecoverCredentials) Validate(ctx context.Context) *co
 	}
 
 	return nil
+}
+
+type UserFiltersToValidate struct {
+	firstName   string
+	surname     string
+	phoneNumber string
+	active      string
+	email       string
+	isVerified  string
+	page        string
+	limit       string
+}
+
+func stringSliceTOInterfaceSlice(values []string) []interface{} {
+	interfaces := make([]interface{}, len(values))
+	for i := range values {
+		interfaces[i] = values[i]
+	}
+
+	return interfaces
+}
+
+func NewUserFiltersToValidate(firstName, surname, phoneNumber, email, active, isVerified, page, limit string) *UserFiltersToValidate {
+	return &UserFiltersToValidate{
+		firstName:   firstName,
+		surname:     surname,
+		phoneNumber: phoneNumber,
+		active:      active,
+		email:       email,
+		isVerified:  isVerified,
+		page:        page,
+		limit:       limit,
+	}
+}
+
+func (userFilters *UserFiltersToValidate) Validate(ctx context.Context) *courseerror.CourseError {
+	if err := validation.ValidateStructWithContext(ctx, userFilters,
+		validation.Field(&userFilters.firstName,
+			validation.Match(lettersRegex).Error(errFieldAcceptsOnlyLetters),
+		),
+		validation.Field(&userFilters.surname,
+			validation.Match(lettersRegex).Error(errFieldAcceptsOnlyLetters),
+		),
+		validation.Field(&userFilters.phoneNumber,
+			validation.Match(phoneRegex).Error("номер телефона передан неверно, введите его в фромате 79123456789"),
+		),
+		validation.Field(&userFilters.isVerified,
+			validation.In(boolsInterfaces...).Error(errBadBool),
+		),
+		validation.Field(&userFilters.active,
+			validation.In(boolsInterfaces...).Error(errBadBool),
+		),
+		validation.Field(&userFilters.email,
+			validation.Match(emailRegex).Error(errBadEmail),
+		),
+		validation.Field(&userFilters.page,
+			validation.By(validatePage(userFilters.page)),
+		),
+		validation.Field(&userFilters.limit,
+			validation.By(validateLimit(userFilters.limit)),
+		),
+	); err != nil {
+		return courseerror.CreateError(err, 400)
+	}
+
+	return nil
+}
+
+func validateLimit(limit string) validation.RuleFunc {
+	return func(value interface{}) error {
+		if limit == "" {
+			return fmt.Errorf(errLimitIsNil)
+		}
+
+		intLimit, err := strconv.Atoi(limit)
+		if err != nil {
+			return fmt.Errorf(errLimitIsNotInt)
+		}
+
+		if intLimit < 1 {
+			return fmt.Errorf(errLimitIsBad)
+		}
+
+		return nil
+	}
+}
+
+func validatePage(page string) validation.RuleFunc {
+	return func(value interface{}) error {
+		if page == "" {
+			return fmt.Errorf(errPageIsNil)
+		}
+
+		intPage, err := strconv.Atoi(page)
+		if err != nil {
+			return fmt.Errorf(errPageNotInt)
+		}
+
+		if intPage < 0 {
+			return fmt.Errorf(errPageIsBad)
+		}
+
+		return nil
+	}
 }

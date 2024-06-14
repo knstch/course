@@ -17,6 +17,16 @@ var (
 	errOldAndNewPasswordsEqual = errors.New("новый и старый пароль не могут совпадать")
 )
 
+func (storage *Storage) newUserProfileUpdate(firstName, surname string, phoneNumber int) map[string]interface{} {
+	updates := make(map[string]interface{}, 3)
+
+	updates["phone_number"] = phoneNumber
+	updates["first_name"] = firstName
+	updates["surname"] = surname
+
+	return updates
+}
+
 func (storage *Storage) FillUserProfile(ctx context.Context, firstName, surname string, phoneNumber int, userId uint) *courseError.CourseError {
 	tx := storage.db.WithContext(ctx).Begin()
 
@@ -30,7 +40,7 @@ func (storage *Storage) FillUserProfile(ctx context.Context, firstName, surname 
 		return courseError.CreateError(err, 10002)
 	}
 
-	if err := tx.Model(&dto.User{}).Where("id = ?", userId).Updates(newUserProfileUpdate(firstName, surname, phoneNumber)).Error; err != nil {
+	if err := tx.Model(&dto.User{}).Where("id = ?", userId).Updates(storage.newUserProfileUpdate(firstName, surname, phoneNumber)).Error; err != nil {
 		tx.Rollback()
 		return courseError.CreateError(err, 10003)
 	}
@@ -174,9 +184,8 @@ func (storage *Storage) RetreiveUserData(ctx context.Context) (*entity.UserData,
 	userData.AddEmailVerifiedStatus(credentials.Verified)
 
 	courses := dto.CreateNewCourses()
-	if err := tx.Exec(`SELECT * FROM courses WHERE id 
-	IN (SELECT course_id FROM users_courses WHERE user_id = ?)`, userId).
-		Find(&courses).Error; err != nil {
+	if err := tx.Joins("JOIN users_courses ON courses.id = users_courses.course_id").
+		Where("users_courses.user_id = ?", userId).Find(&courses).Error; err != nil {
 		tx.Rollback()
 		return nil, courseError.CreateError(err, 10002)
 	}

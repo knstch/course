@@ -31,5 +31,8 @@ func RequestsRouter(h *handlers.Handlers) *gin.Engine {
 	profile.POST("/setPhoto", h.ChangeProfilePhoto)
 	profile.GET("/getUser", h.GetUser)
 
+	admin := v1.Group("admin")
+	admin.GET("/users", h.FindUsersByFilters)
+
 	return router
 }

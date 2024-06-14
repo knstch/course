@@ -9,23 +9,26 @@ import (
 	"github.com/knstch/course/internal/app/services/auth"
 	"github.com/knstch/course/internal/app/services/email"
 	"github.com/knstch/course/internal/app/services/user"
+	usermanagement "github.com/knstch/course/internal/app/services/user_management"
 	"github.com/knstch/course/internal/app/storage"
 )
 
 type Handlers struct {
-	authService  auth.AuthService
-	userService  user.UserService
-	emailService *email.EmailService
-	address      string
+	authService           auth.AuthService
+	userService           user.UserService
+	emailService          *email.EmailService
+	userManagementService usermanagement.UserManagementService
+	address               string
 }
 
 func NewHandlers(storage *storage.Storage, config *config.Config, redisClient *redis.Client, client *http.Client) *Handlers {
 	emailService := email.NewEmailService(redisClient)
 	return &Handlers{
-		authService:  auth.NewAuthService(storage, config, redisClient, emailService),
-		userService:  user.NewUserService(storage, emailService, redisClient, client, config.CdnApiKey, config.CdnHost),
-		emailService: emailService,
-		address:      config.Address,
+		authService:           auth.NewAuthService(storage, config, redisClient, emailService),
+		userService:           user.NewUserService(storage, emailService, redisClient, client, config.CdnApiKey, config.CdnHost),
+		userManagementService: usermanagement.NewUserManagementService(storage),
+		emailService:          emailService,
+		address:               config.Address,
 	}
 }
 

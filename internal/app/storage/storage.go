@@ -33,16 +33,6 @@ func NewStorage(dsn, secret string) (*Storage, error) {
 	}, nil
 }
 
-func newUserProfileUpdate(firstName, surname string, phoneNumber int) map[string]interface{} {
-	updates := make(map[string]interface{}, 3)
-
-	updates["phone_number"] = phoneNumber
-	updates["first_name"] = firstName
-	updates["surname"] = surname
-
-	return updates
-}
-
 func (storage *Storage) Automigrate() error {
 	if err := storage.db.AutoMigrate(
 		&dto.User{},

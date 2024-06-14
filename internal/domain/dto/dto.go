@@ -20,6 +20,10 @@ func CreateNewUser() *User {
 	return &User{}
 }
 
+func CreateNewUsers() []User {
+	return []User{}
+}
+
 type Photo struct {
 	gorm.Model
 	Path string
