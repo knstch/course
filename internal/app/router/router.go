@@ -34,6 +34,7 @@ func RequestsRouter(h *handlers.Handlers) *gin.Engine {
 	admin := v1.Group("admin")
 	admin.GET("/users", h.FindUsersByFilters)
 	admin.POST("/ban", h.BanUser)
+	admin.GET("/user", h.GetUserById)
 
 	return router
 }

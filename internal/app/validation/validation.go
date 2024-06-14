@@ -2,6 +2,7 @@ package validation
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -40,6 +41,7 @@ const (
 
 	errBadId      = "id не может быть меньше 1"
 	errFieldIsNil = "поле не может быть пустым"
+	errIdIsNil    = "ИД обязательно"
 )
 
 var (
@@ -53,6 +55,8 @@ var (
 	}
 
 	boolsInterfaces = stringSliceTOInterfaceSlice(bools)
+
+	errIdNotInt = errors.New("ИД передан не как число")
 )
 
 func NewCredentialsToValidate(credentials *entity.Credentials) *CredentialsToValidate {
@@ -405,6 +409,47 @@ func (id *IdToValidate) Validate(ctx context.Context) *courseerror.CourseError {
 		validation.Field(&id.Id,
 			validation.Min(1).Error(errBadId),
 			validation.Required.Error(errFieldIsNil),
+		),
+	); err != nil {
+		return courseerror.CreateError(err, 400)
+	}
+
+	return nil
+}
+
+type StringIdToValidate struct {
+	Id string
+}
+
+func NewStringIdToValidate(id string) *StringIdToValidate {
+	return &StringIdToValidate{
+		Id: id,
+	}
+}
+
+func idValidator(id string) validation.RuleFunc {
+	return func(value interface{}) error {
+		if id == "" || id == "0" {
+			return fmt.Errorf(errIdIsNil)
+		}
+
+		idInt, err := strconv.Atoi(id)
+		if err != nil {
+			return errIdNotInt
+		}
+
+		if idInt < 0 {
+			return fmt.Errorf(errBadId)
+		}
+
+		return nil
+	}
+}
+
+func (i *StringIdToValidate) Validate(ctx context.Context) *courseerror.CourseError {
+	if err := validation.ValidateStructWithContext(ctx, i,
+		validation.Field(&i.Id,
+			validation.By(idValidator(i.Id)),
 		),
 	); err != nil {
 		return courseerror.CreateError(err, 400)

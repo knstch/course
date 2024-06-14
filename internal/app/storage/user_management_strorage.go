@@ -2,14 +2,16 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"strconv"
 
 	courseError "github.com/knstch/course/internal/app/course_error"
 	"github.com/knstch/course/internal/domain/dto"
 	"github.com/knstch/course/internal/domain/entity"
+	"gorm.io/gorm"
 )
 
-func (storage *Storage) GetAllUserData(ctx context.Context,
+func (storage *Storage) GetAllUsersData(ctx context.Context,
 	firstName, surname, phoneNumber, email, active, isVerified, courseName, page,
 	limit string) (*entity.UserDataWithPagination, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
@@ -139,4 +141,51 @@ func (storage *Storage) DisableUser(ctx context.Context, userId int) *courseErro
 	}
 
 	return nil
+}
+
+func (storage *Storage) GetAllUserDataById(ctx context.Context, id string) (*entity.UserDataAdmin, *courseError.CourseError) {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	user := dto.CreateNewUser()
+
+	if err := tx.Where("id = ?", id).First(&user).Error; err != nil {
+		tx.Rollback()
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, courseError.CreateError(errUserNotFound, 11101)
+		}
+		return nil, courseError.CreateError(err, 10002)
+	}
+
+	userEntity := entity.CreateUserDataAdmin(*user)
+
+	credentials := dto.CreateNewCredentials()
+	if err := tx.Where("id = ?", user.CredentialsId).First(&credentials).Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 10002)
+	}
+	userEntity.AddCredentials(credentials)
+
+	if user.PhotoId != nil {
+		photo := dto.CreateNewPhoto()
+		if err := tx.Where("id = ?", user.PhotoId).First(&photo).Error; err != nil {
+			tx.Rollback()
+			return nil, courseError.CreateError(err, 10002)
+		}
+		userEntity.AddPhoto(photo)
+	}
+
+	userCourses := dto.CreateNewCourses()
+	if err := tx.Joins("JOIN users_courses ON courses.id = users_courses.course_id").
+		Where("users_courses.user_id = ?", id).Find(&userCourses).Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 10002)
+	}
+	userEntity.AddCourses(userCourses)
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 10010)
+	}
+
+	return userEntity, nil
 }

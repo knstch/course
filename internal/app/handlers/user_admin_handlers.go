@@ -9,7 +9,7 @@ import (
 )
 
 func (h *Handlers) FindUsersByFilters(ctx *gin.Context) {
-	users, err := h.userManagementService.GetAllUserData(ctx, ctx.Query("firstName"), ctx.Query("surname"),
+	users, err := h.userManagementService.RetreiveUsersByFilters(ctx, ctx.Query("firstName"), ctx.Query("surname"),
 		ctx.Query("phoneNumber"), ctx.Query("email"), ctx.Query("active"), ctx.Query("verified"), ctx.Query("courseName"),
 		ctx.Query("page"), ctx.Query("limit"))
 
@@ -42,4 +42,22 @@ func (h *Handlers) BanUser(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("пользователь успешно заблокирован", true))
+}
+
+func (h *Handlers) GetUserById(ctx *gin.Context) {
+	user, err := h.userManagementService.RetreiveUserById(ctx, ctx.Query("id"))
+	if err != nil {
+		if err.Code == 400 {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			return
+		}
+		if err.Code == 11101 {
+			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
+			return
+		}
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, user)
 }
