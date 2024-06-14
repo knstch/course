@@ -20,6 +20,7 @@ type Config struct {
 	Address               string `envconfig:"ADDRESS"`
 	CdnHost               string `envconfig:"CDN_HOST"`
 	CdnApiKey             string `envconfig:"CDN_API_KEY"`
+	CdnAdminApiKey        string `envconfig:"ADMIN-API-KEY"`
 }
 
 var (

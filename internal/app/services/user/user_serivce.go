@@ -159,18 +159,18 @@ func (user UserService) AddPhoto(ctx context.Context, formFileName *multipart.Fi
 		return courseError.CreateError(errBadFile, 11105)
 	}
 
-	if err := user.SendPhoto(ctx, file, fileExtention); err != nil {
+	if err := user.SendPhoto(ctx, file, formFileName.Filename); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (user UserService) SendPhoto(ctx context.Context, file *multipart.File, fileExtention string) *courseError.CourseError {
+func (user UserService) SendPhoto(ctx context.Context, file *multipart.File, fileName string) *courseError.CourseError {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
-	formFile, err := writer.CreateFormFile("file", fmt.Sprintf("file.%v", fileExtention))
+	formFile, err := writer.CreateFormFile("file", fileName)
 	if err != nil {
 		return courseError.CreateError(err, 11031)
 	}
