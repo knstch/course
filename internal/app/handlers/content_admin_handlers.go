@@ -60,3 +60,16 @@ func (h *Handlers) CreateNewModule(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, entity.NewId().AddId(id))
 }
+
+func (h *Handlers) UploadNewLesson(ctx *gin.Context) {
+	file, header, err := ctx.Request.FormFile("lesson")
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(err, 400))
+		return
+	}
+
+	_, courseErr := h.contentManagementService.AddLesson(ctx, &file, header)
+	if courseErr != nil {
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+	}
+}

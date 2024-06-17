@@ -21,6 +21,8 @@ type Config struct {
 	CdnHost               string `envconfig:"CDN_HOST"`
 	CdnApiKey             string `envconfig:"CDN_API_KEY"`
 	CdnAdminApiKey        string `envconfig:"ADMIN_API_KEY"`
+	CdnGrpcPort           string `envconfig:"CDN_GRPC_PORT"`
+	CdnGrpcHost           string `envconfig:"CDN_GRPC_HOST"`
 }
 
 var (

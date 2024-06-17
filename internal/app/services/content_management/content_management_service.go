@@ -12,6 +12,8 @@ import (
 
 	"github.com/knstch/course/internal/app/config"
 	courseError "github.com/knstch/course/internal/app/course_error"
+	"github.com/knstch/course/internal/app/grpc"
+	"github.com/knstch/course/internal/app/grpc/grpcvideo"
 	cdnerrors "github.com/knstch/course/internal/app/services/cdn_errors"
 	"github.com/knstch/course/internal/app/validation"
 	"github.com/knstch/course/internal/domain/entity"
@@ -22,6 +24,7 @@ type ContentManagementServcie struct {
 	adminApiKey string
 	cdnHost     string
 	client      *http.Client
+	grpcClient  *grpc.GrpcClient
 }
 
 type ContentManager interface {
@@ -29,12 +32,13 @@ type ContentManager interface {
 	CreateModule(ctx context.Context, name, description string, position, courseId uint) (*uint, *courseError.CourseError)
 }
 
-func NewContentManagementServcie(manager ContentManager, config *config.Config, client *http.Client) ContentManagementServcie {
+func NewContentManagementServcie(manager ContentManager, config *config.Config, client *http.Client, grpcClient *grpc.GrpcClient) ContentManagementServcie {
 	return ContentManagementServcie{
 		manager:     manager,
 		adminApiKey: config.CdnAdminApiKey,
 		cdnHost:     config.CdnHost,
 		client:      client,
+		grpcClient:  grpcClient,
 	}
 }
 
@@ -135,4 +139,26 @@ func (manager ContentManagementServcie) AddModule(ctx context.Context, module *e
 	}
 
 	return id, nil
+}
+
+func (manager ContentManagementServcie) AddLesson(ctx context.Context, file *multipart.File, header *multipart.FileHeader) (*uint, *courseError.CourseError) {
+	rawData, err := io.ReadAll(*file)
+	if err != nil {
+		return nil, courseError.CreateError(err, 11042)
+	}
+
+	uploadVideoReq := grpcvideo.UploadVideoRequest{
+		Content: rawData,
+		Name:    header.Filename,
+	}
+
+	status, err := manager.grpcClient.Client.UploadVideo(ctx, &uploadVideoReq)
+	if err != nil {
+		fmt.Println("ERRRR: ", err.Error())
+		return nil, courseError.CreateError(err, 14002)
+	}
+
+	fmt.Println("STATUS: ", status.Path, " SUC: ", status.Success)
+
+	return nil, nil
 }

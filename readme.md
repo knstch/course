@@ -52,5 +52,9 @@ UserService - 11100
 Контент
 Ошибка при создании модуля, коллизиии - 13001
 
+GRPC
+14001 - ошибка при создании grpc клиента
+14002 - ошибка при отправке контента по grpc
+
 Build:
 docker compose -f docker-compose-local.yml up -d --build --remove-orphans

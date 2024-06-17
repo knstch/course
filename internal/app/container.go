@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-redis/redis"
 	"github.com/knstch/course/internal/app/config"
+	"github.com/knstch/course/internal/app/grpc"
 	"github.com/knstch/course/internal/app/handlers"
 	"github.com/knstch/course/internal/app/storage"
 )
@@ -33,7 +34,12 @@ func InitContainer(config *config.Config) (*Container, error) {
 
 	httpClient := &http.Client{}
 
-	handlers := handlers.NewHandlers(psqlStorage, config, redisClient, httpClient)
+	grpcClient, err := grpc.NewGrpcClient(config)
+	if err != nil {
+		return nil, err
+	}
+
+	handlers := handlers.NewHandlers(psqlStorage, config, redisClient, httpClient, grpcClient)
 
 	return &Container{
 		Storage:  psqlStorage,

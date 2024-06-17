@@ -5,15 +5,15 @@ package grpc;
 option go_package = "./grpcvideo";
 
 service VideoService {
-    rpc UploadVideo (stream VideoChunk) returns (UploadStatus);
+    rpc UploadVideo (UploadVideoRequest) returns (UploadStatus);
 }
 
-message VideoChunk {
+message UploadVideoRequest {
     bytes content = 1;
-    string extention = 2;
+    string name = 2;
 }
 
 message UploadStatus {
     bool success = 1;
-    string message = 2;
+    string path = 2;
 }

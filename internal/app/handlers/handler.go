@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-redis/redis"
 	"github.com/knstch/course/internal/app/config"
+	"github.com/knstch/course/internal/app/grpc"
 	"github.com/knstch/course/internal/app/services/auth"
 	contentmanagement "github.com/knstch/course/internal/app/services/content_management"
 	"github.com/knstch/course/internal/app/services/email"
@@ -23,13 +24,13 @@ type Handlers struct {
 	address                  string
 }
 
-func NewHandlers(storage *storage.Storage, config *config.Config, redisClient *redis.Client, client *http.Client) *Handlers {
+func NewHandlers(storage *storage.Storage, config *config.Config, redisClient *redis.Client, client *http.Client, grpcClient *grpc.GrpcClient) *Handlers {
 	emailService := email.NewEmailService(redisClient)
 	return &Handlers{
 		authService:              auth.NewAuthService(storage, config, redisClient, emailService),
 		userService:              user.NewUserService(storage, emailService, redisClient, client, config.CdnApiKey, config.CdnHost),
 		userManagementService:    usermanagement.NewUserManagementService(storage),
-		contentManagementService: contentmanagement.NewContentManagementServcie(storage, config, client),
+		contentManagementService: contentmanagement.NewContentManagementServcie(storage, config, client, grpcClient),
 		emailService:             emailService,
 		address:                  config.Address,
 	}
