@@ -159,11 +159,44 @@ func CreateNewCourses() []Course {
 
 type Lesson struct {
 	gorm.Model
-	CourseId      uint   `gorm:"not null"`
-	Course        Course `gorm:"not null"`
+	ModuleId      uint   `gorm:"not null"`
+	Module        Module `gorm:"not null"`
 	Name          string `gorm:"not null"`
 	Description   string `gorm:"not null"`
 	PreviewImgUrl string `gorm:"not null"`
 	VideoUrl      string `gorm:"not null"`
 	Position      uint   `gorm:"not null"`
+}
+
+type Module struct {
+	gorm.Model
+	CourseId    uint
+	Course      Course
+	Name        string
+	Description string
+	Position    uint
+}
+
+func CreateNewModule() *Module {
+	return &Module{}
+}
+
+func (m *Module) AddCourseId(id uint) *Module {
+	m.CourseId = id
+	return m
+}
+
+func (m *Module) AddName(name string) *Module {
+	m.Name = name
+	return m
+}
+
+func (m *Module) AddDescription(description string) *Module {
+	m.Description = description
+	return m
+}
+
+func (m *Module) AddPosition(pos uint) *Module {
+	m.Position = pos
+	return m
 }

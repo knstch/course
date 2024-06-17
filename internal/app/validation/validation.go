@@ -47,6 +47,10 @@ const (
 	errCourseNameIsTooBig        = "название курса слишком большое, ограничение в 100 символов"
 	errCourseDescriptionIsTooBig = "описание курса слишком большое, ограничение в 2000 символов"
 	errValueTooSmall             = "значение не может быть ниже 1"
+
+	errModuleNameIsTooBig        = "название модуля слишком длинное"
+	errModuleDescriptionIsTooBig = "описание модуля слишком большое"
+	errModulePositionIsBad       = "позиция модуля передана неверно"
 )
 
 var (
@@ -594,4 +598,45 @@ func costValidator(cost string, isDiscount bool) validation.RuleFunc {
 
 		return nil
 	}
+}
+
+type ModuleToValidate struct {
+	name        string
+	description string
+	position    int
+	courseId    uint
+}
+
+func NewModuleToValidate(name, description string, position, courseId uint) *ModuleToValidate {
+	return &ModuleToValidate{
+		name:        name,
+		description: description,
+		position:    int(position),
+		courseId:    courseId,
+	}
+}
+
+func (module *ModuleToValidate) Validate(ctx context.Context) *courseerror.CourseError {
+	if err := validation.ValidateStructWithContext(ctx, module,
+		validation.Field(&module.courseId,
+			validation.By(idValidator(fmt.Sprint(module.courseId))),
+			validation.Required.Error(errFieldIsNil),
+		),
+		validation.Field(&module.name,
+			validation.Required.Error(errFieldIsNil),
+			validation.RuneLength(1, 40).Error(errModuleNameIsTooBig),
+		),
+		validation.Field(&module.description,
+			validation.Required.Error(errFieldIsNil),
+			validation.RuneLength(1, 200).Error(errModuleDescriptionIsTooBig),
+		),
+		validation.Field(&module.position,
+			validation.Required.Error(errFieldIsNil),
+			validation.Min(1).Error(errModulePositionIsBad),
+		),
+	); err != nil {
+		return courseerror.CreateError(err, 400)
+	}
+
+	return nil
 }

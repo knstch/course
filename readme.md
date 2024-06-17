@@ -49,5 +49,8 @@ UserService - 11100
 Ошибка аутх в CDN - 11050
 Ошибка в CDN - 11051
 
+Контент
+Ошибка при создании модуля, коллизиии - 13001
+
 Build:
 docker compose -f docker-compose-local.yml up -d --build --remove-orphans

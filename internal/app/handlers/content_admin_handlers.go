@@ -24,12 +24,13 @@ func (h *Handlers) CreateNewCourse(ctx *gin.Context) {
 		return
 	}
 
-	if err := h.contentManagementService.AddCourse(ctx, name, description, cost, discount, header, &file); err != nil {
-		if err.Code == 400 || err.Code == 11105 {
+	id, courseErr := h.contentManagementService.AddCourse(ctx, name, description, cost, discount, header, &file)
+	if courseErr != nil {
+		if courseErr.Code == 400 || courseErr.Code == 11105 {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
 			return
 		}
-		if err.Code == 11050 {
+		if courseErr.Code == 11050 {
 			ctx.AbortWithStatusJSON(http.StatusForbidden, err)
 			return
 		}
@@ -37,5 +38,25 @@ func (h *Handlers) CreateNewCourse(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("курс успешно создан!", true))
+	ctx.JSON(http.StatusOK, entity.NewId().AddId(id))
+}
+
+func (h *Handlers) CreateNewModule(ctx *gin.Context) {
+	module := entity.NewModule()
+	if err := ctx.ShouldBindJSON(&module); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
+		return
+	}
+
+	id, err := h.contentManagementService.AddModule(ctx, module)
+	if err != nil {
+		if err.Code == 400 || err.Code == 13001 {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			return
+		}
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, entity.NewId().AddId(id))
 }

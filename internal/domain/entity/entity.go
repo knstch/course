@@ -216,9 +216,25 @@ func (user *UserDataAdmin) AddPhoto(photo *dto.Photo) *UserDataAdmin {
 }
 
 type Id struct {
-	Id int `json:"id"`
+	Id uint `json:"id"`
 }
 
 func NewId() *Id {
 	return &Id{}
+}
+
+func (id *Id) AddId(Id *uint) *Id {
+	id.Id = *Id
+	return id
+}
+
+type Module struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Position    uint   `json:"position"`
+	CourseId    uint   `json:"courseId"`
+}
+
+func NewModule() *Module {
+	return &Module{}
 }

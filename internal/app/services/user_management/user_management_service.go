@@ -42,12 +42,12 @@ func (user UserManagementService) RetreiveUsersByFilters(ctx context.Context,
 	return userData, nil
 }
 
-func (user UserManagementService) DeactivateUser(ctx context.Context, userId int) *courseError.CourseError {
-	if err := validation.NewIdToValidate(userId).Validate(ctx); err != nil {
+func (user UserManagementService) DeactivateUser(ctx context.Context, userId uint) *courseError.CourseError {
+	if err := validation.NewIdToValidate(int(userId)).Validate(ctx); err != nil {
 		return err
 	}
 
-	if err := user.manager.DisableUser(ctx, userId); err != nil {
+	if err := user.manager.DisableUser(ctx, int(userId)); err != nil {
 		return err
 	}
 

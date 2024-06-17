@@ -25,7 +25,8 @@ type ContentManagementServcie struct {
 }
 
 type ContentManager interface {
-	CreateCourse(ctx context.Context, name, description, cost, discount, path string) *courseError.CourseError
+	CreateCourse(ctx context.Context, name, description, cost, discount, path string) (*uint, *courseError.CourseError)
+	CreateModule(ctx context.Context, name, description string, position, courseId uint) (*uint, *courseError.CourseError)
 }
 
 func NewContentManagementServcie(manager ContentManager, config *config.Config, client *http.Client) ContentManagementServcie {
@@ -43,23 +44,24 @@ func NewContentManagementServcie(manager ContentManager, config *config.Config, 
 // 	position := ctx.PostForm("position")
 // }
 
-func (manager ContentManagementServcie) AddCourse(ctx context.Context, name, description, cost, discount string, formFileHeader *multipart.FileHeader, file *multipart.File) *courseError.CourseError {
+func (manager ContentManagementServcie) AddCourse(ctx context.Context, name, description, cost, discount string, formFileHeader *multipart.FileHeader, file *multipart.File) (*uint, *courseError.CourseError) {
 	if err := validation.NewCourseToValidate(name, description, formFileHeader.Filename, cost, discount).Validate(ctx); err != nil {
-		return err
+		return nil, err
 	}
 
 	readyName := manager.prepareFileName(formFileHeader.Filename)
 
 	path, err := manager.sendCourse(file, readyName)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if err := manager.manager.CreateCourse(ctx, name, description, cost, discount, *path); err != nil {
-		return err
+	id, err := manager.manager.CreateCourse(ctx, name, description, cost, discount, *path)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	return id, nil
 }
 
 func (manager ContentManagementServcie) prepareFileName(name string) string {
@@ -119,4 +121,18 @@ func (manager ContentManagementServcie) sendCourse(file *multipart.File, fileNam
 	}
 
 	return &cdnResponse.Path, nil
+}
+
+func (manager ContentManagementServcie) AddModule(ctx context.Context, module *entity.Module) (*uint, *courseError.CourseError) {
+	if err := validation.NewModuleToValidate(module.Name, module.Description, module.Position, module.CourseId).
+		Validate(ctx); err != nil {
+		return nil, err
+	}
+
+	id, err := manager.manager.CreateModule(ctx, module.Name, module.Description, module.Position, module.CourseId)
+	if err != nil {
+		return nil, err
+	}
+
+	return id, nil
 }
