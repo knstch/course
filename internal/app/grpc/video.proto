@@ -5,7 +5,7 @@ package grpc;
 option go_package = "./grpcvideo";
 
 service VideoService {
-    rpc UploadVideo (UploadVideoRequest) returns (UploadStatus);
+    rpc UploadVideo (stream UploadVideoRequest) returns (UploadStatus);
 }
 
 message UploadVideoRequest {

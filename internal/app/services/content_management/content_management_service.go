@@ -42,12 +42,6 @@ func NewContentManagementServcie(manager ContentManager, config *config.Config, 
 	}
 }
 
-// func (manager ContentManagementServcie) AddLesson(ctx *gin.Context) {
-// 	name := ctx.PostForm("name")
-// 	description := ctx.PostForm("description")
-// 	position := ctx.PostForm("position")
-// }
-
 func (manager ContentManagementServcie) AddCourse(ctx context.Context, name, description, cost, discount string, formFileHeader *multipart.FileHeader, file *multipart.File) (*uint, *courseError.CourseError) {
 	if err := validation.NewCourseToValidate(name, description, formFileHeader.Filename, cost, discount).Validate(ctx); err != nil {
 		return nil, err
@@ -142,23 +136,41 @@ func (manager ContentManagementServcie) AddModule(ctx context.Context, module *e
 }
 
 func (manager ContentManagementServcie) AddLesson(ctx context.Context, file *multipart.File, header *multipart.FileHeader) (*uint, *courseError.CourseError) {
-	rawData, err := io.ReadAll(*file)
+	stream, err := manager.grpcClient.Client.UploadVideo(ctx)
+	if err != nil {
+		return nil, courseError.CreateError(err, 14002)
+	}
+
+	fileSize := header.Size
+
+	buffer := make([]byte, fileSize)
+
+	fileReader, err := header.Open()
 	if err != nil {
 		return nil, courseError.CreateError(err, 11042)
 	}
 
-	uploadVideoReq := grpcvideo.UploadVideoRequest{
-		Content: rawData,
-		Name:    header.Filename,
+	for {
+		bytesRead, err := fileReader.Read(buffer)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, courseError.CreateError(err, 11042)
+		}
+
+		if err := stream.Send(&grpcvideo.UploadVideoRequest{
+			Content: buffer[:bytesRead],
+			Name:    header.Filename,
+		}); err != nil {
+			return nil, courseError.CreateError(err, 14002)
+		}
 	}
 
-	status, err := manager.grpcClient.Client.UploadVideo(ctx, &uploadVideoReq)
+	res, err := stream.CloseAndRecv()
 	if err != nil {
-		fmt.Println("ERRRR: ", err.Error())
 		return nil, courseError.CreateError(err, 14002)
 	}
-
-	fmt.Println("STATUS: ", status.Path, " SUC: ", status.Success)
-
+	fmt.Println("RES: ", res.Path)
 	return nil, nil
 }
