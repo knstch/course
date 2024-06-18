@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -28,14 +27,18 @@ func (h *Handlers) CreateNewCourse(ctx *gin.Context) {
 	id, courseErr := h.contentManagementService.AddCourse(ctx, name, description, cost, discount, header, &file)
 	if courseErr != nil {
 		if courseErr.Code == 400 || courseErr.Code == 11105 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, courseErr)
 			return
 		}
 		if courseErr.Code == 11050 {
-			ctx.AbortWithStatusJSON(http.StatusForbidden, err)
+			ctx.AbortWithStatusJSON(http.StatusForbidden, courseErr)
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		if courseErr.Code == 11041 {
+			ctx.AbortWithStatusJSON(http.StatusServiceUnavailable, courseErr)
+			return
+		}
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, courseErr)
 		return
 	}
 
@@ -80,9 +83,19 @@ func (h *Handlers) UploadNewLesson(ctx *gin.Context) {
 	description := ctx.PostForm("description")
 	position := ctx.PostForm("position")
 
-	_, courseErr := h.contentManagementService.AddLesson(ctx, lesson, name, moduleName, description, position, previewHeader, &preview)
+	lessonId, courseErr := h.contentManagementService.AddLesson(ctx, lesson, name, moduleName, description, position, previewHeader, &preview)
 	if courseErr != nil {
-		fmt.Println("ERR: ", err)
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		if courseErr.Code == 400 || courseErr.Code == 13001 || courseErr.Code == 13002 {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, courseErr)
+			return
+		}
+		if courseErr.Code == 11051 || courseErr.Code == 14002 || courseErr.Code == 11041 {
+			ctx.AbortWithStatusJSON(http.StatusServiceUnavailable, courseErr)
+			return
+		}
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, courseErr)
+		return
 	}
+
+	ctx.JSON(http.StatusOK, entity.NewId().AddId(lessonId))
 }

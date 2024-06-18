@@ -13,7 +13,7 @@ type GrpcClient struct {
 }
 
 func NewGrpcClient(config *config.Config) (*GrpcClient, error) {
-	conn, err := grpc.NewClient(fmt.Sprintf("%v:%v", config.CdnGrpcHost, config.CdnGrpcPort), grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpc.NewClient(fmt.Sprintf("%v:%v", config.CdnGrpcHost, config.CdnGrpcPort), grpc.WithInsecure(), grpc.WithBlock(), grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(1073741824)))
 	if err != nil {
 		return nil, err
 	}

@@ -30,7 +30,7 @@ type ContentManagementServcie struct {
 
 type ContentManager interface {
 	CreateCourse(ctx context.Context, name, description, cost, discount, path string) (*uint, *courseError.CourseError)
-	CreateModule(ctx context.Context, name, description string, position, courseId uint) (*uint, *courseError.CourseError)
+	CreateModule(ctx context.Context, name, description, courseName string, position uint) (*uint, *courseError.CourseError)
 	CheckIfLessonCanBeCreated(ctx context.Context, name, moduleName, position string) *courseError.CourseError
 	CreateLesson(ctx context.Context, name, moduleName, description, position, videoPath, previewPath string) (*uint, *courseError.CourseError)
 }
@@ -85,7 +85,7 @@ func (manager ContentManagementServcie) sendPhoto(file *multipart.File, fileName
 
 	writer.Close()
 
-	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%v/course", manager.cdnHost), body)
+	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%v/image", manager.cdnHost), body)
 	if err != nil {
 		return nil, courseError.CreateError(err, 11040)
 	}
@@ -110,14 +110,15 @@ func (manager ContentManagementServcie) sendPhoto(file *multipart.File, fileName
 	}
 
 	if cdnResponse.Err != nil {
-		if cdnResponse.Code == 403 {
+		switch {
+		case cdnResponse.Code == 403:
 			return nil, courseError.CreateError(cdnerrors.ErrFailedAuth, 11050)
-		}
-		if cdnResponse.Code == 400 {
+		case cdnResponse.Code == 400:
 			return nil, courseError.CreateError(cdnerrors.ErrBadFile, 11105)
-		}
-		if cdnResponse.Code == 1000 {
+		case cdnResponse.Code == 1000:
 			return nil, courseError.CreateError(cdnerrors.ErrCdnFailture, 11051)
+		default:
+			return nil, courseError.CreateError(fmt.Errorf(*cdnResponse.Err), cdnResponse.Code)
 		}
 	}
 
@@ -125,12 +126,12 @@ func (manager ContentManagementServcie) sendPhoto(file *multipart.File, fileName
 }
 
 func (manager ContentManagementServcie) AddModule(ctx context.Context, module *entity.Module) (*uint, *courseError.CourseError) {
-	if err := validation.NewModuleToValidate(module.Name, module.Description, module.Position, module.CourseId).
+	if err := validation.NewModuleToValidate(module.Name, module.Description, module.CourseName, module.Position).
 		Validate(ctx); err != nil {
 		return nil, err
 	}
 
-	id, err := manager.contentManager.CreateModule(ctx, module.Name, module.Description, module.Position, module.CourseId)
+	id, err := manager.contentManager.CreateModule(ctx, module.Name, module.Description, module.CourseName, module.Position)
 	if err != nil {
 		return nil, err
 	}

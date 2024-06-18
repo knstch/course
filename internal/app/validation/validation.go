@@ -613,22 +613,21 @@ type ModuleToValidate struct {
 	name        string
 	description string
 	position    int
-	courseId    uint
+	courseName  string
 }
 
-func NewModuleToValidate(name, description string, position, courseId uint) *ModuleToValidate {
+func NewModuleToValidate(name, description, courseName string, position uint) *ModuleToValidate {
 	return &ModuleToValidate{
 		name:        name,
 		description: description,
 		position:    int(position),
-		courseId:    courseId,
+		courseName:  courseName,
 	}
 }
 
 func (module *ModuleToValidate) Validate(ctx context.Context) *courseerror.CourseError {
 	if err := validation.ValidateStructWithContext(ctx, module,
-		validation.Field(&module.courseId,
-			validation.By(idValidator(fmt.Sprint(module.courseId))),
+		validation.Field(&module.courseName,
 			validation.Required.Error(errFieldIsNil),
 		),
 		validation.Field(&module.name,
@@ -679,10 +678,6 @@ func (lesson *LessonToValidate) Validate(ctx context.Context) *courseerror.Cours
 		validation.Field(&lesson.description,
 			validation.Required.Error(errFieldIsNil),
 			validation.RuneLength(1, 200).Error(errLessonDescriptionIsTooBig),
-		),
-		validation.Field(&lesson.position,
-			validation.Required.Error(errFieldIsNil),
-			validation.Min(1).Error(errLessonPositionIsBad),
 		),
 		validation.Field(&lesson.moduleName,
 			validation.Required.Error(errFieldIsNil),

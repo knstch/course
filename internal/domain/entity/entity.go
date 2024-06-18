@@ -232,7 +232,7 @@ type Module struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Position    uint   `json:"position"`
-	CourseId    uint   `json:"courseId"`
+	CourseName  string `json:"courseName"`
 }
 
 func NewModule() *Module {

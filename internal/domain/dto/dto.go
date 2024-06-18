@@ -165,11 +165,41 @@ type Lesson struct {
 	Description   string `gorm:"not null"`
 	PreviewImgUrl string `gorm:"not null"`
 	VideoUrl      string `gorm:"not null"`
-	Position      uint   `gorm:"not null"`
+	Position      int    `gorm:"not null"`
 }
 
 func CreateNewLesson() *Lesson {
 	return &Lesson{}
+}
+
+func (lesson *Lesson) AddModuleId(id uint) *Lesson {
+	lesson.ModuleId = id
+	return lesson
+}
+
+func (lesson *Lesson) AddName(name string) *Lesson {
+	lesson.Name = name
+	return lesson
+}
+
+func (lesson *Lesson) AddDescription(descr string) *Lesson {
+	lesson.Description = descr
+	return lesson
+}
+
+func (lesson *Lesson) AddPreviewImgUrl(url string) *Lesson {
+	lesson.PreviewImgUrl = url
+	return lesson
+}
+
+func (lesson *Lesson) AddVideoUrl(url string) *Lesson {
+	lesson.VideoUrl = url
+	return lesson
+}
+
+func (lesson *Lesson) AddPosition(pos int) *Lesson {
+	lesson.Position = pos
+	return lesson
 }
 
 type Module struct {
