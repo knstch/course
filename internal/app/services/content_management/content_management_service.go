@@ -17,28 +17,31 @@ import (
 	cdnerrors "github.com/knstch/course/internal/app/services/cdn_errors"
 	"github.com/knstch/course/internal/app/validation"
 	"github.com/knstch/course/internal/domain/entity"
+	"golang.org/x/sync/errgroup"
 )
 
 type ContentManagementServcie struct {
-	manager     ContentManager
-	adminApiKey string
-	cdnHost     string
-	client      *http.Client
-	grpcClient  *grpc.GrpcClient
+	contentManager ContentManager
+	adminApiKey    string
+	cdnHost        string
+	client         *http.Client
+	grpcClient     *grpc.GrpcClient
 }
 
 type ContentManager interface {
 	CreateCourse(ctx context.Context, name, description, cost, discount, path string) (*uint, *courseError.CourseError)
 	CreateModule(ctx context.Context, name, description string, position, courseId uint) (*uint, *courseError.CourseError)
+	CheckIfLessonCanBeCreated(ctx context.Context, name, moduleName, position string) *courseError.CourseError
+	CreateLesson(ctx context.Context, name, moduleName, description, position, videoPath, previewPath string) (*uint, *courseError.CourseError)
 }
 
 func NewContentManagementServcie(manager ContentManager, config *config.Config, client *http.Client, grpcClient *grpc.GrpcClient) ContentManagementServcie {
 	return ContentManagementServcie{
-		manager:     manager,
-		adminApiKey: config.CdnAdminApiKey,
-		cdnHost:     config.CdnHost,
-		client:      client,
-		grpcClient:  grpcClient,
+		contentManager: manager,
+		adminApiKey:    config.CdnAdminApiKey,
+		cdnHost:        config.CdnHost,
+		client:         client,
+		grpcClient:     grpcClient,
 	}
 }
 
@@ -49,12 +52,12 @@ func (manager ContentManagementServcie) AddCourse(ctx context.Context, name, des
 
 	readyName := manager.prepareFileName(formFileHeader.Filename)
 
-	path, err := manager.sendCourse(file, readyName)
+	path, err := manager.sendPhoto(file, readyName)
 	if err != nil {
 		return nil, err
 	}
 
-	id, err := manager.manager.CreateCourse(ctx, name, description, cost, discount, *path)
+	id, err := manager.contentManager.CreateCourse(ctx, name, description, cost, discount, *path)
 	if err != nil {
 		return nil, err
 	}
@@ -66,11 +69,11 @@ func (manager ContentManagementServcie) prepareFileName(name string) string {
 	return strings.ReplaceAll(strings.TrimSpace(name), " ", "_")
 }
 
-func (manager ContentManagementServcie) sendCourse(file *multipart.File, fileName string) (*string, *courseError.CourseError) {
+func (manager ContentManagementServcie) sendPhoto(file *multipart.File, fileName string) (*string, *courseError.CourseError) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
-	formFile, err := writer.CreateFormFile("preview", fileName)
+	formFile, err := writer.CreateFormFile("photo", fileName)
 	if err != nil {
 		return nil, courseError.CreateError(err, 11031)
 	}
@@ -127,7 +130,7 @@ func (manager ContentManagementServcie) AddModule(ctx context.Context, module *e
 		return nil, err
 	}
 
-	id, err := manager.manager.CreateModule(ctx, module.Name, module.Description, module.Position, module.CourseId)
+	id, err := manager.contentManager.CreateModule(ctx, module.Name, module.Description, module.Position, module.CourseId)
 	if err != nil {
 		return nil, err
 	}
@@ -135,17 +138,84 @@ func (manager ContentManagementServcie) AddModule(ctx context.Context, module *e
 	return id, nil
 }
 
-func (manager ContentManagementServcie) AddLesson(ctx context.Context, file *multipart.File, header *multipart.FileHeader) (*uint, *courseError.CourseError) {
+func (manager ContentManagementServcie) AddLesson(
+	ctx context.Context,
+	video *multipart.FileHeader,
+	name string,
+	moduleName string,
+	description string,
+	position string,
+	preview *multipart.FileHeader,
+	previewFile *multipart.File,
+) (*uint, *courseError.CourseError) {
+	if err := validation.NewLessonToValidate(
+		name, description, moduleName, preview.Filename, video.Filename, position,
+	).Validate(ctx); err != nil {
+		return nil, err
+	}
+
+	if err := manager.contentManager.CheckIfLessonCanBeCreated(ctx, name, moduleName, position); err != nil {
+		return nil, err
+	}
+
+	var (
+		videoPath    *string
+		sendVideoErr *courseError.CourseError
+
+		previewPath  *string
+		sendPhotoErr *courseError.CourseError
+	)
+
+	g, errGroupCtx := errgroup.WithContext(ctx)
+
+	g.Go(func() error {
+		videoPath, sendVideoErr = manager.sendVideo(errGroupCtx, video)
+		if sendVideoErr != nil {
+			return sendVideoErr.Error
+		}
+		return nil
+	})
+
+	g.Go(func() error {
+		readyPreviewFileName := manager.prepareFileName(preview.Filename)
+		previewPath, sendPhotoErr = manager.sendPhoto(previewFile, readyPreviewFileName)
+		if sendPhotoErr != nil {
+			return sendPhotoErr.Error
+		}
+
+		return nil
+	})
+
+	if err := g.Wait(); err != nil {
+		if sendPhotoErr != nil {
+			return nil, sendPhotoErr
+		}
+		if sendVideoErr != nil {
+			return nil, sendVideoErr
+		}
+	}
+
+	lessonId, err := manager.contentManager.CreateLesson(ctx, name, moduleName, description, position, *videoPath, *previewPath)
+	if err != nil {
+		return nil, err
+	}
+
+	return lessonId, nil
+}
+
+func (manager ContentManagementServcie) sendVideo(ctx context.Context, file *multipart.FileHeader) (*string, *courseError.CourseError) {
+	readyName := manager.prepareFileName(file.Filename)
+
 	stream, err := manager.grpcClient.Client.UploadVideo(ctx)
 	if err != nil {
 		return nil, courseError.CreateError(err, 14002)
 	}
 
-	fileSize := header.Size
+	fileSize := file.Size
 
 	buffer := make([]byte, fileSize)
 
-	fileReader, err := header.Open()
+	fileReader, err := file.Open()
 	if err != nil {
 		return nil, courseError.CreateError(err, 11042)
 	}
@@ -161,7 +231,7 @@ func (manager ContentManagementServcie) AddLesson(ctx context.Context, file *mul
 
 		if err := stream.Send(&grpcvideo.UploadVideoRequest{
 			Content: buffer[:bytesRead],
-			Name:    header.Filename,
+			Name:    readyName,
 		}); err != nil {
 			return nil, courseError.CreateError(err, 14002)
 		}
@@ -171,6 +241,6 @@ func (manager ContentManagementServcie) AddLesson(ctx context.Context, file *mul
 	if err != nil {
 		return nil, courseError.CreateError(err, 14002)
 	}
-	fmt.Println("RES: ", res.Path)
-	return nil, nil
+
+	return &res.Path, nil
 }

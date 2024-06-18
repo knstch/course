@@ -40,17 +40,22 @@ const (
 	errLimitIsNotInt = "лимит передан не как число"
 	errLimitIsBad    = "значение лимит не может быть меньше 1"
 
-	errBadValue   = "значение не может быть меньше 1"
-	errFieldIsNil = "поле не может быть пустым"
-	errIdIsNil    = "ИД обязательно"
+	errBadMinCostValue = "значение не может быть меньше 0"
+	errFieldIsNil      = "поле не может быть пустым"
+	errIdIsNil         = "ИД обязательно"
 
-	errCourseNameIsTooBig        = "название курса слишком большое, ограничение в 100 символов"
-	errCourseDescriptionIsTooBig = "описание курса слишком большое, ограничение в 2000 символов"
+	errCourseNameIsTooBig        = "название курса слишком длинное, ограничение в 100 символов"
+	errCourseDescriptionIsTooBig = "описание курса слишком длинное, ограничение в 2000 символов"
 	errValueTooSmall             = "значение не может быть ниже 1"
 
 	errModuleNameIsTooBig        = "название модуля слишком длинное"
-	errModuleDescriptionIsTooBig = "описание модуля слишком большое"
+	errModuleDescriptionIsTooBig = "описание модуля слишком длинное"
 	errModulePositionIsBad       = "позиция модуля передана неверно"
+
+	errLessonNameIsTooBig        = "название урока слишком длинное"
+	errLessonDescriptionIsTooBig = "описание урока слишком длинное"
+	errLessonPositionIsBad       = "позиция модуля передана неверно"
+	errBadMinValue               = "значение не может быть меньше 1"
 )
 
 var (
@@ -72,6 +77,10 @@ var (
 		"JPEG",
 		"JPG",
 		"PNG",
+	}
+
+	allowedVideoExtentions = []string{
+		"mp4",
 	}
 
 	boolsInterfaces = stringSliceTOInterfaceSlice(bools)
@@ -428,7 +437,7 @@ func NewIdToValidate(id int) *IdToValidate {
 func (id *IdToValidate) Validate(ctx context.Context) *courseerror.CourseError {
 	if err := validation.ValidateStructWithContext(ctx, id,
 		validation.Field(&id.Id,
-			validation.Min(1).Error(errBadValue),
+			validation.Min(1).Error(errBadMinValue),
 			validation.Required.Error(errFieldIsNil),
 		),
 	); err != nil {
@@ -460,7 +469,7 @@ func idValidator(id string) validation.RuleFunc {
 		}
 
 		if idInt < 0 {
-			return fmt.Errorf(errBadValue)
+			return fmt.Errorf(errBadMinValue)
 		}
 
 		return nil
@@ -489,7 +498,7 @@ func NewImgExtToValidate(fileName string) *ImgExtToValidate {
 	}
 }
 
-func extValidator(fileName string) validation.RuleFunc {
+func imgExtValidator(fileName string) validation.RuleFunc {
 	return func(value interface{}) error {
 		var fileExtention string
 		matches := fileExtRegex.FindStringSubmatch(fileName)
@@ -518,7 +527,7 @@ func extValidator(fileName string) validation.RuleFunc {
 func (img *ImgExtToValidate) Validate(ctx context.Context) *courseerror.CourseError {
 	if err := validation.ValidateStructWithContext(ctx, img,
 		validation.Field(&img.FileName,
-			validation.By(extValidator(img.FileName)),
+			validation.By(imgExtValidator(img.FileName)),
 		),
 	); err != nil {
 		return courseerror.CreateError(err, 400)
@@ -557,7 +566,7 @@ func (course *CourseToValidate) Validate(ctx context.Context) *courseerror.Cours
 		),
 		validation.Field(&course.PreviewExt,
 			validation.Required.Error(errFieldIsNil),
-			validation.By(extValidator(course.PreviewExt)),
+			validation.By(imgExtValidator(course.PreviewExt)),
 		),
 		validation.Field(&course.Cost,
 			validation.By(costValidator(course.Cost, false)),
@@ -589,7 +598,7 @@ func costValidator(cost string, isDiscount bool) validation.RuleFunc {
 			}
 
 			if costInt < 0 {
-				return fmt.Errorf(errBadValue)
+				return fmt.Errorf(errBadMinCostValue)
 			}
 		}
 		if !isDiscount && cost == "" {
@@ -639,4 +648,104 @@ func (module *ModuleToValidate) Validate(ctx context.Context) *courseerror.Cours
 	}
 
 	return nil
+}
+
+type LessonToValidate struct {
+	description string
+	position    string
+	moduleName  string
+	name        string
+	previewImg  string
+	lesson      string
+}
+
+func NewLessonToValidate(name, description, moduleName, previewImg, lesson, position string) *LessonToValidate {
+	return &LessonToValidate{
+		name:        name,
+		description: description,
+		position:    position,
+		moduleName:  moduleName,
+		previewImg:  previewImg,
+		lesson:      lesson,
+	}
+}
+
+func (lesson *LessonToValidate) Validate(ctx context.Context) *courseerror.CourseError {
+	if err := validation.ValidateStructWithContext(ctx, lesson,
+		validation.Field(&lesson.name,
+			validation.Required.Error(errFieldIsNil),
+			validation.RuneLength(1, 40).Error(errLessonNameIsTooBig),
+		),
+		validation.Field(&lesson.description,
+			validation.Required.Error(errFieldIsNil),
+			validation.RuneLength(1, 200).Error(errLessonDescriptionIsTooBig),
+		),
+		validation.Field(&lesson.position,
+			validation.Required.Error(errFieldIsNil),
+			validation.Min(1).Error(errLessonPositionIsBad),
+		),
+		validation.Field(&lesson.moduleName,
+			validation.Required.Error(errFieldIsNil),
+		),
+		validation.Field(&lesson.previewImg,
+			validation.Required.Error(errFieldIsNil),
+			validation.By(imgExtValidator(lesson.previewImg)),
+		),
+		validation.Field(&lesson.lesson,
+			validation.Required.Error(errFieldIsNil),
+			validation.By(videoExtValidator(lesson.lesson)),
+		),
+		validation.Field(&lesson.position,
+			validation.By(posValidator(lesson.position)),
+		),
+	); err != nil {
+		return courseerror.CreateError(err, 400)
+	}
+
+	return nil
+}
+
+func videoExtValidator(fileName string) validation.RuleFunc {
+	return func(value interface{}) error {
+		var fileExtention string
+		matches := fileExtRegex.FindStringSubmatch(fileName)
+		if len(matches) > 1 {
+			fileExtention = matches[1]
+		} else {
+			return errBadFile
+		}
+
+		var isExtApproved bool
+		for _, v := range allowedVideoExtentions {
+			if v == fileExtention {
+				isExtApproved = true
+				break
+			}
+		}
+
+		if !isExtApproved {
+			return errBadFile
+		}
+
+		return nil
+	}
+}
+
+func posValidator(position string) validation.RuleFunc {
+	return func(value interface{}) error {
+		if position == "" {
+			return fmt.Errorf(errFieldIsNil)
+		}
+
+		posInt, err := strconv.Atoi(position)
+		if err != nil {
+			return errValueNotInt
+		}
+
+		if posInt < 1 {
+			return fmt.Errorf(errBadMinValue)
+		}
+
+		return nil
+	}
 }

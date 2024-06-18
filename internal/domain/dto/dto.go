@@ -168,6 +168,10 @@ type Lesson struct {
 	Position      uint   `gorm:"not null"`
 }
 
+func CreateNewLesson() *Lesson {
+	return &Lesson{}
+}
+
 type Module struct {
 	gorm.Model
 	CourseId    uint

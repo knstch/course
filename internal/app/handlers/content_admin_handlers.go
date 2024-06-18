@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -62,14 +63,26 @@ func (h *Handlers) CreateNewModule(ctx *gin.Context) {
 }
 
 func (h *Handlers) UploadNewLesson(ctx *gin.Context) {
-	file, header, err := ctx.Request.FormFile("lesson")
+	lesson, err := ctx.FormFile("lesson")
 	if err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(err, 400))
 		return
 	}
 
-	_, courseErr := h.contentManagementService.AddLesson(ctx, &file, header)
+	preview, previewHeader, err := ctx.Request.FormFile("preview")
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBadFormData, 400))
+		return
+	}
+
+	name := ctx.PostForm("name")
+	moduleName := ctx.PostForm("moduleName")
+	description := ctx.PostForm("description")
+	position := ctx.PostForm("position")
+
+	_, courseErr := h.contentManagementService.AddLesson(ctx, lesson, name, moduleName, description, position, previewHeader, &preview)
 	if courseErr != nil {
+		fmt.Println("ERR: ", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
 	}
 }
