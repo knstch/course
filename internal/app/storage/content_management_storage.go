@@ -226,7 +226,7 @@ func (storage *Storage) GetCourse(ctx context.Context, name, descr, cost, discou
 	query := tx.Model(&dto.Course{})
 
 	if name != "" {
-		query = query.Where("LOWER(name) LIKE %?%", fmt.Sprint("%"+strings.ToLower(name)+"%"))
+		query = query.Where("LOWER(name) LIKE ?", fmt.Sprint("%"+strings.ToLower(name)+"%"))
 	}
 
 	if descr != "" {
