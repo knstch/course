@@ -61,3 +61,23 @@ GRPC
 
 Build:
 docker compose -f docker-compose-local.yml up -d --build --remove-orphans
+
+Рабочие env
+````
+PORT=8080
+DSN=postgres://course:password@postgres:5432/course?sslmode=disable
+SECRET=ABOBA
+JWT_SECRET=ABOBA
+REDIS_DSN=redis://admin:password@redis:6379/0
+REDIS_PASSWORD=password
+REDIS_EMAIL_CHANNEL_NAME=emailKeys
+ADDRESS=localhost
+PG_PORT=1488
+CDN_GRPC_PORT=10000
+CDN_GRPC_HOST=cdn
+ADMIN_API_KEY=aboba
+CDN_API_KEY=aboba
+CDN_HOST=http://cdn:7070
+PG_USER=course
+PG_PASSWORD=password
+````
