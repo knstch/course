@@ -3,7 +3,9 @@ package storage
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
+	"strings"
 
 	courseError "github.com/knstch/course/internal/app/course_error"
 	"github.com/knstch/course/internal/domain/dto"
@@ -216,11 +218,30 @@ func (storage *Storage) CreateLesson(ctx context.Context, name, moduleName, desc
 	return &lesson.ID, nil
 }
 
-func (storage *Storage) GetCourse(ctx context.Context, name string) (*entity.CourseInfo, *courseError.CourseError) {
+func (storage *Storage) GetCourse(ctx context.Context, name, descr, cost, discount string) ([]entity.CourseInfo, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
 
-	course := dto.CreateNewCourse()
-	if err := tx.Where("name = ?", name).First(&course).Error; err != nil {
+	courses := dto.CreateNewCourses()
+
+	query := tx.Model(&dto.Course{})
+
+	if name != "" {
+		query = query.Where("LOWER(name) LIKE %?%", fmt.Sprint("%"+strings.ToLower(name)+"%"))
+	}
+
+	if descr != "" {
+		query = query.Where("LOWER(description) LIKE ?", fmt.Sprint("%"+strings.ToLower(descr)+"%"))
+	}
+
+	if cost != "" {
+		query = query.Where("LOWER(cost) LIKE ?", fmt.Sprint("%"+strings.ToLower(cost)+"%"))
+	}
+
+	if discount != "" {
+		query = query.Where("LOWER(discount) LIKE ?", fmt.Sprint("%"+strings.ToLower(discount)+"%"))
+	}
+
+	if err := query.Find(&courses).Error; err != nil {
 		tx.Rollback()
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, courseError.CreateError(errCourseNotExists, 13003)
@@ -228,13 +249,18 @@ func (storage *Storage) GetCourse(ctx context.Context, name string) (*entity.Cou
 		return nil, courseError.CreateError(err, 10002)
 	}
 
+	coursesIds := dto.ExtractIds(courses, func(item interface{}) uint {
+		return item.(dto.Course).ID
+	})
 	modules := dto.GetAllModules()
-	if err := tx.Where("course_id = ?", course.ID).Order("position").Find(&modules).Error; err != nil {
+	if err := tx.Where("course_id IN (?)", coursesIds).Order("position").Find(&modules).Error; err != nil {
 		tx.Rollback()
 		return nil, courseError.CreateError(err, 10002)
 	}
 
-	lessonIds := dto.ExtractAllIds(modules)
+	lessonIds := dto.ExtractIds(modules, func(item interface{}) uint {
+		return item.(dto.Module).ID
+	})
 	lessons := dto.GetAllLessons()
 	if err := tx.Where("module_id IN (?)", lessonIds).Order("position").Find(&lessons).Error; err != nil {
 		tx.Rollback()
@@ -260,7 +286,7 @@ func (storage *Storage) GetCourse(ctx context.Context, name string) (*entity.Cou
 		modulesInfo = append(modulesInfo, *moduleInfo)
 	}
 
-	courseInfo := entity.CreateCourseInfo(course, modulesInfo)
+	courseInfo := entity.CreateCoursesInfo(courses, modulesInfo)
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()

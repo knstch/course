@@ -1,6 +1,7 @@
 package dto
 
 import (
+	"reflect"
 	"strconv"
 
 	"gorm.io/gorm"
@@ -173,14 +174,45 @@ func GetAllLessons() []Lesson {
 	return lessons
 }
 
-func ExtractAllIds(modules []Module) []interface{} {
+func ExtractAllModulesIds(modules []Module) []interface{} {
 	ids := make([]interface{}, 0, len(modules))
-	checkIfIdsExist := make(map[uint]bool)
+	checkIfIdsExist := make(map[uint]interface{})
 	for _, v := range modules {
 		_, ok := checkIfIdsExist[v.ID]
 		if !ok {
 			checkIfIdsExist[v.ID] = true
 			ids = append(ids, v.ID)
+		}
+	}
+	return ids
+}
+
+func ExtractAllCoursesIds(courses []Course) []interface{} {
+	ids := make([]interface{}, 0, len(courses))
+	checkIfIdsExist := make(map[uint]interface{})
+	for _, v := range courses {
+		_, ok := checkIfIdsExist[v.ID]
+		if !ok {
+			checkIfIdsExist[v.ID] = true
+			ids = append(ids, v.ID)
+		}
+	}
+	return ids
+}
+
+func ExtractIds(items interface{}, idExtractor func(interface{}) uint) []interface{} {
+	ids := make([]interface{}, 0)
+	checkIfIdsExist := make(map[uint]interface{})
+
+	sliceValue := reflect.ValueOf(items)
+	for i := 0; i < sliceValue.Len(); i++ {
+		item := sliceValue.Index(i).Interface()
+		id := idExtractor(item)
+
+		_, ok := checkIfIdsExist[id]
+		if !ok {
+			checkIfIdsExist[id] = true
+			ids = append(ids, id)
 		}
 	}
 	return ids

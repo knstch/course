@@ -249,16 +249,32 @@ type CourseInfo struct {
 	Modules     []ModuleInfo `json:"modules"`
 }
 
-func CreateCourseInfo(course *dto.Course, modules []ModuleInfo) *CourseInfo {
+func CreateCourseInfo(course dto.Course, modules []ModuleInfo) *CourseInfo {
 	return &CourseInfo{
 		Id:          course.ID,
-		Cost:        course.Cost,
-		Discount:    *course.Discount,
 		Name:        course.Name,
 		Description: course.Description,
 		PreviewUrl:  course.PreviewImgUrl,
+		Cost:        course.Cost,
+		Discount:    *course.Discount,
 		Modules:     modules,
 	}
+}
+
+func CreateCoursesInfo(courses []dto.Course, modules []ModuleInfo) []CourseInfo {
+	coursesInfo := make([]CourseInfo, 0, len(courses))
+
+	for _, course := range courses {
+		modulesInfo := make([]ModuleInfo, 0)
+		for _, module := range modules {
+			if module.CourseId == course.ID {
+				modulesInfo = append(modulesInfo, module)
+			}
+		}
+		coursesInfo = append(coursesInfo, *CreateCourseInfo(course, modulesInfo))
+	}
+
+	return coursesInfo
 }
 
 type ModuleInfo struct {
@@ -267,6 +283,7 @@ type ModuleInfo struct {
 	Description string       `json:"description"`
 	Position    uint         `json:"position"`
 	Lessons     []LessonInfo `json:"lessons"`
+	CourseId    uint         `json:"-"`
 }
 
 func CreateModuleInfo(module *dto.Module, lessons []LessonInfo) *ModuleInfo {
@@ -276,6 +293,7 @@ func CreateModuleInfo(module *dto.Module, lessons []LessonInfo) *ModuleInfo {
 		Name:        module.Name,
 		Description: module.Description,
 		Lessons:     lessons,
+		CourseId:    module.CourseId,
 	}
 }
 
@@ -286,7 +304,7 @@ type LessonInfo struct {
 	PreviewUrl  string `json:"preview"`
 	VideoUrl    string `json:"video"`
 	Position    uint   `json:"position"`
-	ModuleId    uint
+	ModuleId    uint   `json:"-"`
 }
 
 func CreateLessonInfo(lesson *dto.Lesson) *LessonInfo {

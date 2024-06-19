@@ -33,7 +33,7 @@ type ContentManager interface {
 	CreateModule(ctx context.Context, name, description, courseName string, position uint) (*uint, *courseError.CourseError)
 	CheckIfLessonCanBeCreated(ctx context.Context, name, moduleName, position string) *courseError.CourseError
 	CreateLesson(ctx context.Context, name, moduleName, description, position, videoPath, previewPath string) (*uint, *courseError.CourseError)
-	GetCourse(ctx context.Context, name string) (*entity.CourseInfo, *courseError.CourseError)
+	GetCourse(ctx context.Context, name, descr, cost, discount string) ([]entity.CourseInfo, *courseError.CourseError)
 }
 
 func NewContentManagementServcie(manager ContentManager, config *config.Config, client *http.Client, grpcClient *grpc.GrpcClient) ContentManagementServcie {
@@ -247,12 +247,12 @@ func (manager ContentManagementServcie) sendVideo(ctx context.Context, file *mul
 	return &res.Path, nil
 }
 
-func (manager ContentManagementServcie) GetCourseInfo(ctx context.Context, name string) (*entity.CourseInfo, *courseError.CourseError) {
-	if err := validation.NewNameToValidate(name).Validate(ctx); err != nil {
+func (manager ContentManagementServcie) GetCourseInfo(ctx context.Context, name, descr, cost, discount string) ([]entity.CourseInfo, *courseError.CourseError) {
+	if err := validation.NewCourseQueryToValidate(name, descr, cost, discount).Validate(ctx); err != nil {
 		return nil, err
 	}
 
-	courseInfo, err := manager.contentManager.GetCourse(ctx, name)
+	courseInfo, err := manager.contentManager.GetCourse(ctx, name, descr, cost, discount)
 	if err != nil {
 		return nil, err
 	}

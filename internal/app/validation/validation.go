@@ -56,6 +56,8 @@ const (
 	errLessonDescriptionIsTooBig = "описание урока слишком длинное"
 	errLessonPositionIsBad       = "позиция модуля передана неверно"
 	errBadMinValue               = "значение не может быть меньше 1"
+
+	errBadParam = "параметр передан неправильно"
 )
 
 var (
@@ -745,21 +747,35 @@ func posValidator(position string) validation.RuleFunc {
 	}
 }
 
-type NameToValidate struct {
-	name string
+type CourseQueryToValidate struct {
+	name        string
+	description string
+	cost        string
+	discount    string
 }
 
-func NewNameToValidate(name string) *NameToValidate {
-	return &NameToValidate{
-		name: name,
+func NewCourseQueryToValidate(name, descr, cost, discount string) *CourseQueryToValidate {
+	return &CourseQueryToValidate{
+		name:        name,
+		description: descr,
+		cost:        cost,
+		discount:    discount,
 	}
 }
 
-func (name *NameToValidate) Validate(ctx context.Context) *courseerror.CourseError {
-	if err := validation.ValidateStructWithContext(ctx, name,
-		validation.Field(&name.name,
-			validation.Required.Error(errFieldIsNil),
-			validation.RuneLength(1, 200).Error("параметр имя передан неправильно"),
+func (query *CourseQueryToValidate) Validate(ctx context.Context) *courseerror.CourseError {
+	if err := validation.ValidateStructWithContext(ctx, query,
+		validation.Field(&query.name,
+			validation.RuneLength(1, 100).Error(errBadParam),
+		),
+		validation.Field(&query.description,
+			validation.RuneLength(1, 100).Error(errBadParam),
+		),
+		validation.Field(&query.cost,
+			validation.RuneLength(1, 100).Error(errBadParam),
+		),
+		validation.Field(&query.discount,
+			validation.RuneLength(1, 100).Error(errBadParam),
 		),
 	); err != nil {
 		return courseerror.CreateError(err, 400)
