@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -16,8 +17,13 @@ import (
 	"github.com/knstch/course/internal/app/grpc/grpcvideo"
 	cdnerrors "github.com/knstch/course/internal/app/services/cdn_errors"
 	"github.com/knstch/course/internal/app/validation"
+	"github.com/knstch/course/internal/domain/dto"
 	"github.com/knstch/course/internal/domain/entity"
 	"golang.org/x/sync/errgroup"
+)
+
+var (
+	ErrUnautharizedAccess = errors.New("доступ к курсу запрещен")
 )
 
 type ContentManagementServcie struct {
@@ -33,7 +39,8 @@ type ContentManager interface {
 	CreateModule(ctx context.Context, name, description, courseName string, position uint) (*uint, *courseError.CourseError)
 	CheckIfLessonCanBeCreated(ctx context.Context, name, moduleName, position string) *courseError.CourseError
 	CreateLesson(ctx context.Context, name, moduleName, description, position, videoPath, previewPath string) (*uint, *courseError.CourseError)
-	GetCourse(ctx context.Context, name, descr, cost, discount string) ([]entity.CourseInfo, *courseError.CourseError)
+	GetCourse(ctx context.Context, id, name, descr, cost, discount string, isPurchased bool) ([]entity.CourseInfo, *courseError.CourseError)
+	GetUserCourses(ctx context.Context) ([]dto.UsersCourse, *courseError.CourseError)
 }
 
 func NewContentManagementServcie(manager ContentManager, config *config.Config, client *http.Client, grpcClient *grpc.GrpcClient) ContentManagementServcie {
@@ -247,12 +254,34 @@ func (manager ContentManagementServcie) sendVideo(ctx context.Context, file *mul
 	return &res.Path, nil
 }
 
-func (manager ContentManagementServcie) GetCourseInfo(ctx context.Context, name, descr, cost, discount string) ([]entity.CourseInfo, *courseError.CourseError) {
+func (manager ContentManagementServcie) GetCourseInfo(ctx context.Context, id, name, descr, cost, discount string) ([]entity.CourseInfo, *courseError.CourseError) {
+	var isCoursePurchased bool
+	if id != "" {
+		if ctx.Value("userId") == nil {
+			return nil, courseError.CreateError(ErrUnautharizedAccess, 13004)
+		}
+
+		if err := validation.NewStringIdToValidate(id).Validate(ctx); err != nil {
+			return nil, err
+		}
+
+		courses, err := manager.contentManager.GetUserCourses(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, v := range courses {
+			if fmt.Sprint(v.ID) == id {
+				isCoursePurchased = true
+			}
+		}
+	}
+
 	if err := validation.NewCourseQueryToValidate(name, descr, cost, discount).Validate(ctx); err != nil {
 		return nil, err
 	}
 
-	courseInfo, err := manager.contentManager.GetCourse(ctx, name, descr, cost, discount)
+	courseInfo, err := manager.contentManager.GetCourse(ctx, id, name, descr, cost, discount, isCoursePurchased)
 	if err != nil {
 		return nil, err
 	}

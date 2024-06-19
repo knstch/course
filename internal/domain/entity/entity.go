@@ -298,23 +298,33 @@ func CreateModuleInfo(module *dto.Module, lessons []LessonInfo) *ModuleInfo {
 }
 
 type LessonInfo struct {
-	Id          uint   `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	PreviewUrl  string `json:"preview"`
-	VideoUrl    string `json:"video"`
-	Position    uint   `json:"position"`
-	ModuleId    uint   `json:"-"`
+	Id          uint    `json:"id"`
+	Name        string  `json:"name"`
+	Description *string `json:"description,omitempty"`
+	PreviewUrl  string  `json:"preview"`
+	VideoUrl    *string `json:"video,omitempty"`
+	Position    uint    `json:"position"`
+	ModuleId    uint    `json:"-"`
 }
 
-func CreateLessonInfo(lesson *dto.Lesson) *LessonInfo {
+func CreateLessonInfo(lesson *dto.Lesson, isPurchased bool) *LessonInfo {
+	if isPurchased {
+		return &LessonInfo{
+			Id:          lesson.ID,
+			Name:        lesson.Name,
+			Description: lesson.Description,
+			PreviewUrl:  lesson.PreviewImgUrl,
+			VideoUrl:    lesson.VideoUrl,
+			Position:    uint(lesson.Position),
+			ModuleId:    lesson.ModuleId,
+		}
+	}
+
 	return &LessonInfo{
-		Id:          lesson.ID,
-		Name:        lesson.Name,
-		Description: lesson.Description,
-		PreviewUrl:  lesson.PreviewImgUrl,
-		VideoUrl:    lesson.VideoUrl,
-		Position:    uint(lesson.Position),
-		ModuleId:    lesson.ModuleId,
+		Id:         lesson.ID,
+		Name:       lesson.Name,
+		PreviewUrl: lesson.PreviewImgUrl,
+		Position:   uint(lesson.Position),
+		ModuleId:   lesson.ModuleId,
 	}
 }

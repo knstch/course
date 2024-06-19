@@ -218,27 +218,31 @@ func (storage *Storage) CreateLesson(ctx context.Context, name, moduleName, desc
 	return &lesson.ID, nil
 }
 
-func (storage *Storage) GetCourse(ctx context.Context, name, descr, cost, discount string) ([]entity.CourseInfo, *courseError.CourseError) {
+func (storage *Storage) GetCourse(ctx context.Context, id, name, descr, cost, discount string, isPurchased bool) ([]entity.CourseInfo, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	courses := dto.CreateNewCourses()
 
 	query := tx.Model(&dto.Course{})
 
-	if name != "" {
-		query = query.Where("LOWER(name) LIKE ?", fmt.Sprint("%"+strings.ToLower(name)+"%"))
-	}
+	if id != "" {
+		query = query.Where("id = ?", id)
+	} else {
+		if name != "" {
+			query = query.Where("LOWER(name) LIKE ?", fmt.Sprint("%"+strings.ToLower(name)+"%"))
+		}
 
-	if descr != "" {
-		query = query.Where("LOWER(description) LIKE ?", fmt.Sprint("%"+strings.ToLower(descr)+"%"))
-	}
+		if descr != "" {
+			query = query.Where("LOWER(description) LIKE ?", fmt.Sprint("%"+strings.ToLower(descr)+"%"))
+		}
 
-	if cost != "" {
-		query = query.Where("LOWER(cost) LIKE ?", fmt.Sprint("%"+strings.ToLower(cost)+"%"))
-	}
+		if cost != "" {
+			query = query.Where("cost = ?", cost)
+		}
 
-	if discount != "" {
-		query = query.Where("LOWER(discount) LIKE ?", fmt.Sprint("%"+strings.ToLower(discount)+"%"))
+		if discount != "" {
+			query = query.Where("discount = ?", discount)
+		}
 	}
 
 	if err := query.Find(&courses).Error; err != nil {
@@ -269,7 +273,7 @@ func (storage *Storage) GetCourse(ctx context.Context, name, descr, cost, discou
 
 	lessonsInfo := make([]entity.LessonInfo, 0, len(lessons))
 	for _, v := range lessons {
-		lessonInfo := entity.CreateLessonInfo(&v)
+		lessonInfo := entity.CreateLessonInfo(&v, isPurchased)
 		lessonsInfo = append(lessonsInfo, *lessonInfo)
 	}
 

@@ -111,6 +111,10 @@ func NewUsersCourse() *UsersCourse {
 	return &UsersCourse{}
 }
 
+func NewUserCourses() []UsersCourse {
+	return []UsersCourse{}
+}
+
 type Course struct {
 	gorm.Model
 	Name          string `gorm:"not null"`
@@ -160,13 +164,13 @@ func CreateNewCourses() []Course {
 
 type Lesson struct {
 	gorm.Model
-	ModuleId      uint   `gorm:"not null"`
-	Module        Module `gorm:"not null"`
-	Name          string `gorm:"not null"`
-	Description   string `gorm:"not null"`
-	PreviewImgUrl string `gorm:"not null"`
-	VideoUrl      string `gorm:"not null"`
-	Position      int    `gorm:"not null"`
+	ModuleId      uint    `gorm:"not null"`
+	Module        Module  `gorm:"not null"`
+	Name          string  `gorm:"not null"`
+	Description   *string `gorm:"not null"`
+	PreviewImgUrl string  `gorm:"not null"`
+	VideoUrl      *string `gorm:"not null"`
+	Position      int     `gorm:"not null"`
 }
 
 func GetAllLessons() []Lesson {
@@ -232,8 +236,8 @@ func (lesson *Lesson) AddName(name string) *Lesson {
 	return lesson
 }
 
-func (lesson *Lesson) AddDescription(descr string) *Lesson {
-	lesson.Description = descr
+func (lesson *Lesson) AddDescription(desc string) *Lesson {
+	lesson.Description = &desc
 	return lesson
 }
 
@@ -243,7 +247,7 @@ func (lesson *Lesson) AddPreviewImgUrl(url string) *Lesson {
 }
 
 func (lesson *Lesson) AddVideoUrl(url string) *Lesson {
-	lesson.VideoUrl = url
+	lesson.VideoUrl = &url
 	return lesson
 }
 

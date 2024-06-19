@@ -153,6 +153,7 @@ func (storage *Storage) SetPhoto(ctx context.Context, path string) *courseError.
 
 func (storage *Storage) RetreiveUserData(ctx context.Context) (*entity.UserData, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
+
 	userData := entity.CreateNewUserData()
 
 	userId := ctx.Value("userId").(uint)
@@ -197,4 +198,23 @@ func (storage *Storage) RetreiveUserData(ctx context.Context) (*entity.UserData,
 	}
 
 	return userData, nil
+}
+
+func (storage *Storage) GetUserCourses(ctx context.Context) ([]dto.UsersCourse, *courseError.CourseError) {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	userId := ctx.Value("userId").(uint)
+
+	courses := dto.NewUserCourses()
+
+	if err := tx.Where("user_id = ?", userId).Find(&courses).Error; err != nil {
+		return nil, courseError.CreateError(err, 10002)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 10010)
+	}
+
+	return courses, nil
 }
