@@ -87,8 +87,9 @@ func NewCdnResponse() *CdnResponse {
 }
 
 type UserCourses struct {
-	Id   uint   `json:"id"`
-	Name string `json:"name"`
+	Id         uint   `json:"id"`
+	Name       string `json:"name"`
+	PreviewUrl string `json:"previewUrl"`
 }
 
 type UserData struct {
@@ -141,8 +142,9 @@ func (user *UserData) AddCourses(courses []dto.Course) *UserData {
 	user.Courses = make([]UserCourses, 0, len(courses))
 	for _, v := range courses {
 		course := UserCourses{
-			Id:   v.ID,
-			Name: v.Name,
+			Id:         v.ID,
+			Name:       v.Name,
+			PreviewUrl: v.PreviewImgUrl,
 		}
 		user.Courses = append(user.Courses, course)
 	}
