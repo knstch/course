@@ -7,6 +7,7 @@ import (
 
 	courseError "github.com/knstch/course/internal/app/course_error"
 	"github.com/knstch/course/internal/domain/dto"
+	"github.com/knstch/course/internal/domain/entity"
 	"gorm.io/gorm"
 )
 
@@ -18,13 +19,31 @@ var (
 
 	errCourseNotExists = errors.New("курса с таким названием не существует")
 	errModuleNotExists = errors.New("модуль с таким названием не существует")
+
+	errCourseAlreadyExists = errors.New("курс с таким названием уже существует")
 )
 
 func (storage *Storage) CreateCourse(ctx context.Context, name, description, cost, discount, path string) (*uint, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
 
-	course := dto.CreateNewCourse().
-		AddName(name).
+	var isCourseNotExists bool
+	course := dto.CreateNewCourse()
+
+	if err := tx.Where("name = ?", name).First(&course).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			isCourseNotExists = true
+		} else {
+			tx.Rollback()
+			return nil, courseError.CreateError(err, 10002)
+		}
+	}
+
+	if !isCourseNotExists {
+		tx.Rollback()
+		return nil, courseError.CreateError(errCourseAlreadyExists, 13001)
+	}
+
+	course.AddName(name).
 		AddDescription(description).
 		AddCost(cost).
 		AddDiscount(discount).
@@ -195,4 +214,58 @@ func (storage *Storage) CreateLesson(ctx context.Context, name, moduleName, desc
 	}
 
 	return &lesson.ID, nil
+}
+
+func (storage *Storage) GetCourse(ctx context.Context, name string) (*entity.CourseInfo, *courseError.CourseError) {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	course := dto.CreateNewCourse()
+	if err := tx.Where("name = ?", name).First(&course).Error; err != nil {
+		tx.Rollback()
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, courseError.CreateError(errCourseNotExists, 13003)
+		}
+		return nil, courseError.CreateError(err, 10002)
+	}
+
+	modules := dto.GetAllModules()
+	if err := tx.Where("course_id = ?", course.ID).Order("position").Find(&modules).Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 10002)
+	}
+
+	lessonIds := dto.ExtractAllIds(modules)
+	lessons := dto.GetAllLessons()
+	if err := tx.Where("module_id IN (?)", lessonIds).Order("position").Find(&lessons).Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 10002)
+	}
+
+	lessonsInfo := make([]entity.LessonInfo, 0, len(lessons))
+	for _, v := range lessons {
+		lessonInfo := entity.CreateLessonInfo(&v)
+		lessonsInfo = append(lessonsInfo, *lessonInfo)
+	}
+
+	modulesInfo := make([]entity.ModuleInfo, 0, len(modules))
+	for _, module := range modules {
+		retreivedLessons := make([]entity.LessonInfo, 0)
+		for _, lesson := range lessonsInfo {
+			if lesson.ModuleId == module.ID {
+				retreivedLessons = append(retreivedLessons, lesson)
+				continue
+			}
+		}
+		moduleInfo := entity.CreateModuleInfo(&module, retreivedLessons)
+		modulesInfo = append(modulesInfo, *moduleInfo)
+	}
+
+	courseInfo := entity.CreateCourseInfo(course, modulesInfo)
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 10010)
+	}
+
+	return courseInfo, nil
 }

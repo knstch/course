@@ -168,6 +168,24 @@ type Lesson struct {
 	Position      int    `gorm:"not null"`
 }
 
+func GetAllLessons() []Lesson {
+	var lessons []Lesson
+	return lessons
+}
+
+func ExtractAllIds(modules []Module) []interface{} {
+	ids := make([]interface{}, 0, len(modules))
+	checkIfIdsExist := make(map[uint]bool)
+	for _, v := range modules {
+		_, ok := checkIfIdsExist[v.ID]
+		if !ok {
+			checkIfIdsExist[v.ID] = true
+			ids = append(ids, v.ID)
+		}
+	}
+	return ids
+}
+
 func CreateNewLesson() *Lesson {
 	return &Lesson{}
 }
@@ -209,6 +227,11 @@ type Module struct {
 	Name        string
 	Description string
 	Position    uint
+}
+
+func GetAllModules() []Module {
+	var modules []Module
+	return modules
 }
 
 func CreateNewModule() *Module {

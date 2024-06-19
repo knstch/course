@@ -744,3 +744,26 @@ func posValidator(position string) validation.RuleFunc {
 		return nil
 	}
 }
+
+type NameToValidate struct {
+	name string
+}
+
+func NewNameToValidate(name string) *NameToValidate {
+	return &NameToValidate{
+		name: name,
+	}
+}
+
+func (name *NameToValidate) Validate(ctx context.Context) *courseerror.CourseError {
+	if err := validation.ValidateStructWithContext(ctx, name,
+		validation.Field(&name.name,
+			validation.Required.Error(errFieldIsNil),
+			validation.RuneLength(1, 200).Error("параметр имя передан неправильно"),
+		),
+	); err != nil {
+		return courseerror.CreateError(err, 400)
+	}
+
+	return nil
+}

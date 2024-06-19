@@ -238,3 +238,65 @@ type Module struct {
 func NewModule() *Module {
 	return &Module{}
 }
+
+type CourseInfo struct {
+	Id          uint         `json:"id"`
+	Name        string       `json:"name"`
+	Description string       `json:"description"`
+	PreviewUrl  string       `json:"preview"`
+	Cost        uint         `json:"cost"`
+	Discount    uint         `json:"discount"`
+	Modules     []ModuleInfo `json:"modules"`
+}
+
+func CreateCourseInfo(course *dto.Course, modules []ModuleInfo) *CourseInfo {
+	return &CourseInfo{
+		Id:          course.ID,
+		Cost:        course.Cost,
+		Discount:    *course.Discount,
+		Name:        course.Name,
+		Description: course.Description,
+		PreviewUrl:  course.PreviewImgUrl,
+		Modules:     modules,
+	}
+}
+
+type ModuleInfo struct {
+	Id          uint         `json:"id"`
+	Name        string       `json:"name"`
+	Description string       `json:"description"`
+	Position    uint         `json:"position"`
+	Lessons     []LessonInfo `json:"lessons"`
+}
+
+func CreateModuleInfo(module *dto.Module, lessons []LessonInfo) *ModuleInfo {
+	return &ModuleInfo{
+		Id:          module.ID,
+		Position:    module.Position,
+		Name:        module.Name,
+		Description: module.Description,
+		Lessons:     lessons,
+	}
+}
+
+type LessonInfo struct {
+	Id          uint   `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	PreviewUrl  string `json:"preview"`
+	VideoUrl    string `json:"video"`
+	Position    uint   `json:"position"`
+	ModuleId    uint
+}
+
+func CreateLessonInfo(lesson *dto.Lesson) *LessonInfo {
+	return &LessonInfo{
+		Id:          lesson.ID,
+		Name:        lesson.Name,
+		Description: lesson.Description,
+		PreviewUrl:  lesson.PreviewImgUrl,
+		VideoUrl:    lesson.VideoUrl,
+		Position:    uint(lesson.Position),
+		ModuleId:    lesson.ModuleId,
+	}
+}
