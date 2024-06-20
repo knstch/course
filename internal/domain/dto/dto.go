@@ -99,37 +99,36 @@ func (accessToken *AccessToken) SetStatusAvailable() *AccessToken {
 	return accessToken
 }
 
-type UsersCourse struct {
+type Order struct {
 	gorm.Model
 	UserId   uint
 	User     User
 	CourseId uint
 	Course   Course
 	Order    string
-	Paid     bool `gorm:"default:false"`
 }
 
-func NewUsersCourse() *UsersCourse {
-	return &UsersCourse{}
+func NewOrder() *Order {
+	return &Order{}
 }
 
-func (course *UsersCourse) AddUserId(id uint) *UsersCourse {
-	course.UserId = id
-	return course
+func (order *Order) AddUserId(id uint) *Order {
+	order.UserId = id
+	return order
 }
 
-func (course *UsersCourse) AddCourseId(id uint) *UsersCourse {
-	course.CourseId = id
-	return course
+func (order *Order) AddCourseId(id uint) *Order {
+	order.CourseId = id
+	return order
 }
 
-func (course *UsersCourse) AddOrder(order string) *UsersCourse {
-	course.Order = order
-	return course
+func (order *Order) AddOrder(orderHash string) *Order {
+	order.Order = orderHash
+	return order
 }
 
-func NewUserCourses() []UsersCourse {
-	return []UsersCourse{}
+func NewUserCourses() []Order {
+	return []Order{}
 }
 
 type Course struct {
@@ -314,7 +313,115 @@ func (m *Module) AddPosition(pos uint) *Module {
 type Billing struct {
 	gorm.Model
 	PaymentMethod string
-	AmountPaid    float64
-	UsersCourseId uint
-	UsersCourse   UsersCourse
+	Price         float64
+	OrderId       uint
+	Order         Order
+	InvoiceId     uint
+	Paid          bool `gorm:"default:false"`
+}
+
+func NewPayment() *Billing {
+	return &Billing{}
+}
+
+func (billing *Billing) AddRusCard() *Billing {
+	billing.PaymentMethod = "ru-card"
+	return billing
+}
+
+func (billing *Billing) AddForeignCard() *Billing {
+	billing.PaymentMethod = "foreign-card"
+	return billing
+}
+
+func (billing *Billing) AddOrderId(id uint) *Billing {
+	billing.OrderId = id
+	return billing
+}
+
+func (billing *Billing) AddPrice(price float64) *Billing {
+	billing.Price = price
+	return billing
+}
+
+func (billing *Billing) SetPaidStatus() *Billing {
+	billing.Paid = true
+	return billing
+}
+
+type OrderEssentials struct {
+	OrderId        uint
+	Order          string
+	OrderDate      uint
+	Amount         uint
+	Currency       string
+	Purpose        string
+	Language       string
+	ExpirationDate uint
+	TaxSystem      uint
+	Purchaser      Purchaser
+}
+
+type Purchaser struct {
+	Email   string
+	Contact string
+}
+
+func NewOrderEssentials() *OrderEssentials {
+	return &OrderEssentials{}
+}
+
+func (order *OrderEssentials) AddOrderId(id uint) *OrderEssentials {
+	order.OrderId = id
+	return order
+}
+
+func (order *OrderEssentials) AddOrder(orderHash string) *OrderEssentials {
+	order.Order = orderHash
+	return order
+}
+
+func (order *OrderEssentials) AddOrderDate(date uint) *OrderEssentials {
+	order.OrderDate = date
+	return order
+}
+
+func (order *OrderEssentials) AddAmountToPay(price uint) *OrderEssentials {
+	order.Amount = price
+	return order
+}
+
+func (order *OrderEssentials) AddCurrencyRub() *OrderEssentials {
+	order.Currency = "RUB"
+	return order
+}
+
+func (order *OrderEssentials) AddPurpose(purpose string) *OrderEssentials {
+	order.Purpose = purpose
+	return order
+}
+
+func (order *OrderEssentials) AddRusLang() *OrderEssentials {
+	order.Language = "ru-RU"
+	return order
+}
+
+func (order *OrderEssentials) AddExpDate(date uint) *OrderEssentials {
+	order.ExpirationDate = date
+	return order
+}
+
+func (order *OrderEssentials) AddDefaultTaxSystem() *OrderEssentials {
+	order.TaxSystem = 0
+	return order
+}
+
+func (order *OrderEssentials) AddEmail(email string) *OrderEssentials {
+	order.Purchaser.Email = email
+	return order
+}
+
+func (order *OrderEssentials) AddContactEmail() *OrderEssentials {
+	order.Purchaser.Contact = "email"
+	return order
 }

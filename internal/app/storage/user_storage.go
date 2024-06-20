@@ -204,7 +204,7 @@ func (storage *Storage) RetreiveUserData(ctx context.Context) (*entity.UserData,
 	return userData, nil
 }
 
-func (storage *Storage) GetUserCourses(ctx context.Context) ([]dto.UsersCourse, *courseError.CourseError) {
+func (storage *Storage) GetUserCourses(ctx context.Context) ([]dto.Order, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	userId := ctx.Value("userId").(uint)
@@ -223,7 +223,7 @@ func (storage *Storage) GetUserCourses(ctx context.Context) ([]dto.UsersCourse, 
 	return courses, nil
 }
 
-func (storage *Storage) CreateOrder(ctx context.Context, courseId uint) *courseError.CourseError {
+func (storage *Storage) CreateOrder(ctx context.Context, courseId, price uint, ruCard bool) (*dto.OrderEssentials, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	userId := ctx.Value("userId").(uint)
@@ -232,20 +232,60 @@ func (storage *Storage) CreateOrder(ctx context.Context, courseId uint) *courseE
 
 	orderHash.Write([]byte(fmt.Sprintf("%d%d%d", userId, courseId, time.Now().Unix())))
 
-	order := hex.EncodeToString(orderHash.Sum(nil))
+	orderNum := hex.EncodeToString(orderHash.Sum(nil))
 
-	userCourse := dto.NewUsersCourse().AddCourseId(courseId).AddUserId(userId).AddOrder(order)
+	order := dto.NewOrder().AddCourseId(courseId).AddUserId(userId).AddOrder(orderNum)
 
-	if err := tx.Create(&userCourse).Error; err != nil {
-		return courseError.CreateError(err, 10001)
+	if err := tx.Create(&order).Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 10001)
+	}
+
+	invoice := dto.NewPayment().AddOrderId(order.ID).AddRusCard().AddPrice(float64(price))
+	if err := tx.Create(&invoice).Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 10001)
+	}
+
+	course := dto.CreateNewCourse()
+	if err := tx.Where("id = ?", courseId).First(&course).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, courseError.CreateError(errCourseNotExists, 13003)
+		}
+		return nil, courseError.CreateError(err, 10002)
+	}
+
+	credentials := dto.CreateNewCredentials()
+	if err := tx.Joins("JOIN users ON users.id = ?", userId).
+		Where("credentials.id = users.credentials_id").First(&credentials).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, courseError.CreateError(errUserNotFound, 11002)
+		}
+		return nil, courseError.CreateError(err, 10002)
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return courseError.CreateError(err, 10010)
+		return nil, courseError.CreateError(err, 10010)
 	}
 
-	return nil
+	placedOrder := dto.NewOrderEssentials().
+		AddOrderId(order.ID).
+		AddOrder(orderNum).
+		AddOrderDate(uint(order.CreatedAt.Unix())).
+		AddExpDate(uint(order.CreatedAt.Add(15 * time.Minute).Unix())).
+		AddAmountToPay(price).
+		AddRusLang().
+		AddPurpose(fmt.Sprintf("Покупка: %v", course.Name)).
+		AddDefaultTaxSystem().
+		AddEmail(credentials.Email).
+		AddContactEmail()
+
+	if ruCard {
+		placedOrder.AddCurrencyRub()
+	}
+
+	return placedOrder, nil
 }
 
 func (storage *Storage) GetCourseCost(ctx context.Context, courseId uint) (*uint, *courseError.CourseError) {
@@ -267,4 +307,18 @@ func (storage *Storage) GetCourseCost(ctx context.Context, courseId uint) (*uint
 	return &finalCost, nil
 }
 
-func (storage *Storage) ConfirmPayment(ctx context.Context)
+// func (storage *Storage) ConfirmPayment(ctx context.Context)
+func (storage *Storage) SetInvoiceId(ctx context.Context, invoiceId, orderId uint) *courseError.CourseError {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	if err := tx.Where("order_id = ?", orderId).Update("invoice_id", invoiceId).Error; err != nil {
+		return courseError.CreateError(err, 10003)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10010)
+	}
+
+	return nil
+}

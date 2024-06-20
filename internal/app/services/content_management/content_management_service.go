@@ -41,7 +41,7 @@ type ContentManager interface {
 	CheckIfLessonCanBeCreated(ctx context.Context, name, moduleName, position, courseName string) *courseError.CourseError
 	CreateLesson(ctx context.Context, name, moduleName, description, position, videoPath, previewPath string) (*uint, *courseError.CourseError)
 	GetCourse(ctx context.Context, id, name, descr, cost, discount string, page, offset int, isPurchased bool) ([]entity.CourseInfo, *courseError.CourseError)
-	GetUserCourses(ctx context.Context) ([]dto.UsersCourse, *courseError.CourseError)
+	GetUserCourses(ctx context.Context) ([]dto.Order, *courseError.CourseError)
 	GetModules(ctx context.Context, name, description, courseName string, limit, offset int) ([]entity.ModuleInfo, *courseError.CourseError)
 	GetLessons(ctx context.Context, name, description, moduleName, courseName string, limit, offset int) ([]entity.LessonInfo, *courseError.CourseError)
 }

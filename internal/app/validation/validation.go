@@ -908,3 +908,30 @@ func (lesson *LessonQueryToValidate) Validate(ctx context.Context) *courseerror.
 
 	return nil
 }
+
+type PaymentCredentialsToValidate struct {
+	courseId uint
+	ruCard   bool
+}
+
+func NewPaymentCredentialsToValidate(courseId uint, ruCard bool) *PaymentCredentialsToValidate {
+	return &PaymentCredentialsToValidate{
+		courseId: courseId,
+		ruCard:   ruCard,
+	}
+}
+
+func (credentials *PaymentCredentialsToValidate) Validate(ctx context.Context) *courseerror.CourseError {
+	if err := validation.ValidateStructWithContext(ctx, credentials,
+		validation.Field(&credentials.courseId,
+			validation.Required.Error(errFieldIsNil),
+		),
+		validation.Field(&credentials.ruCard,
+			validation.Required.Error(errFieldIsNil),
+		),
+	); err != nil {
+		return courseerror.CreateError(err, 400)
+	}
+
+	return nil
+}

@@ -1,6 +1,10 @@
 package entity
 
-import "github.com/knstch/course/internal/domain/dto"
+import (
+	"time"
+
+	"github.com/knstch/course/internal/domain/dto"
+)
 
 type Credentials struct {
 	Email    string `json:"email"`
@@ -344,4 +348,66 @@ func CreateLessonInfo(lesson *dto.Lesson, isPurchased bool) *LessonInfo {
 type LessonsInfoWithPagination struct {
 	Pagination Pagination   `json:"pagination"`
 	LessonInfo []LessonInfo `json:"lessonsInfo"`
+}
+
+type Invoice struct {
+	Purchaser struct {
+		Email   string `json:"email"`
+		Contact string `json:"contact"`
+	} `json:"purchaser"`
+	Order Order `json:"order"`
+}
+
+type Order struct {
+	OrderID        string    `json:"order_id"`
+	OrderNumber    int       `json:"order_number"`
+	OrderDate      time.Time `json:"order_date"`
+	ServiceID      int       `json:"service_id"`
+	Amount         int       `json:"amount"`
+	Currency       string    `json:"currency"`
+	Purpose        string    `json:"purpose"`
+	Language       string    `json:"language"`
+	ExpirationDate time.Time `json:"expiration_date"`
+	TaxSystem      int       `json:"tax_system"`
+}
+
+type UserID struct {
+	PartnerClientID string `json:"partner_client_id"`
+}
+
+type InvoiceData struct {
+	UserID  UserID  `json:"user_id"`
+	PType   int     `json:"ptype"`
+	Invoice Invoice `json:"invoice"`
+}
+
+func CreateOrder(essentials dto.OrderEssentials, serviceID int, partnerClientID string, ptype int) InvoiceData {
+	order := Order{
+		OrderID:        essentials.Order,
+		OrderNumber:    int(essentials.OrderId),
+		OrderDate:      time.Unix(int64(essentials.OrderDate), 0).UTC(),
+		ServiceID:      serviceID,
+		Amount:         int(essentials.Amount),
+		Currency:       essentials.Currency,
+		Purpose:        essentials.Purpose,
+		Language:       essentials.Language,
+		ExpirationDate: time.Unix(int64(essentials.ExpirationDate), 0).UTC(),
+		TaxSystem:      int(essentials.TaxSystem),
+	}
+
+	invoice := Invoice{
+		Order: order,
+	}
+	invoice.Purchaser.Email = essentials.Purchaser.Email
+	invoice.Purchaser.Contact = essentials.Purchaser.Contact
+
+	data := InvoiceData{
+		UserID: UserID{
+			PartnerClientID: partnerClientID,
+		},
+		PType:   ptype,
+		Invoice: invoice,
+	}
+
+	return data
 }

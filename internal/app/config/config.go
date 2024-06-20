@@ -23,6 +23,8 @@ type Config struct {
 	CdnAdminApiKey        string `envconfig:"ADMIN_API_KEY"`
 	CdnGrpcPort           string `envconfig:"CDN_GRPC_PORT"`
 	CdnGrpcHost           string `envconfig:"CDN_GRPC_HOST"`
+	SberApiHost           string `envconfig:"SBER_API_HOST"`
+	SberAccessToken       string `envconfig:"SBER_ACCESS_TOKEN"`
 }
 
 var (

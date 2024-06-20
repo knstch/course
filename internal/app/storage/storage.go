@@ -40,7 +40,7 @@ func (storage *Storage) Automigrate() error {
 		&dto.Course{},
 		&dto.AccessToken{},
 		&dto.Photo{},
-		&dto.UsersCourse{},
+		&dto.Order{},
 		&dto.Course{},
 		&dto.Lesson{},
 		&dto.Billing{},
