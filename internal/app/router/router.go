@@ -43,6 +43,7 @@ func RequestsRouter(h *handlers.Handlers) *gin.Engine {
 	content := v1.Group("content")
 	content.GET("/courses", h.RetreiveCourses)
 	content.GET("/modules", h.RetreiveModules)
+	content.GET("/lessons", h.RetreiveLessons)
 
 	return router
 }

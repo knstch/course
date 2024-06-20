@@ -55,3 +55,23 @@ func (h Handlers) RetreiveModules(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, modules)
 }
+
+func (h *Handlers) RetreiveLessons(ctx *gin.Context) {
+	lessons, err := h.contentManagementService.GetLessonsInfo(ctx,
+		ctx.Query("name"),
+		ctx.Query("description"),
+		ctx.Query("moduleName"),
+		ctx.Query("courseName"),
+		ctx.Query("page"),
+		ctx.Query("limit"))
+	if err != nil {
+		if err.Code == 400 {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			return
+		}
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, lessons)
+}

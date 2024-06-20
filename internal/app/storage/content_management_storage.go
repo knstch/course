@@ -376,3 +376,47 @@ func (storage *Storage) GetModules(ctx context.Context,
 
 	return modulesInfo, nil
 }
+
+func (storage *Storage) GetLessons(ctx context.Context,
+	name, description, moduleName, courseName string,
+	limit, offset int) ([]entity.LessonInfo, *courseError.CourseError) {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	query := tx.Model(&dto.Lesson{})
+
+	if name != "" {
+		query = query.Where("LOWER(name) LIKE ?", fmt.Sprint("%"+strings.ToLower(name)+"%"))
+	}
+
+	if description != "" {
+		query = query.Where("LOWER(description) LIKE ?", fmt.Sprint("%"+strings.ToLower(description)+"%"))
+	}
+
+	if courseName != "" {
+		query = query.Where("module_id IN (SELECT id FROM modules WHERE course_id IN (SELECT id FROM courses WHERE LOWER(courses.name) LIKE ?))",
+			fmt.Sprint("%"+strings.ToLower(courseName)+"%"))
+	}
+
+	if moduleName != "" {
+		query = query.Where("module_id IN (SELECT id FROM modules WHERE LOWER(modules.name) LIKE ?)",
+			fmt.Sprint("%"+strings.ToLower(moduleName)+"%"))
+	}
+
+	lessons := dto.GetAllLessons()
+	if err := query.Offset(offset).Limit(limit).Find(&lessons).Error; err != nil {
+		return nil, courseError.CreateError(err, 10002)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 10010)
+	}
+
+	lessonsInfo := make([]entity.LessonInfo, 0, len(lessons))
+	for _, v := range lessons {
+		lessonInfo := entity.CreateLessonInfo(&v, true)
+		lessonsInfo = append(lessonsInfo, *lessonInfo)
+	}
+
+	return lessonsInfo, nil
+}

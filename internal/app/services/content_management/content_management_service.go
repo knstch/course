@@ -43,6 +43,7 @@ type ContentManager interface {
 	GetCourse(ctx context.Context, id, name, descr, cost, discount string, page, offset int, isPurchased bool) ([]entity.CourseInfo, *courseError.CourseError)
 	GetUserCourses(ctx context.Context) ([]dto.UsersCourse, *courseError.CourseError)
 	GetModules(ctx context.Context, name, description, courseName string, limit, offset int) ([]entity.ModuleInfo, *courseError.CourseError)
+	GetLessons(ctx context.Context, name, description, moduleName, courseName string, limit, offset int) ([]entity.LessonInfo, *courseError.CourseError)
 }
 
 func NewContentManagementServcie(manager ContentManager, config *config.Config, client *http.Client, grpcClient *grpc.GrpcClient) ContentManagementServcie {
@@ -329,5 +330,33 @@ func (manager ContentManagementServcie) GetModulesInfo(ctx context.Context,
 			PagesCount: len(modules) / limitInt,
 		},
 		ModuleInfo: modules,
+	}, nil
+}
+
+func (manager ContentManagementServcie) GetLessonsInfo(ctx context.Context,
+	name, description, moduleName, courseName, page, limit string) (
+	*entity.LessonsInfoWithPagination, *courseError.CourseError) {
+	if err := validation.NewLessonsQueryToValidate(name, description, courseName, moduleName, page, limit).Validate(ctx); err != nil {
+		return nil, err
+	}
+
+	pageInt, _ := strconv.Atoi(page)
+	limitInt, _ := strconv.Atoi(limit)
+
+	offset := pageInt * limitInt
+
+	lessons, err := manager.contentManager.GetLessons(ctx, name, description, moduleName, courseName, limitInt, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	return &entity.LessonsInfoWithPagination{
+		Pagination: entity.Pagination{
+			Page:       pageInt,
+			Limit:      limitInt,
+			TotalCount: len(lessons),
+			PagesCount: len(lessons) / limitInt,
+		},
+		LessonInfo: lessons,
 	}, nil
 }

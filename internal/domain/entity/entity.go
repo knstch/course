@@ -294,8 +294,8 @@ type ModuleInfo struct {
 }
 
 type ModuleInfoWithPagination struct {
-	Pagination Pagination
-	ModuleInfo []ModuleInfo
+	Pagination Pagination   `json:"pagination"`
+	ModuleInfo []ModuleInfo `json:"modulesInfo"`
 }
 
 func CreateModuleInfo(module *dto.Module, lessons []LessonInfo) *ModuleInfo {
@@ -339,4 +339,9 @@ func CreateLessonInfo(lesson *dto.Lesson, isPurchased bool) *LessonInfo {
 		Position:   uint(lesson.Position),
 		ModuleId:   lesson.ModuleId,
 	}
+}
+
+type LessonsInfoWithPagination struct {
+	Pagination Pagination   `json:"pagination"`
+	LessonInfo []LessonInfo `json:"lessonsInfo"`
 }
