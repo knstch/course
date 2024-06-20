@@ -45,5 +45,11 @@ func RequestsRouter(h *handlers.Handlers) *gin.Engine {
 	content.GET("/modules", h.RetreiveModules)
 	content.GET("/lessons", h.RetreiveLessons)
 
+	billing := v1.Group("billing")
+	billing.Use(h.WithCookieAuth())
+	billing.POST("/buyCourse", h.BuyCourse)
+	billing.GET("/successPayment/:userData", h.CompletePurchase)
+	billing.GET("/failPayment/:userData", h.DeclineOrder)
+
 	return router
 }

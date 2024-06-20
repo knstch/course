@@ -8,6 +8,7 @@ import (
 	"github.com/knstch/course/internal/app/config"
 	"github.com/knstch/course/internal/app/grpc"
 	"github.com/knstch/course/internal/app/services/auth"
+	"github.com/knstch/course/internal/app/services/billing"
 	contentmanagement "github.com/knstch/course/internal/app/services/content_management"
 	"github.com/knstch/course/internal/app/services/email"
 	"github.com/knstch/course/internal/app/services/user"
@@ -21,6 +22,7 @@ type Handlers struct {
 	emailService             *email.EmailService
 	userManagementService    usermanagement.UserManagementService
 	contentManagementService contentmanagement.ContentManagementServcie
+	sberBillingService       billing.SberBillingService
 	address                  string
 }
 
@@ -31,6 +33,7 @@ func NewHandlers(storage *storage.Storage, config *config.Config, redisClient *r
 		userService:              user.NewUserService(storage, emailService, redisClient, client, config.CdnApiKey, config.CdnHost),
 		userManagementService:    usermanagement.NewUserManagementService(storage),
 		contentManagementService: contentmanagement.NewContentManagementServcie(storage, config, client, grpcClient),
+		sberBillingService:       billing.NewSberBillingService(config, storage, redisClient),
 		emailService:             emailService,
 		address:                  config.Address,
 	}

@@ -411,3 +411,34 @@ func CreateOrder(essentials dto.OrderEssentials, serviceID int, partnerClientID 
 
 	return data
 }
+
+type BuyDetails struct {
+	CourseId  uint `json:"courseId"`
+	IsRusCard bool `json:"isRusCard"`
+}
+
+func CreateNewBuyDetails() *BuyDetails {
+	return &BuyDetails{}
+}
+
+type SuccessPayment struct {
+	CourseName string `json:"courseName"`
+	Status     bool   `json:"status"`
+}
+
+func CreateNewSuccessPayment(courseName string) *SuccessPayment {
+	return &SuccessPayment{
+		CourseName: courseName,
+		Status:     true,
+	}
+}
+
+type FailedPayment struct {
+	Status bool `json:"status"`
+}
+
+func CreateNewFailedPayment() *FailedPayment {
+	return &FailedPayment{
+		Status: true,
+	}
+}

@@ -61,8 +61,8 @@ func (storage *Storage) GetAllUsersData(ctx context.Context,
 
 	if courseName != "" {
 		query.Joins("JOIN courses ON courses.name = ?", courseName).
-			Joins("JOIN users_courses ON users_courses.course_id = courses.id").
-			Where("users.id = users_courses.user_id")
+			Joins("JOIN orders ON orders.course_id = courses.id").
+			Where("users.id = orders.user_id")
 	}
 
 	limitInt, _ := strconv.Atoi(limit)
@@ -96,8 +96,8 @@ func (storage *Storage) GetAllUsersData(ctx context.Context,
 		}
 
 		userCourses := dto.CreateNewCourses()
-		if err := tx.Joins("JOIN users_courses ON courses.id = users_courses.course_id").
-			Where("users_courses.user_id = ?", v.ID).Find(&userCourses).Error; err != nil {
+		if err := tx.Joins("JOIN orders ON courses.id = orders.course_id").
+			Where("orders.user_id = ?", v.ID).Find(&userCourses).Error; err != nil {
 			tx.Rollback()
 			return nil, courseError.CreateError(err, 10002)
 		}
@@ -175,8 +175,8 @@ func (storage *Storage) GetAllUserDataById(ctx context.Context, id string) (*ent
 	}
 
 	userCourses := dto.CreateNewCourses()
-	if err := tx.Joins("JOIN users_courses ON courses.id = users_courses.course_id").
-		Where("users_courses.user_id = ?", id).Find(&userCourses).Error; err != nil {
+	if err := tx.Joins("JOIN orders ON courses.id = orders.course_id").
+		Where("orders.user_id = ?", id).Find(&userCourses).Error; err != nil {
 		tx.Rollback()
 		return nil, courseError.CreateError(err, 10002)
 	}

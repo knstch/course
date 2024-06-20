@@ -108,7 +108,7 @@ type Order struct {
 	Order    string
 }
 
-func NewOrder() *Order {
+func CreateNewOrder() *Order {
 	return &Order{}
 }
 

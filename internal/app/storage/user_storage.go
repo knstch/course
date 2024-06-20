@@ -19,6 +19,10 @@ import (
 var (
 	errBadPassword             = errors.New("старый пароль передан неверно")
 	errOldAndNewPasswordsEqual = errors.New("новый и старый пароль не могут совпадать")
+
+	errInvoiceNotFound    = errors.New("инвойс не найден")
+	errOrderNotFound      = errors.New("заказ не найден")
+	errBadUserCredentials = errors.New("данные не совпадают с инвойсом")
 )
 
 func (storage *Storage) newUserProfileUpdate(firstName, surname string, phoneNumber int) map[string]interface{} {
@@ -189,8 +193,9 @@ func (storage *Storage) RetreiveUserData(ctx context.Context) (*entity.UserData,
 	userData.AddEmailVerifiedStatus(credentials.Verified)
 
 	courses := dto.CreateNewCourses()
-	if err := tx.Joins("JOIN users_courses ON courses.id = users_courses.course_id").
-		Where("users_courses.user_id = ?", userId).Find(&courses).Error; err != nil {
+	if err := tx.Joins("JOIN orders ON courses.id = orders.course_id").
+		Joins("JOIN billings ON billings.order_id = orders.id").
+		Where("orders.user_id = ? AND billings.paid = ?", userId, true).Find(&courses).Error; err != nil {
 		tx.Rollback()
 		return nil, courseError.CreateError(err, 10002)
 	}
@@ -211,7 +216,11 @@ func (storage *Storage) GetUserCourses(ctx context.Context) ([]dto.Order, *cours
 
 	courses := dto.NewUserCourses()
 
-	if err := tx.Where("user_id = ? AND paid = true", userId).Find(&courses).Error; err != nil {
+	if err := tx.Joins("JOIN billings b ON b.order_id = orders.id").
+		Joins("JOIN orders o ON o.id = b.order_id").
+		Joins("JOIN courses c ON c.id = o.course_id").
+		Where("o.user_id = ? AND b.paid = ?", userId, true).
+		Find(&courses).Error; err != nil {
 		return nil, courseError.CreateError(err, 10002)
 	}
 
@@ -223,7 +232,7 @@ func (storage *Storage) GetUserCourses(ctx context.Context) ([]dto.Order, *cours
 	return courses, nil
 }
 
-func (storage *Storage) CreateOrder(ctx context.Context, courseId, price uint, ruCard bool) (*dto.OrderEssentials, *courseError.CourseError) {
+func (storage *Storage) CreateNewOrder(ctx context.Context, courseId, price uint, ruCard bool) (*dto.OrderEssentials, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	userId := ctx.Value("userId").(uint)
@@ -234,7 +243,7 @@ func (storage *Storage) CreateOrder(ctx context.Context, courseId, price uint, r
 
 	orderNum := hex.EncodeToString(orderHash.Sum(nil))
 
-	order := dto.NewOrder().AddCourseId(courseId).AddUserId(userId).AddOrder(orderNum)
+	order := dto.CreateNewOrder().AddCourseId(courseId).AddUserId(userId).AddOrder(orderNum)
 
 	if err := tx.Create(&order).Error; err != nil {
 		tx.Rollback()
@@ -307,12 +316,91 @@ func (storage *Storage) GetCourseCost(ctx context.Context, courseId uint) (*uint
 	return &finalCost, nil
 }
 
-// func (storage *Storage) ConfirmPayment(ctx context.Context)
 func (storage *Storage) SetInvoiceId(ctx context.Context, invoiceId, orderId uint) *courseError.CourseError {
 	tx := storage.db.WithContext(ctx).Begin()
 
-	if err := tx.Where("order_id = ?", orderId).Update("invoice_id", invoiceId).Error; err != nil {
+	if err := tx.Model(&dto.Billing{}).Where("order_id = ?", orderId).Update("invoice_id", invoiceId).Error; err != nil {
 		return courseError.CreateError(err, 10003)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10010)
+	}
+
+	return nil
+}
+
+func (storage *Storage) ApprovePayment(ctx context.Context, invoiceId, hashedUserData string) (*string, *courseError.CourseError) {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	bill := dto.NewPayment()
+	if err := tx.Where("invoice_id = ?", invoiceId).First(&bill).Error; err != nil {
+		tx.Rollback()
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, courseError.CreateError(errInvoiceNotFound, 15001)
+		}
+		return nil, courseError.CreateError(err, 10002)
+	}
+
+	order := dto.CreateNewOrder()
+	if err := tx.Where("id = ?", bill.OrderId).First(&order).Error; err != nil {
+		tx.Rollback()
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, courseError.CreateError(errOrderNotFound, 15002)
+		}
+		return nil, courseError.CreateError(err, 10002)
+	}
+
+	userDataHash := md5.New()
+
+	userDataHash.Write([]byte(fmt.Sprintf("%d%v", order.UserId, order.Order)))
+
+	checkHashedUserData := hex.EncodeToString(userDataHash.Sum(nil))
+
+	if checkHashedUserData != hashedUserData {
+		tx.Rollback()
+		return nil, courseError.CreateError(errBadUserCredentials, 15003)
+	}
+
+	if err := tx.Model(&dto.Billing{}).Where("id = ?", bill.ID).Update("paid", true).Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(errBadUserCredentials, 10003)
+	}
+
+	course := dto.CreateNewCourse()
+	if err := tx.Where("id = ?", order.CourseId).First(&course).Error; err != nil {
+		return nil, courseError.CreateError(err, 10002)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 10010)
+	}
+
+	return &course.Name, nil
+}
+
+func (storage *Storage) DeleteOrder(ctx context.Context, invoiceId string) *courseError.CourseError {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	bill := dto.NewPayment()
+	if err := tx.Where("invoice_id = ?", invoiceId).First(&bill).Error; err != nil {
+		tx.Rollback()
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return courseError.CreateError(errInvoiceNotFound, 15001)
+		}
+		return courseError.CreateError(err, 10002)
+	}
+
+	if err := tx.Model(&dto.Billing{}).Where("order_id = ?", bill.OrderId).Delete(nil).Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10004)
+	}
+
+	if err := tx.Model(&dto.Order{}).Where("id = ?", bill.OrderId).Delete(nil).Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10004)
 	}
 
 	if err := tx.Commit().Error; err != nil {
