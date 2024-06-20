@@ -90,6 +90,9 @@ var (
 
 	errValueNotInt = errors.New("значение передано не как число")
 	errBadFile     = errors.New("загруженный файл имеет неверный формат")
+
+	errDiscountValueNotInt = errors.New("размер скидки передан не как число")
+	errBadDiscountPriect   = errors.New("размер скидки не может быть больше стоимости")
 )
 
 func NewCredentialsToValidate(credentials *entity.Credentials) *CredentialsToValidate {
@@ -571,11 +574,11 @@ func (course *CourseToValidate) Validate(ctx context.Context) *courseerror.Cours
 			validation.Required.Error(errFieldIsNil),
 			validation.By(imgExtValidator(course.PreviewExt)),
 		),
-		validation.Field(&course.Cost,
-			validation.By(costValidator(course.Cost, false)),
-		),
 		validation.Field(&course.Discount,
-			validation.By(costValidator(course.Discount, true)),
+			validation.By(costValidator(course.Discount, "", true)),
+		),
+		validation.Field(&course.Cost,
+			validation.By(costValidator(course.Cost, course.Discount, false)),
 		),
 	); err != nil {
 		return courseerror.CreateError(err, 400)
@@ -584,7 +587,7 @@ func (course *CourseToValidate) Validate(ctx context.Context) *courseerror.Cours
 	return nil
 }
 
-func costValidator(cost string, isDiscount bool) validation.RuleFunc {
+func costValidator(cost, discount string, isDiscount bool) validation.RuleFunc {
 	return func(value interface{}) error {
 		if isDiscount && (cost == "" || cost == "0") {
 			return nil
@@ -594,8 +597,14 @@ func costValidator(cost string, isDiscount bool) validation.RuleFunc {
 			return fmt.Errorf(errFieldIsNil)
 		}
 
+		var (
+			costInt     int
+			discountInt int
+			err         error
+		)
+
 		if cost != "0" {
-			costInt, err := strconv.Atoi(cost)
+			costInt, err = strconv.Atoi(cost)
 			if err != nil {
 				return errValueNotInt
 			}
@@ -606,6 +615,17 @@ func costValidator(cost string, isDiscount bool) validation.RuleFunc {
 		}
 		if !isDiscount && cost == "" {
 			return fmt.Errorf(errFieldIsNil)
+		}
+
+		if discount != "" {
+			discountInt, err = strconv.Atoi(discount)
+			if err != nil {
+				return errDiscountValueNotInt
+			}
+
+			if costInt < discountInt {
+				return errBadDiscountPriect
+			}
 		}
 
 		return nil

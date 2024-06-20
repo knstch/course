@@ -43,6 +43,7 @@ func (storage *Storage) Automigrate() error {
 		&dto.UsersCourse{},
 		&dto.Course{},
 		&dto.Lesson{},
+		&dto.Billing{},
 	); err != nil {
 		return err
 	}

@@ -2,8 +2,12 @@ package storage
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/hex"
 	"errors"
+	"fmt"
 	"strings"
+	"time"
 
 	courseError "github.com/knstch/course/internal/app/course_error"
 	"github.com/knstch/course/internal/domain/dto"
@@ -207,7 +211,7 @@ func (storage *Storage) GetUserCourses(ctx context.Context) ([]dto.UsersCourse, 
 
 	courses := dto.NewUserCourses()
 
-	if err := tx.Where("user_id = ?", userId).Find(&courses).Error; err != nil {
+	if err := tx.Where("user_id = ? AND paid = true", userId).Find(&courses).Error; err != nil {
 		return nil, courseError.CreateError(err, 10002)
 	}
 
@@ -218,3 +222,49 @@ func (storage *Storage) GetUserCourses(ctx context.Context) ([]dto.UsersCourse, 
 
 	return courses, nil
 }
+
+func (storage *Storage) CreateOrder(ctx context.Context, courseId uint) *courseError.CourseError {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	userId := ctx.Value("userId").(uint)
+
+	orderHash := md5.New()
+
+	orderHash.Write([]byte(fmt.Sprintf("%d%d%d", userId, courseId, time.Now().Unix())))
+
+	order := hex.EncodeToString(orderHash.Sum(nil))
+
+	userCourse := dto.NewUsersCourse().AddCourseId(courseId).AddUserId(userId).AddOrder(order)
+
+	if err := tx.Create(&userCourse).Error; err != nil {
+		return courseError.CreateError(err, 10001)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10010)
+	}
+
+	return nil
+}
+
+func (storage *Storage) GetCourseCost(ctx context.Context, courseId uint) (*uint, *courseError.CourseError) {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	course := dto.CreateNewCourse()
+	if err := tx.Where("id = ?", courseId).First(&course).Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 10002)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 10010)
+	}
+
+	finalCost := course.Cost - *course.Discount
+
+	return &finalCost, nil
+}
+
+func (storage *Storage) ConfirmPayment(ctx context.Context)

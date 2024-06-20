@@ -101,14 +101,31 @@ func (accessToken *AccessToken) SetStatusAvailable() *AccessToken {
 
 type UsersCourse struct {
 	gorm.Model
-	UserId   *uint
+	UserId   uint
 	User     User
-	CourseId *uint
+	CourseId uint
 	Course   Course
+	Order    string
+	Paid     bool `gorm:"default:false"`
 }
 
 func NewUsersCourse() *UsersCourse {
 	return &UsersCourse{}
+}
+
+func (course *UsersCourse) AddUserId(id uint) *UsersCourse {
+	course.UserId = id
+	return course
+}
+
+func (course *UsersCourse) AddCourseId(id uint) *UsersCourse {
+	course.CourseId = id
+	return course
+}
+
+func (course *UsersCourse) AddOrder(order string) *UsersCourse {
+	course.Order = order
+	return course
 }
 
 func NewUserCourses() []UsersCourse {
@@ -292,4 +309,12 @@ func (m *Module) AddDescription(description string) *Module {
 func (m *Module) AddPosition(pos uint) *Module {
 	m.Position = pos
 	return m
+}
+
+type Billing struct {
+	gorm.Model
+	PaymentMethod string
+	AmountPaid    float64
+	UsersCourseId uint
+	UsersCourse   UsersCourse
 }
