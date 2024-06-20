@@ -57,7 +57,8 @@ const (
 	errLessonPositionIsBad       = "позиция модуля передана неверно"
 	errBadMinValue               = "значение не может быть меньше 1"
 
-	errBadParam = "параметр передан неправильно"
+	errBadParam  = "параметр передан неправильно"
+	errBadLength = "превышена длина параметра"
 )
 
 var (
@@ -655,17 +656,19 @@ type LessonToValidate struct {
 	description string
 	position    string
 	moduleName  string
+	courseName  string
 	name        string
 	previewImg  string
 	lesson      string
 }
 
-func NewLessonToValidate(name, description, moduleName, previewImg, lesson, position string) *LessonToValidate {
+func NewLessonToValidate(name, description, moduleName, previewImg, lesson, position, courseName string) *LessonToValidate {
 	return &LessonToValidate{
 		name:        name,
 		description: description,
 		position:    position,
 		moduleName:  moduleName,
+		courseName:  courseName,
 		previewImg:  previewImg,
 		lesson:      lesson,
 	}
@@ -694,6 +697,9 @@ func (lesson *LessonToValidate) Validate(ctx context.Context) *courseerror.Cours
 		),
 		validation.Field(&lesson.position,
 			validation.By(posValidator(lesson.position)),
+		),
+		validation.Field(&lesson.courseName,
+			validation.Required.Error(errFieldIsNil),
 		),
 	); err != nil {
 		return courseerror.CreateError(err, 400)
@@ -752,30 +758,82 @@ type CourseQueryToValidate struct {
 	description string
 	cost        string
 	discount    string
+	page        string
+	limit       string
 }
 
-func NewCourseQueryToValidate(name, descr, cost, discount string) *CourseQueryToValidate {
+func NewCourseQueryToValidate(name, descr, cost, discount, page, limit string) *CourseQueryToValidate {
 	return &CourseQueryToValidate{
 		name:        name,
 		description: descr,
 		cost:        cost,
 		discount:    discount,
+		page:        page,
+		limit:       limit,
 	}
 }
 
 func (query *CourseQueryToValidate) Validate(ctx context.Context) *courseerror.CourseError {
 	if err := validation.ValidateStructWithContext(ctx, query,
 		validation.Field(&query.name,
-			validation.RuneLength(1, 100).Error(errBadParam),
+			validation.RuneLength(1, 100).Error(errBadLength),
 		),
 		validation.Field(&query.description,
-			validation.RuneLength(1, 100).Error(errBadParam),
+			validation.RuneLength(1, 100).Error(errBadLength),
 		),
 		validation.Field(&query.cost,
-			validation.RuneLength(1, 100).Error(errBadParam),
+			validation.RuneLength(1, 100).Error(errBadLength),
 		),
 		validation.Field(&query.discount,
-			validation.RuneLength(1, 100).Error(errBadParam),
+			validation.RuneLength(1, 100).Error(errBadLength),
+		),
+		validation.Field(&query.page,
+			validation.By(validatePage(query.page)),
+		),
+		validation.Field(&query.limit,
+			validation.By(validateLimit(query.limit)),
+		),
+	); err != nil {
+		return courseerror.CreateError(err, 400)
+	}
+
+	return nil
+}
+
+type ModuleQueryToValidate struct {
+	name        string
+	description string
+	courseName  string
+	page        string
+	limit       string
+}
+
+func NewModuleQueryToValidate(name, description, courseName, page, limit string) *ModuleQueryToValidate {
+	return &ModuleQueryToValidate{
+		name:        name,
+		description: description,
+		courseName:  courseName,
+		page:        page,
+		limit:       limit,
+	}
+}
+
+func (module *ModuleQueryToValidate) Validate(ctx context.Context) *courseerror.CourseError {
+	if err := validation.ValidateStructWithContext(ctx, module,
+		validation.Field(&module.name,
+			validation.RuneLength(1, 200).Error(errBadLength),
+		),
+		validation.Field(&module.description,
+			validation.RuneLength(1, 200).Error(errBadLength),
+		),
+		validation.Field(&module.courseName,
+			validation.RuneLength(1, 200).Error(errBadLength),
+		),
+		validation.Field(&module.page,
+			validation.By(validatePage(module.page)),
+		),
+		validation.Field(&module.limit,
+			validation.By(validateLimit(module.limit)),
 		),
 	); err != nil {
 		return courseerror.CreateError(err, 400)

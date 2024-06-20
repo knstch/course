@@ -9,6 +9,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/knstch/course/internal/app/config"
@@ -37,10 +38,11 @@ type ContentManagementServcie struct {
 type ContentManager interface {
 	CreateCourse(ctx context.Context, name, description, cost, discount, path string) (*uint, *courseError.CourseError)
 	CreateModule(ctx context.Context, name, description, courseName string, position uint) (*uint, *courseError.CourseError)
-	CheckIfLessonCanBeCreated(ctx context.Context, name, moduleName, position string) *courseError.CourseError
+	CheckIfLessonCanBeCreated(ctx context.Context, name, moduleName, position, courseName string) *courseError.CourseError
 	CreateLesson(ctx context.Context, name, moduleName, description, position, videoPath, previewPath string) (*uint, *courseError.CourseError)
-	GetCourse(ctx context.Context, id, name, descr, cost, discount string, isPurchased bool) ([]entity.CourseInfo, *courseError.CourseError)
+	GetCourse(ctx context.Context, id, name, descr, cost, discount string, page, offset int, isPurchased bool) ([]entity.CourseInfo, *courseError.CourseError)
 	GetUserCourses(ctx context.Context) ([]dto.UsersCourse, *courseError.CourseError)
+	GetModules(ctx context.Context, name, description, courseName string, limit, offset int) ([]entity.ModuleInfo, *courseError.CourseError)
 }
 
 func NewContentManagementServcie(manager ContentManager, config *config.Config, client *http.Client, grpcClient *grpc.GrpcClient) ContentManagementServcie {
@@ -154,16 +156,17 @@ func (manager ContentManagementServcie) AddLesson(
 	moduleName string,
 	description string,
 	position string,
+	courseName string,
 	preview *multipart.FileHeader,
 	previewFile *multipart.File,
 ) (*uint, *courseError.CourseError) {
 	if err := validation.NewLessonToValidate(
-		name, description, moduleName, preview.Filename, video.Filename, position,
+		name, description, moduleName, preview.Filename, video.Filename, position, courseName,
 	).Validate(ctx); err != nil {
 		return nil, err
 	}
 
-	if err := manager.contentManager.CheckIfLessonCanBeCreated(ctx, name, moduleName, position); err != nil {
+	if err := manager.contentManager.CheckIfLessonCanBeCreated(ctx, name, moduleName, position, courseName); err != nil {
 		return nil, err
 	}
 
@@ -254,7 +257,7 @@ func (manager ContentManagementServcie) sendVideo(ctx context.Context, file *mul
 	return &res.Path, nil
 }
 
-func (manager ContentManagementServcie) GetCourseInfo(ctx context.Context, id, name, descr, cost, discount string) ([]entity.CourseInfo, *courseError.CourseError) {
+func (manager ContentManagementServcie) GetCourseInfo(ctx context.Context, id, name, descr, cost, discount, page, limit string) (*entity.CourseInfoWithPagination, *courseError.CourseError) {
 	var isCoursePurchased bool
 	if id != "" {
 		if ctx.Value("userId") == nil {
@@ -277,14 +280,54 @@ func (manager ContentManagementServcie) GetCourseInfo(ctx context.Context, id, n
 		}
 	}
 
-	if err := validation.NewCourseQueryToValidate(name, descr, cost, discount).Validate(ctx); err != nil {
+	if err := validation.NewCourseQueryToValidate(name, descr, cost, discount, page, limit).Validate(ctx); err != nil {
 		return nil, err
 	}
 
-	courseInfo, err := manager.contentManager.GetCourse(ctx, id, name, descr, cost, discount, isCoursePurchased)
+	pageInt, _ := strconv.Atoi(page)
+	limitInt, _ := strconv.Atoi(limit)
+
+	offset := pageInt * limitInt
+
+	courseInfo, err := manager.contentManager.GetCourse(ctx, id, name, descr, cost, discount, limitInt, offset, isCoursePurchased)
 	if err != nil {
 		return nil, err
 	}
 
-	return courseInfo, nil
+	return &entity.CourseInfoWithPagination{
+		Pagination: entity.Pagination{
+			Page:       pageInt,
+			Limit:      limitInt,
+			TotalCount: len(courseInfo),
+			PagesCount: len(courseInfo) / limitInt,
+		},
+		CourseInfo: courseInfo,
+	}, nil
+}
+
+func (manager ContentManagementServcie) GetModulesInfo(ctx context.Context,
+	name, description, courseName, page, limit string) (*entity.ModuleInfoWithPagination, *courseError.CourseError) {
+	if err := validation.NewModuleQueryToValidate(name, description, courseName, page, limit).Validate(ctx); err != nil {
+		return nil, err
+	}
+
+	pageInt, _ := strconv.Atoi(page)
+	limitInt, _ := strconv.Atoi(limit)
+
+	offset := pageInt * limitInt
+
+	modules, err := manager.contentManager.GetModules(ctx, name, description, courseName, limitInt, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	return &entity.ModuleInfoWithPagination{
+		Pagination: entity.Pagination{
+			Page:       pageInt,
+			Limit:      limitInt,
+			TotalCount: len(modules),
+			PagesCount: len(modules) / limitInt,
+		},
+		ModuleInfo: modules,
+	}, nil
 }

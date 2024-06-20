@@ -82,8 +82,9 @@ func (h *Handlers) UploadNewLesson(ctx *gin.Context) {
 	moduleName := ctx.PostForm("moduleName")
 	description := ctx.PostForm("description")
 	position := ctx.PostForm("position")
+	courseName := ctx.PostForm("courseName")
 
-	lessonId, courseErr := h.contentManagementService.AddLesson(ctx, lesson, name, moduleName, description, position, previewHeader, &preview)
+	lessonId, courseErr := h.contentManagementService.AddLesson(ctx, lesson, name, moduleName, description, position, courseName, previewHeader, &preview)
 	if courseErr != nil {
 		if courseErr.Code == 400 || courseErr.Code == 13001 || courseErr.Code == 13002 {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, courseErr)

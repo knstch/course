@@ -41,7 +41,8 @@ func RequestsRouter(h *handlers.Handlers) *gin.Engine {
 	admin.POST("/uploadLesson", h.UploadNewLesson)
 
 	content := v1.Group("content")
-	content.GET("/course", h.RetreiveCourses)
+	content.GET("/courses", h.RetreiveCourses)
+	content.GET("/modules", h.RetreiveModules)
 
 	return router
 }

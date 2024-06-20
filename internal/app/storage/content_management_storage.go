@@ -128,7 +128,7 @@ func (storage *Storage) CreateModule(ctx context.Context, name, description, cou
 	return &module.ID, nil
 }
 
-func (storage *Storage) CheckIfLessonCanBeCreated(ctx context.Context, name, moduleName, position string) *courseError.CourseError {
+func (storage *Storage) CheckIfLessonCanBeCreated(ctx context.Context, name, moduleName, position, courseName string) *courseError.CourseError {
 	var (
 		lessonWithThisPosNotExists  bool
 		lessonWithThisNameNotExists bool
@@ -175,6 +175,15 @@ func (storage *Storage) CheckIfLessonCanBeCreated(ctx context.Context, name, mod
 		return courseError.CreateError(errLessonPosAlreadyExists, 13001)
 	}
 
+	course := dto.CreateNewCourse()
+	if err := tx.Where("name = ?", courseName).First(&course).Error; err != nil {
+		tx.Rollback()
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return courseError.CreateError(errCourseNotExists, 13003)
+		}
+		return courseError.CreateError(err, 10002)
+	}
+
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
 		return courseError.CreateError(err, 10010)
@@ -218,7 +227,13 @@ func (storage *Storage) CreateLesson(ctx context.Context, name, moduleName, desc
 	return &lesson.ID, nil
 }
 
-func (storage *Storage) GetCourse(ctx context.Context, id, name, descr, cost, discount string, isPurchased bool) ([]entity.CourseInfo, *courseError.CourseError) {
+func (storage *Storage) GetCourse(
+	ctx context.Context, id, name, descr, cost, discount string,
+	limit, offset int,
+	isPurchased bool) (
+	[]entity.CourseInfo,
+	*courseError.CourseError,
+) {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	courses := dto.CreateNewCourses()
@@ -245,7 +260,7 @@ func (storage *Storage) GetCourse(ctx context.Context, id, name, descr, cost, di
 		}
 	}
 
-	if err := query.Find(&courses).Error; err != nil {
+	if err := query.Limit(limit).Offset(offset).Find(&courses).Error; err != nil {
 		tx.Rollback()
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, courseError.CreateError(errCourseNotExists, 13003)
@@ -298,4 +313,66 @@ func (storage *Storage) GetCourse(ctx context.Context, id, name, descr, cost, di
 	}
 
 	return courseInfo, nil
+}
+
+func (storage *Storage) GetModules(ctx context.Context,
+	name, description, courseName string,
+	limit, offset int) ([]entity.ModuleInfo, *courseError.CourseError) {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	query := tx.Model(&dto.Module{})
+
+	if name != "" {
+		query = query.Where("LOWER(name) LIKE ?", fmt.Sprint("%"+strings.ToLower(name)+"%"))
+	}
+
+	if description != "" {
+		query = query.Where("LOWER(description) LIKE ?", fmt.Sprint("%"+strings.ToLower(description)+"%"))
+	}
+
+	if courseName != "" {
+		query = query.Where("course_id IN (SELECT id FROM courses WHERE LOWER(courses.name) LIKE ?)",
+			fmt.Sprint("%"+strings.ToLower(courseName)+"%"))
+	}
+
+	modules := dto.GetAllModules()
+	if err := query.Order("position").Offset(offset).Limit(limit).Find(&modules).Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 10002)
+	}
+
+	modulesIds := dto.ExtractIds(modules, func(item interface{}) uint {
+		return item.(dto.Module).ID
+	})
+	lessons := dto.GetAllLessons()
+	if err := tx.Where("module_id IN (?)", modulesIds).Order("position").Find(&lessons).Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 10002)
+	}
+
+	lessonsInfo := make([]entity.LessonInfo, 0, len(lessons))
+	for _, v := range lessons {
+		lessonInfo := entity.CreateLessonInfo(&v, true)
+		lessonsInfo = append(lessonsInfo, *lessonInfo)
+	}
+
+	modulesInfo := make([]entity.ModuleInfo, 0, len(modules))
+	for _, module := range modules {
+		retreivedLessons := make([]entity.LessonInfo, 0)
+		for _, lesson := range lessonsInfo {
+			if lesson.ModuleId == module.ID {
+				retreivedLessons = append(retreivedLessons, lesson)
+				continue
+			}
+		}
+		moduleInfo := entity.CreateModuleInfo(&module, retreivedLessons)
+		modulesInfo = append(modulesInfo, *moduleInfo)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 10010)
+	}
+
+	return modulesInfo, nil
 }

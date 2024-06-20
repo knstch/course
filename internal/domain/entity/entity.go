@@ -251,6 +251,11 @@ type CourseInfo struct {
 	Modules     []ModuleInfo `json:"modules"`
 }
 
+type CourseInfoWithPagination struct {
+	Pagination Pagination   `json:"pagination"`
+	CourseInfo []CourseInfo `json:"courses"`
+}
+
 func CreateCourseInfo(course dto.Course, modules []ModuleInfo) *CourseInfo {
 	return &CourseInfo{
 		Id:          course.ID,
@@ -286,6 +291,11 @@ type ModuleInfo struct {
 	Position    uint         `json:"position"`
 	Lessons     []LessonInfo `json:"lessons"`
 	CourseId    uint         `json:"-"`
+}
+
+type ModuleInfoWithPagination struct {
+	Pagination Pagination
+	ModuleInfo []ModuleInfo
 }
 
 func CreateModuleInfo(module *dto.Module, lessons []LessonInfo) *ModuleInfo {
