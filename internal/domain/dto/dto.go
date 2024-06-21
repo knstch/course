@@ -185,7 +185,7 @@ type Lesson struct {
 	Name          string  `gorm:"not null"`
 	Description   *string `gorm:"not null"`
 	PreviewImgUrl string  `gorm:"not null"`
-	VideoUrl      *string `gorm:"not null"`
+	VideoUrl      string  `gorm:"not null"`
 	Position      int     `gorm:"not null"`
 }
 
@@ -263,7 +263,7 @@ func (lesson *Lesson) AddPreviewImgUrl(url string) *Lesson {
 }
 
 func (lesson *Lesson) AddVideoUrl(url string) *Lesson {
-	lesson.VideoUrl = &url
+	lesson.VideoUrl = url
 	return lesson
 }
 

@@ -669,6 +669,7 @@ type ModuleToValidate struct {
 	description string
 	position    int
 	courseName  string
+	moduleId    uint
 }
 
 func NewModuleToValidate(name, description, courseName string, position uint) *ModuleToValidate {
@@ -704,6 +705,38 @@ func (module *ModuleToValidate) Validate(ctx context.Context) *courseerror.Cours
 	return nil
 }
 
+type EditModuleToValidate ModuleToValidate
+
+func NewEditModuleToValidate(name, description string, position, moduleId uint) *EditModuleToValidate {
+	return &EditModuleToValidate{
+		name:        name,
+		description: description,
+		position:    int(position),
+		moduleId:    moduleId,
+	}
+}
+
+func (module *EditModuleToValidate) Validate(ctx context.Context) *courseerror.CourseError {
+	if err := validation.ValidateStructWithContext(ctx, module,
+		validation.Field(&module.name,
+			validation.RuneLength(1, 40).Error(errModuleNameIsTooBig),
+		),
+		validation.Field(&module.description,
+			validation.RuneLength(1, 200).Error(errModuleDescriptionIsTooBig),
+		),
+		validation.Field(&module.position,
+			validation.Min(1).Error(errModulePositionIsBad),
+		),
+		validation.Field(&module.moduleId,
+			validation.By(idValidator(fmt.Sprint(module.moduleId))),
+		),
+	); err != nil {
+		return courseerror.CreateError(err, 400)
+	}
+
+	return nil
+}
+
 type LessonToValidate struct {
 	description string
 	position    string
@@ -711,10 +744,11 @@ type LessonToValidate struct {
 	courseName  string
 	name        string
 	previewImg  string
-	lesson      string
+	video       string
+	lessonId    string
 }
 
-func NewLessonToValidate(name, description, moduleName, previewImg, lesson, position, courseName string) *LessonToValidate {
+func NewLessonToValidate(name, description, moduleName, previewImg, video, position, courseName string) *LessonToValidate {
 	return &LessonToValidate{
 		name:        name,
 		description: description,
@@ -722,7 +756,7 @@ func NewLessonToValidate(name, description, moduleName, previewImg, lesson, posi
 		moduleName:  moduleName,
 		courseName:  courseName,
 		previewImg:  previewImg,
-		lesson:      lesson,
+		video:       video,
 	}
 }
 
@@ -743,9 +777,9 @@ func (lesson *LessonToValidate) Validate(ctx context.Context) *courseerror.Cours
 			validation.Required.Error(errFieldIsNil),
 			validation.By(imgExtValidator(lesson.previewImg)),
 		),
-		validation.Field(&lesson.lesson,
+		validation.Field(&lesson.video,
 			validation.Required.Error(errFieldIsNil),
-			validation.By(videoExtValidator(lesson.lesson)),
+			validation.By(videoExtValidator(lesson.video)),
 		),
 		validation.Field(&lesson.position,
 			validation.By(posValidator(lesson.position)),
@@ -803,6 +837,61 @@ func posValidator(position string) validation.RuleFunc {
 
 		return nil
 	}
+}
+
+type EditLessonToValidate LessonToValidate
+
+func NewEditLessonToValidate(name, description, position, lessonId string) *EditLessonToValidate {
+	return &EditLessonToValidate{
+		name:        name,
+		description: description,
+		position:    position,
+		lessonId:    lessonId,
+	}
+}
+
+func (lesson *EditLessonToValidate) Validate(ctx context.Context) *courseerror.CourseError {
+	if err := validation.ValidateStructWithContext(ctx, lesson,
+		validation.Field(&lesson.name,
+			validation.RuneLength(1, 40).Error(errLessonNameIsTooBig),
+		),
+		validation.Field(&lesson.description,
+			validation.RuneLength(1, 200).Error(errLessonDescriptionIsTooBig),
+		),
+		validation.Field(&lesson.position,
+			validation.By(posValidator(lesson.position)),
+		),
+		validation.Field(&lesson.lessonId,
+			validation.Required.Error(errFieldIsNil),
+			validation.By(idValidator(lesson.lessonId)),
+		),
+	); err != nil {
+		return courseerror.CreateError(err, 400)
+	}
+
+	return nil
+}
+
+type VideoFileNameToValidate struct {
+	VideoExt string
+}
+
+func NewVideoFileNameToValidate(fileName string) *VideoFileNameToValidate {
+	return &VideoFileNameToValidate{
+		VideoExt: fileName,
+	}
+}
+
+func (video *VideoFileNameToValidate) Validate(ctx context.Context) *courseerror.CourseError {
+	if err := validation.ValidateStructWithContext(ctx, video,
+		validation.Field(&video.VideoExt,
+			validation.By(videoExtValidator(video.VideoExt)),
+		),
+	); err != nil {
+		return courseerror.CreateError(err, 400)
+	}
+
+	return nil
 }
 
 type CourseQueryToValidate struct {

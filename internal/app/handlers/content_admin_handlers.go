@@ -149,3 +149,70 @@ func (h *Handlers) UpdateCourse(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("данные о курсе успешно отредактированы", true))
 }
+
+func (h *Handlers) UpdateModule(ctx *gin.Context) {
+	module := entity.NewModule()
+	if err := ctx.ShouldBindJSON(&module); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
+		return
+	}
+
+	if err := h.contentManagementService.ManageModule(ctx, module); err != nil {
+		if err.Code == 400 {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			return
+		}
+		if err.Code == 13001 {
+			ctx.AbortWithStatusJSON(http.StatusConflict, err)
+			return
+		}
+		if err.Code == 13003 {
+			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
+			return
+		}
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("данные о модуле успешно отредактированы", true))
+}
+
+func (h Handlers) UpdateLesson(ctx *gin.Context) {
+	var (
+		videoNotExists   bool
+		previewNotExists bool
+	)
+	lesson, err := ctx.FormFile("lesson")
+	if err != nil {
+		if errors.Is(err, http.ErrMissingFile) {
+			videoNotExists = true
+		} else {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBadFormData, 400))
+			return
+		}
+	}
+
+	preview, previewHeader, err := ctx.Request.FormFile("preview")
+	if err != nil {
+		if err != nil {
+			if errors.Is(err, http.ErrMissingFile) {
+				previewNotExists = true
+			} else {
+				ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBadFormData, 400))
+				return
+			}
+		}
+
+	}
+
+	name := ctx.PostForm("name")
+	description := ctx.PostForm("description")
+	position := ctx.PostForm("position")
+	lessonId := ctx.PostForm("lessonId")
+
+	if err := h.contentManagementService.ManageLesson(
+		ctx, lesson, name, description, position, lessonId,
+		previewHeader, &preview, videoNotExists, previewNotExists); err != nil {
+
+	}
+}

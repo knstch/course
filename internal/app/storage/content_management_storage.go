@@ -20,7 +20,7 @@ var (
 	errLessonPosAlreadyExists  = errors.New("урок с такой позицией уже существует")
 
 	errCourseNotExists = errors.New("курса с таким названием не существует")
-	errModuleNotExists = errors.New("модуль с таким названием не существует")
+	errModuleNotExists = errors.New("такого модуля не существует")
 
 	errCourseAlreadyExists = errors.New("курс с таким названием уже существует")
 )
@@ -73,7 +73,7 @@ func (storage *Storage) CreateModule(ctx context.Context, name, description, cou
 
 	module := dto.CreateNewModule()
 
-	if err := storage.db.Joins("JOIN courses ON courses.name = ?", courseName).Where("course_id = courses.id AND position = ?", position).First(&module).Error; err != nil {
+	if err := tx.Joins("JOIN courses ON courses.name = ?", courseName).Where("course_id = courses.id AND position = ?", position).First(&module).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			moduleWithThisPosNotExists = true
 		} else {
@@ -87,7 +87,7 @@ func (storage *Storage) CreateModule(ctx context.Context, name, description, cou
 		return nil, courseError.CreateError(errModulePosAlreadyExists, 13001)
 	}
 
-	if err := storage.db.Joins("JOIN courses ON courses.name = ?", courseName).Where("course_id = courses.id AND modules.name = ?", name).First(&module).Error; err != nil {
+	if err := tx.Joins("JOIN courses ON courses.name = ?", courseName).Where("course_id = courses.id AND modules.name = ?", name).First(&module).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			moduleWithThisNameNotExists = true
 		} else {
@@ -102,7 +102,7 @@ func (storage *Storage) CreateModule(ctx context.Context, name, description, cou
 	}
 
 	course := dto.CreateNewCourse()
-	if err := storage.db.Where("name = ?", courseName).First(&course).Error; err != nil {
+	if err := tx.Where("name = ?", courseName).First(&course).Error; err != nil {
 		tx.Rollback()
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, courseError.CreateError(errCourseNotExists, 13003)
@@ -115,7 +115,7 @@ func (storage *Storage) CreateModule(ctx context.Context, name, description, cou
 		AddDescription(description).
 		AddPosition(position)
 
-	if err := storage.db.Create(&module).Error; err != nil {
+	if err := tx.Create(&module).Error; err != nil {
 		tx.Rollback()
 		return nil, courseError.CreateError(err, 10001)
 	}
@@ -428,6 +428,7 @@ func (storage *Storage) EditCourse(ctx context.Context,
 
 	originalCourse := dto.CreateNewCourse()
 	if err := tx.Where("id = ?", courseId).First(&originalCourse).Error; err != nil {
+		tx.Rollback()
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return courseError.CreateError(errCourseNotExists, 13003)
 		}
@@ -438,6 +439,7 @@ func (storage *Storage) EditCourse(ctx context.Context,
 		checkCourse := dto.CreateNewCourse()
 		if err := tx.Where("name = ? AND id != ?", name, courseId).First(&checkCourse).Error; err != nil {
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				tx.Rollback()
 				tx.Rollback()
 				return courseError.CreateError(err, 13001)
 			}
@@ -466,6 +468,137 @@ func (storage *Storage) EditCourse(ctx context.Context,
 	}
 
 	if err := tx.Save(&originalCourse).Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10003)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10010)
+	}
+
+	return nil
+}
+
+func (storage *Storage) EditModule(ctx context.Context,
+	name, description string, position *uint, moduleId uint) *courseError.CourseError {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	originalModule := dto.CreateNewModule()
+	if err := tx.Where("id = ?", moduleId).First(&originalModule).Error; err != nil {
+		tx.Rollback()
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return courseError.CreateError(errModuleNotExists, 13003)
+		}
+		return courseError.CreateError(err, 10002)
+	}
+
+	if position != nil {
+		checkCollisionsModule := dto.CreateNewModule()
+		if err := tx.Where("course_id = ? AND position = ? AND id != ?", originalModule.CourseId, position, originalModule.ID).First(&checkCollisionsModule).Error; err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				tx.Rollback()
+				return courseError.CreateError(err, 10002)
+			}
+		}
+		if checkCollisionsModule.ID != 0 {
+			tx.Rollback()
+			return courseError.CreateError(errModulePosAlreadyExists, 13001)
+		}
+		originalModule.Position = *position
+	}
+
+	if name != "" {
+		checkCollisionsModule := dto.CreateNewModule()
+		if err := tx.Where("course_id = ? AND name = ? AND id != ?", originalModule.CourseId, name, originalModule.ID).First(&checkCollisionsModule).Error; err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				tx.Rollback()
+				return courseError.CreateError(err, 13001)
+			}
+		}
+		if checkCollisionsModule.ID != 0 {
+			tx.Rollback()
+			return courseError.CreateError(errModuleNameAlreadyExists, 13001)
+		}
+		originalModule.Name = name
+	}
+
+	if description != "" {
+		originalModule.Description = description
+	}
+
+	if err := tx.Save(&originalModule).Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10003)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10010)
+	}
+
+	return nil
+}
+
+func (storage Storage) EditLesson(ctx context.Context,
+	name, description, position, videoPath, previewPath, lessonId string) *courseError.CourseError {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	originalLesson := dto.CreateNewLesson()
+	if err := tx.Where("id = ?", lessonId).First(&originalLesson).Error; err != nil {
+		tx.Rollback()
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return courseError.CreateError(err, 13001)
+		}
+		return courseError.CreateError(err, 10002)
+	}
+
+	if name != "" {
+		checkCollisionsLesson := dto.CreateNewLesson()
+		if err := tx.Where("module_id = ? AND name = ? AND id != ?", originalLesson.ModuleId, originalLesson.Name, lessonId).
+			First(&checkCollisionsLesson).Error; err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				tx.Rollback()
+				return courseError.CreateError(err, 10002)
+			}
+		}
+		if checkCollisionsLesson.ID != 0 {
+			tx.Rollback()
+			return courseError.CreateError(errLessonNameAlreadyExists, 13001)
+		}
+		originalLesson.Name = name
+	}
+
+	if position != "" {
+		checkCollisionsLesson := dto.CreateNewLesson()
+		if err := tx.Where("module_id = ? AND position = ? AND id != ?", originalLesson.ModuleId, originalLesson.Position, lessonId).
+			First(&checkCollisionsLesson).Error; err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				tx.Rollback()
+				return courseError.CreateError(err, 10002)
+			}
+		}
+		if checkCollisionsLesson.ID != 0 {
+			tx.Rollback()
+			return courseError.CreateError(errLessonPosAlreadyExists, 13001)
+		}
+		intPos, _ := strconv.Atoi(position)
+		originalLesson.Position = intPos
+	}
+
+	if description != "" {
+		originalLesson.Description = &description
+	}
+
+	if videoPath != "" {
+		originalLesson.VideoUrl = videoPath
+	}
+
+	if previewPath != "" {
+		originalLesson.PreviewImgUrl = previewPath
+	}
+
+	if err := tx.Save(&originalLesson).Error; err != nil {
 		return courseError.CreateError(err, 10003)
 	}
 

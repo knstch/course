@@ -45,6 +45,8 @@ type ContentManager interface {
 	GetModules(ctx context.Context, name, description, courseName string, limit, offset int) ([]entity.ModuleInfo, *courseError.CourseError)
 	GetLessons(ctx context.Context, name, description, moduleName, courseName string, limit, offset int) ([]entity.LessonInfo, *courseError.CourseError)
 	EditCourse(ctx context.Context, courseId, name, description string, previewUrl *string, cost, discount *uint) *courseError.CourseError
+	EditModule(ctx context.Context, name, description string, position *uint, moduleId uint) *courseError.CourseError
+	EditLesson(ctx context.Context, name, description, position, videoPath, previewPath, lessonId string) *courseError.CourseError
 }
 
 func NewContentManagementServcie(manager ContentManager, config *config.Config, client *http.Client, grpcClient *grpc.GrpcClient) ContentManagementServcie {
@@ -140,12 +142,12 @@ func (manager ContentManagementServcie) sendPhoto(file *multipart.File, fileName
 }
 
 func (manager ContentManagementServcie) AddModule(ctx context.Context, module *entity.Module) (*uint, *courseError.CourseError) {
-	if err := validation.NewModuleToValidate(module.Name, module.Description, module.CourseName, module.Position).
+	if err := validation.NewModuleToValidate(module.Name, module.Description, module.CourseName, *module.Position).
 		Validate(ctx); err != nil {
 		return nil, err
 	}
 
-	id, err := manager.contentManager.CreateModule(ctx, module.Name, module.Description, module.CourseName, module.Position)
+	id, err := manager.contentManager.CreateModule(ctx, module.Name, module.Description, module.CourseName, *module.Position)
 	if err != nil {
 		return nil, err
 	}
@@ -372,12 +374,6 @@ func (manager ContentManagementServcie) ManageCourse(ctx context.Context,
 		return err
 	}
 
-	if !fileNotExists {
-		if err := validation.NewPreviewFileNameToValidate(formFileHeader.Filename).Validate(ctx); err != nil {
-			return err
-		}
-	}
-
 	var (
 		path         *string
 		err          *courseError.CourseError
@@ -386,6 +382,10 @@ func (manager ContentManagementServcie) ManageCourse(ctx context.Context,
 	)
 
 	if !fileNotExists {
+		if err := validation.NewPreviewFileNameToValidate(formFileHeader.Filename).Validate(ctx); err != nil {
+			return err
+		}
+
 		readyName := manager.prepareFileName(formFileHeader.Filename)
 
 		path, err = manager.sendPhoto(file, readyName)
@@ -406,6 +406,71 @@ func (manager ContentManagementServcie) ManageCourse(ctx context.Context,
 	}
 
 	if err := manager.contentManager.EditCourse(ctx, courseId, name, description, path, uintCost, uintDiscount); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (manager ContentManagementServcie) ManageModule(ctx context.Context, module *entity.Module) *courseError.CourseError {
+	if err := validation.NewEditModuleToValidate(module.Name, module.Description, *module.Position, module.ModuleId).
+		Validate(ctx); err != nil {
+		return err
+	}
+
+	if err := manager.contentManager.EditModule(ctx, module.Name, module.Description, module.Position, module.ModuleId); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (manager ContentManagementServcie) ManageLesson(ctx context.Context,
+	video *multipart.FileHeader,
+	name string,
+	description string,
+	position string,
+	lessonId string,
+	preview *multipart.FileHeader,
+	previewFile *multipart.File,
+	videoNotExists bool,
+	previewNotExists bool,
+) *courseError.CourseError {
+	if err := validation.NewEditLessonToValidate(name, description, position, lessonId).Validate(ctx); err != nil {
+		return err
+	}
+
+	var (
+		previewPath *string
+		videoPath   *string
+		err         *courseError.CourseError
+	)
+
+	if !previewNotExists {
+		if err := validation.NewPreviewFileNameToValidate(preview.Filename).Validate(ctx); err != nil {
+			return err
+		}
+
+		readyName := manager.prepareFileName(preview.Filename)
+
+		previewPath, err = manager.sendPhoto(previewFile, readyName)
+		if err != nil {
+			return err
+		}
+	}
+
+	if !videoNotExists {
+		if err := validation.NewVideoFileNameToValidate(video.Filename).Validate(ctx); err != nil {
+			return err
+		}
+
+		videoPath, err = manager.sendVideo(ctx, video)
+		if err != nil {
+			return err
+		}
+	}
+
+	if err := manager.contentManager.EditLesson(ctx, name, description, position, *videoPath, *previewPath, lessonId); err != nil {
 		return err
 	}
 

@@ -236,9 +236,10 @@ func (id *Id) AddId(Id *uint) *Id {
 }
 
 type Module struct {
+	ModuleId    uint   `json:"moduleId"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
-	Position    uint   `json:"position"`
+	Position    *uint  `json:"position,omitempty"`
 	CourseName  string `json:"courseName"`
 }
 
@@ -331,7 +332,7 @@ func CreateLessonInfo(lesson *dto.Lesson, isPurchased bool) *LessonInfo {
 			Name:        lesson.Name,
 			Description: lesson.Description,
 			PreviewUrl:  lesson.PreviewImgUrl,
-			VideoUrl:    lesson.VideoUrl,
+			VideoUrl:    &lesson.VideoUrl,
 			Position:    uint(lesson.Position),
 			ModuleId:    lesson.ModuleId,
 		}
