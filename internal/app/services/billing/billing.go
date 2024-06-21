@@ -47,24 +47,24 @@ func NewSberBillingService(config *config.Config, banker Banker, redis *redis.Cl
 	}
 }
 
-func (billing SberBillingService) PlaceOrder(ctx context.Context, courseId uint, ruCard bool) (*string, *courseError.CourseError) {
-	if err := validation.NewPaymentCredentialsToValidate(courseId, ruCard).Validate(ctx); err != nil {
+func (billing SberBillingService) PlaceOrder(ctx context.Context, buyDetails *entity.BuyDetails) (*string, *courseError.CourseError) {
+	if err := validation.NewPaymentCredentialsToValidate(buyDetails).Validate(ctx); err != nil {
 		return nil, err
 	}
 
-	price, err := billing.banker.GetCourseCost(ctx, courseId)
+	price, err := billing.banker.GetCourseCost(ctx, buyDetails.CourseId)
 	if err != nil {
 		return nil, err
 	}
 
-	order, err := billing.banker.CreateNewOrder(ctx, courseId, *price, ruCard)
+	order, err := billing.banker.CreateNewOrder(ctx, buyDetails.CourseId, *price, buyDetails.IsRusCard)
 	if err != nil {
 		return nil, err
 	}
 
 	userId := ctx.Value("userId").(uint)
 
-	invoice := entity.CreateOrder(*order, int(courseId), fmt.Sprint(userId), 0)
+	invoice := entity.CreateOrder(*order, int(buyDetails.CourseId), fmt.Sprint(userId), 0)
 
 	invoiceId, err := billing.sendInvoice(invoice)
 	if err != nil {

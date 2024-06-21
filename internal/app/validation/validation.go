@@ -13,11 +13,6 @@ import (
 	"github.com/knstch/course/internal/domain/entity"
 )
 
-type CredentialsToValidate struct {
-	Email    string
-	Password string
-}
-
 const (
 	emailPattern    = `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
 	passwordPattern = `^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};:"\\|,.<>\/?]*$`
@@ -95,11 +90,19 @@ var (
 	errBadDiscountPriect   = errors.New("размер скидки не может быть больше стоимости")
 )
 
-func NewCredentialsToValidate(credentials *entity.Credentials) *CredentialsToValidate {
-	return &CredentialsToValidate{
-		Email:    credentials.Email,
-		Password: credentials.Password,
+func stringSliceTOInterfaceSlice(values []string) []interface{} {
+	interfaces := make([]interface{}, len(values))
+	for i := range values {
+		interfaces[i] = values[i]
 	}
+
+	return interfaces
+}
+
+type CredentialsToValidate entity.Credentials
+
+func NewCredentialsToValidate(credentials *entity.Credentials) *CredentialsToValidate {
+	return (*CredentialsToValidate)(credentials)
 }
 
 func (cr *CredentialsToValidate) Validate(ctx context.Context) *courseerror.CourseError {
@@ -149,37 +152,29 @@ func validatePassword(password string) validation.RuleFunc {
 	}
 }
 
-type UserInfoToValidate struct {
-	firstName   string
-	surname     string
-	phoneNumber string
-}
+type UserInfoToValidate entity.UserInfo
 
 var (
 	phoneRegex = regexp.MustCompile(`^\+?\d{1,20}$`)
 )
 
 func NewUserInfoToValidate(userInfo *entity.UserInfo) *UserInfoToValidate {
-	return &UserInfoToValidate{
-		firstName:   userInfo.FirstName,
-		surname:     userInfo.Surname,
-		phoneNumber: userInfo.PhoneNumber,
-	}
+	return (*UserInfoToValidate)(userInfo)
 }
 
 func (user *UserInfoToValidate) Validate(ctx context.Context) *courseerror.CourseError {
 	if err := validation.ValidateStructWithContext(ctx, user,
-		validation.Field(&user.firstName,
+		validation.Field(&user.FirstName,
 			validation.Required.Error("имя не может быть пустым"),
 			validation.RuneLength(1, 20).Error("имя передано в неверном формате"),
 			validation.Match(lettersRegex).Error(errFieldAcceptsOnlyLetters),
 		),
-		validation.Field(&user.surname,
+		validation.Field(&user.Surname,
 			validation.Required.Error("фамилия не может быть пустой"),
 			validation.RuneLength(1, 20).Error("фамилия передана в неверном формате"),
 			validation.Match(lettersRegex).Error(errFieldAcceptsOnlyLetters),
 		),
-		validation.Field(&user.phoneNumber,
+		validation.Field(&user.PhoneNumber,
 			validation.Required.Error("номер телефона не может быть пустым"),
 			validation.Match(phoneRegex).Error("номер телефона передан неверно, введите его в фромате 79123456789"),
 			validation.RuneLength(1, 20).Error("номер телефона передан в неверном формате"),
@@ -191,16 +186,10 @@ func (user *UserInfoToValidate) Validate(ctx context.Context) *courseerror.Cours
 	return nil
 }
 
-type SignInCredentials struct {
-	Email    string
-	Password string
-}
+type SignInCredentials entity.Credentials
 
 func NewSignInCredentials(credentials *entity.Credentials) *SignInCredentials {
-	return &SignInCredentials{
-		Email:    credentials.Email,
-		Password: credentials.Password,
-	}
+	return (*SignInCredentials)(credentials)
 }
 
 func (cr *SignInCredentials) Validate(ctx context.Context) *courseerror.CourseError {
@@ -289,18 +278,10 @@ func (code *ConfirmCodeToValidate) Validate(ctx context.Context) *courseerror.Co
 	return nil
 }
 
-type PasswordRecoverCredentials struct {
-	Email    string
-	Password string
-	Code     int
-}
+type PasswordRecoverCredentials entity.PasswordRecoverCredentials
 
 func NewPasswordRecoverCredentialsToValidate(credentials entity.PasswordRecoverCredentials) *PasswordRecoverCredentials {
-	return &PasswordRecoverCredentials{
-		Email:    credentials.Email,
-		Password: credentials.Password,
-		Code:     credentials.Code,
-	}
+	return (*PasswordRecoverCredentials)(&credentials)
 }
 
 func (credentials *PasswordRecoverCredentials) Validate(ctx context.Context) *courseerror.CourseError {
@@ -335,15 +316,6 @@ type UserFiltersToValidate struct {
 	isVerified  string
 	page        string
 	limit       string
-}
-
-func stringSliceTOInterfaceSlice(values []string) []interface{} {
-	interfaces := make([]interface{}, len(values))
-	for i := range values {
-		interfaces[i] = values[i]
-	}
-
-	return interfaces
 }
 
 func NewUserFiltersToValidate(firstName, surname, phoneNumber, email, active, isVerified, page, limit string) *UserFiltersToValidate {
@@ -909,24 +881,18 @@ func (lesson *LessonQueryToValidate) Validate(ctx context.Context) *courseerror.
 	return nil
 }
 
-type PaymentCredentialsToValidate struct {
-	courseId uint
-	ruCard   bool
-}
+type PaymentCredentialsToValidate entity.BuyDetails
 
-func NewPaymentCredentialsToValidate(courseId uint, ruCard bool) *PaymentCredentialsToValidate {
-	return &PaymentCredentialsToValidate{
-		courseId: courseId,
-		ruCard:   ruCard,
-	}
+func NewPaymentCredentialsToValidate(buyDetails *entity.BuyDetails) *PaymentCredentialsToValidate {
+	return (*PaymentCredentialsToValidate)(buyDetails)
 }
 
 func (credentials *PaymentCredentialsToValidate) Validate(ctx context.Context) *courseerror.CourseError {
 	if err := validation.ValidateStructWithContext(ctx, credentials,
-		validation.Field(&credentials.courseId,
+		validation.Field(&credentials.CourseId,
 			validation.Required.Error(errFieldIsNil),
 		),
-		validation.Field(&credentials.ruCard,
+		validation.Field(&credentials.IsRusCard,
 			validation.Required.Error(errFieldIsNil),
 		),
 	); err != nil {

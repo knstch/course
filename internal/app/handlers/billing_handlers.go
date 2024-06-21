@@ -16,7 +16,7 @@ func (h Handlers) BuyCourse(ctx *gin.Context) {
 		return
 	}
 
-	linkToPay, err := h.sberBillingService.PlaceOrder(ctx, buyDetails.CourseId, buyDetails.IsRusCard)
+	linkToPay, err := h.sberBillingService.PlaceOrder(ctx, buyDetails)
 	if err != nil {
 		if err.Code == 400 {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
