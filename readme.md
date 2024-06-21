@@ -63,6 +63,7 @@ GRPC
 15001 - инвойс не найден
 15002 - заказ не найден
 15003 - инвойс айди не совпадает с хэшем
+15004 - курс уже приобретен
 
 Build:
 docker compose -f docker-compose-local.yml up -d --build --remove-orphans

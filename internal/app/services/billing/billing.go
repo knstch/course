@@ -20,7 +20,8 @@ import (
 )
 
 var (
-	ErrInvoiceNotFound = errors.New("инвойс не найден")
+	ErrInvoiceNotFound        = errors.New("инвойс не найден")
+	ErrCourseAlreadyPurchased = errors.New("этот курс уже куплен")
 )
 
 type SberBillingService struct {
@@ -36,6 +37,7 @@ type Banker interface {
 	SetInvoiceId(ctx context.Context, invoiceId, orderId uint) *courseError.CourseError
 	ApprovePayment(ctx context.Context, invoiceId, hashedUserData string) (*string, *courseError.CourseError)
 	DeleteOrder(ctx context.Context, invoiceId string) *courseError.CourseError
+	GetUserCourses(ctx context.Context) ([]dto.Order, *courseError.CourseError)
 }
 
 func NewSberBillingService(config *config.Config, banker Banker, redis *redis.Client) SberBillingService {
@@ -50,6 +52,17 @@ func NewSberBillingService(config *config.Config, banker Banker, redis *redis.Cl
 func (billing SberBillingService) PlaceOrder(ctx context.Context, buyDetails *entity.BuyDetails) (*string, *courseError.CourseError) {
 	if err := validation.NewPaymentCredentialsToValidate(buyDetails).Validate(ctx); err != nil {
 		return nil, err
+	}
+
+	userCourses, err := billing.banker.GetUserCourses(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, v := range userCourses {
+		if v.CourseId == buyDetails.CourseId {
+			return nil, courseError.CreateError(ErrCourseAlreadyPurchased, 15004)
+		}
 	}
 
 	price, err := billing.banker.GetCourseCost(ctx, buyDetails.CourseId)
