@@ -520,15 +520,16 @@ type CourseToValidate struct {
 	PreviewExt  string
 	Cost        string
 	Discount    string
+	CourseId    string
 }
 
-func NewCourseToValidate(name, description, previewExt, cost, discount string) *CourseToValidate {
+func NewCourseToValidate(name, description, cost, discount, previewExt string) *CourseToValidate {
 	return &CourseToValidate{
 		Name:        name,
 		Description: description,
-		PreviewExt:  previewExt,
 		Cost:        cost,
 		Discount:    discount,
+		PreviewExt:  previewExt,
 	}
 }
 
@@ -551,6 +552,65 @@ func (course *CourseToValidate) Validate(ctx context.Context) *courseerror.Cours
 		),
 		validation.Field(&course.Cost,
 			validation.By(costValidator(course.Cost, course.Discount, false)),
+		),
+	); err != nil {
+		return courseerror.CreateError(err, 400)
+	}
+
+	return nil
+}
+
+type EditCourseToValidate CourseToValidate
+
+func NewEditCoruseToValidate(name, description, cost, discount, courseId string) *EditCourseToValidate {
+	return &EditCourseToValidate{
+		Name:        name,
+		Description: description,
+		Cost:        cost,
+		Discount:    discount,
+		CourseId:    courseId,
+	}
+}
+
+func (course *EditCourseToValidate) Validate(ctx context.Context) *courseerror.CourseError {
+	if err := validation.ValidateStructWithContext(ctx, course,
+		validation.Field(&course.Name,
+			validation.RuneLength(1, 100).Error(errCourseNameIsTooBig),
+		),
+		validation.Field(&course.Description,
+			validation.RuneLength(1, 2000).Error(errCourseDescriptionIsTooBig),
+		),
+		validation.Field(&course.Discount,
+			validation.By(costValidator(course.Discount, "", true)),
+		),
+		validation.Field(&course.Cost,
+			validation.By(costValidator(course.Cost, course.Discount, false)),
+		),
+		validation.Field(&course.CourseId,
+			validation.Required.Error(errFieldIsNil),
+			validation.By(idValidator(course.CourseId)),
+		),
+	); err != nil {
+		return courseerror.CreateError(err, 400)
+	}
+
+	return nil
+}
+
+type PreviewFileNameToValidate struct {
+	PreviewExt string
+}
+
+func NewPreviewFileNameToValidate(fileName string) *PreviewFileNameToValidate {
+	return &PreviewFileNameToValidate{
+		PreviewExt: fileName,
+	}
+}
+
+func (preview *PreviewFileNameToValidate) Validate(ctx context.Context) *courseerror.CourseError {
+	if err := validation.ValidateStructWithContext(ctx, preview,
+		validation.Field(&preview.PreviewExt,
+			validation.By(imgExtValidator(preview.PreviewExt)),
 		),
 	); err != nil {
 		return courseerror.CreateError(err, 400)

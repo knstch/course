@@ -3,7 +3,9 @@ package storage
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
+	"strings"
 
 	courseError "github.com/knstch/course/internal/app/course_error"
 	"github.com/knstch/course/internal/domain/dto"
@@ -34,19 +36,19 @@ func (storage *Storage) GetAllUsersData(ctx context.Context,
 	query := tx.Model(&dto.User{})
 
 	if firstName != "" {
-		query.Where("first_name = ?", firstName)
+		query.Where("LOWER(first_name) LIKE ?", fmt.Sprint("%"+strings.ToLower(firstName)+"%"))
 	}
 
 	if surname != "" {
-		query.Where("surname = ?", surname)
+		query.Where("LOWER(surname) LIKE ?", fmt.Sprint("%"+strings.ToLower(surname)+"%"))
 	}
 
 	if phoneNumber != "" {
-		query.Where("phone_number = ?", phoneNumber)
+		query.Where("LOWER(phone_number) LIKE ?", fmt.Sprint("%"+strings.ToLower(phoneNumber)+"%"))
 	}
 
 	if email != "" {
-		query.Joins("JOIN credentials ON credentials.email = ?", email).
+		query.Joins("JOIN credentials ON LOWER(credentials.email) LIKE ?", fmt.Sprint("%"+strings.ToLower(email)+"%")).
 			Where("credentials_id = credentials.id")
 	}
 
@@ -60,7 +62,7 @@ func (storage *Storage) GetAllUsersData(ctx context.Context,
 	}
 
 	if courseName != "" {
-		query.Joins("JOIN courses ON courses.name = ?", courseName).
+		query.Joins("JOIN courses ON LOWER(courses.name) LIKE ?", fmt.Sprint("%"+strings.ToLower(courseName)+"%")).
 			Joins("JOIN orders ON orders.course_id = courses.id").
 			Where("users.id = orders.user_id")
 	}

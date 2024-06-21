@@ -38,6 +38,10 @@ func (h *Handlers) CreateNewCourse(ctx *gin.Context) {
 			ctx.AbortWithStatusJSON(http.StatusServiceUnavailable, courseErr)
 			return
 		}
+		if courseErr.Code == 13001 {
+			ctx.AbortWithStatusJSON(http.StatusConflict, courseErr)
+			return
+		}
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, courseErr)
 		return
 	}
@@ -54,8 +58,12 @@ func (h *Handlers) CreateNewModule(ctx *gin.Context) {
 
 	id, err := h.contentManagementService.AddModule(ctx, module)
 	if err != nil {
-		if err.Code == 400 || err.Code == 13001 {
+		if err.Code == 400 {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			return
+		}
+		if err.Code == 13001 {
+			ctx.AbortWithStatusJSON(http.StatusConflict, err)
 			return
 		}
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
@@ -86,8 +94,12 @@ func (h *Handlers) UploadNewLesson(ctx *gin.Context) {
 
 	lessonId, courseErr := h.contentManagementService.AddLesson(ctx, lesson, name, moduleName, description, position, courseName, previewHeader, &preview)
 	if courseErr != nil {
-		if courseErr.Code == 400 || courseErr.Code == 13001 || courseErr.Code == 13002 {
+		if courseErr.Code == 400 {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, courseErr)
+			return
+		}
+		if courseErr.Code == 13001 || courseErr.Code == 13002 {
+			ctx.AbortWithStatusJSON(http.StatusConflict, courseErr)
 			return
 		}
 		if courseErr.Code == 11051 || courseErr.Code == 14002 || courseErr.Code == 11041 {
@@ -99,4 +111,41 @@ func (h *Handlers) UploadNewLesson(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, entity.NewId().AddId(lessonId))
+}
+
+func (h *Handlers) UpdateCourse(ctx *gin.Context) {
+	var fileNotExists bool
+	name := ctx.PostForm("name")
+	description := ctx.PostForm("description")
+	cost := ctx.PostForm("cost")
+	discount := ctx.PostForm("discount")
+	courseId := ctx.PostForm("courseId")
+	file, header, err := ctx.Request.FormFile("preview")
+	if err != nil {
+		if errors.Is(err, http.ErrMissingFile) {
+			fileNotExists = true
+		} else {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBadFormData, 400))
+			return
+		}
+	}
+
+	if err := h.contentManagementService.ManageCourse(ctx, courseId, name, description, cost, discount, header, &file, fileNotExists); err != nil {
+		if err.Code == 400 {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			return
+		}
+		if err.Code == 13003 {
+			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
+			return
+		}
+		if err.Code == 13001 {
+			ctx.AbortWithStatusJSON(http.StatusConflict, err)
+			return
+		}
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("данные о курсе успешно отредактированы", true))
 }

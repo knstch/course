@@ -199,8 +199,9 @@ func (user *UserDataAdmin) AddCourses(courses []dto.Course) *UserDataAdmin {
 	user.Courses = make([]UserCourses, 0, len(courses))
 	for _, v := range courses {
 		course := UserCourses{
-			Id:   v.ID,
-			Name: v.Name,
+			Id:         v.ID,
+			Name:       v.Name,
+			PreviewUrl: v.PreviewImgUrl,
 		}
 		user.Courses = append(user.Courses, course)
 	}

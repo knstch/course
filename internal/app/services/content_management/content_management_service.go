@@ -44,6 +44,7 @@ type ContentManager interface {
 	GetUserCourses(ctx context.Context) ([]dto.Order, *courseError.CourseError)
 	GetModules(ctx context.Context, name, description, courseName string, limit, offset int) ([]entity.ModuleInfo, *courseError.CourseError)
 	GetLessons(ctx context.Context, name, description, moduleName, courseName string, limit, offset int) ([]entity.LessonInfo, *courseError.CourseError)
+	EditCourse(ctx context.Context, courseId, name, description string, previewUrl *string, cost, discount *uint) *courseError.CourseError
 }
 
 func NewContentManagementServcie(manager ContentManager, config *config.Config, client *http.Client, grpcClient *grpc.GrpcClient) ContentManagementServcie {
@@ -56,8 +57,10 @@ func NewContentManagementServcie(manager ContentManager, config *config.Config, 
 	}
 }
 
-func (manager ContentManagementServcie) AddCourse(ctx context.Context, name, description, cost, discount string, formFileHeader *multipart.FileHeader, file *multipart.File) (*uint, *courseError.CourseError) {
-	if err := validation.NewCourseToValidate(name, description, formFileHeader.Filename, cost, discount).Validate(ctx); err != nil {
+func (manager ContentManagementServcie) AddCourse(ctx context.Context,
+	name, description, cost, discount string,
+	formFileHeader *multipart.FileHeader, file *multipart.File) (*uint, *courseError.CourseError) {
+	if err := validation.NewCourseToValidate(name, description, cost, discount, formFileHeader.Filename).Validate(ctx); err != nil {
 		return nil, err
 	}
 
@@ -359,4 +362,52 @@ func (manager ContentManagementServcie) GetLessonsInfo(ctx context.Context,
 		},
 		LessonInfo: lessons,
 	}, nil
+}
+
+func (manager ContentManagementServcie) ManageCourse(ctx context.Context,
+	courseId, name, description, cost, discount string,
+	formFileHeader *multipart.FileHeader,
+	file *multipart.File, fileNotExists bool) *courseError.CourseError {
+	if err := validation.NewEditCoruseToValidate(name, description, cost, discount, courseId).Validate(ctx); err != nil {
+		return err
+	}
+
+	if !fileNotExists {
+		if err := validation.NewPreviewFileNameToValidate(formFileHeader.Filename).Validate(ctx); err != nil {
+			return err
+		}
+	}
+
+	var (
+		path         *string
+		err          *courseError.CourseError
+		uintCost     *uint
+		uintDiscount *uint
+	)
+
+	if !fileNotExists {
+		readyName := manager.prepareFileName(formFileHeader.Filename)
+
+		path, err = manager.sendPhoto(file, readyName)
+		if err != nil {
+			return err
+		}
+	}
+
+	if cost != "" {
+		intCost, _ := strconv.Atoi(cost)
+		bufferCost := uint(intCost)
+		uintCost = &bufferCost
+	}
+	if discount != "" {
+		intDiscount, _ := strconv.Atoi(discount)
+		bufferDiscount := uint(intDiscount)
+		uintCost = &bufferDiscount
+	}
+
+	if err := manager.contentManager.EditCourse(ctx, courseId, name, description, path, uintCost, uintDiscount); err != nil {
+		return err
+	}
+
+	return nil
 }

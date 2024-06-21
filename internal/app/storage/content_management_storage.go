@@ -420,3 +420,59 @@ func (storage *Storage) GetLessons(ctx context.Context,
 
 	return lessonsInfo, nil
 }
+
+func (storage *Storage) EditCourse(ctx context.Context,
+	courseId, name, description string, previewUrl *string,
+	cost, discount *uint) *courseError.CourseError {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	originalCourse := dto.CreateNewCourse()
+	if err := tx.Where("id = ?", courseId).First(&originalCourse).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return courseError.CreateError(errCourseNotExists, 13003)
+		}
+		return courseError.CreateError(err, 10002)
+	}
+
+	if originalCourse.Name != name {
+		checkCourse := dto.CreateNewCourse()
+		if err := tx.Where("name = ? AND id != ?", name, courseId).First(&checkCourse).Error; err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				tx.Rollback()
+				return courseError.CreateError(err, 13001)
+			}
+		}
+		if checkCourse.ID != 0 {
+			tx.Rollback()
+			return courseError.CreateError(errCourseAlreadyExists, 10002)
+		}
+		originalCourse.Name = name
+	}
+
+	if originalCourse.Description != description {
+		originalCourse.Description = description
+	}
+
+	if originalCourse.Cost != *cost && cost != nil {
+		originalCourse.Cost = *cost
+	}
+
+	if originalCourse.Discount != discount && discount != nil {
+		originalCourse.Discount = discount
+	}
+
+	if previewUrl != nil && originalCourse.PreviewImgUrl != *previewUrl {
+		originalCourse.PreviewImgUrl = *previewUrl
+	}
+
+	if err := tx.Save(&originalCourse).Error; err != nil {
+		return courseError.CreateError(err, 10003)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10010)
+	}
+
+	return nil
+}

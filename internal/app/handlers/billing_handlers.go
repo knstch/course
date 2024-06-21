@@ -26,6 +26,10 @@ func (h Handlers) BuyCourse(ctx *gin.Context) {
 			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
 			return
 		}
+		if err.Code == 15004 {
+			ctx.AbortWithStatusJSON(http.StatusConflict, err)
+			return
+		}
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
 		return
 	}
