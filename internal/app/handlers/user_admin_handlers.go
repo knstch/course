@@ -26,7 +26,7 @@ func (h *Handlers) FindUsersByFilters(ctx *gin.Context) {
 }
 
 func (h *Handlers) BanUser(ctx *gin.Context) {
-	Id := entity.NewId()
+	Id := entity.NewId(nil)
 	if err := ctx.ShouldBindJSON(&Id); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
 		return

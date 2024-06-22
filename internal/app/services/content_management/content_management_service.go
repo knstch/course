@@ -47,6 +47,7 @@ type ContentManager interface {
 	EditCourse(ctx context.Context, courseId, name, description string, previewUrl *string, cost, discount *uint) *courseError.CourseError
 	EditModule(ctx context.Context, name, description string, position *uint, moduleId uint) *courseError.CourseError
 	EditLesson(ctx context.Context, name, description, position, lessonId string, videoPath, previewPath *string) *courseError.CourseError
+	ToggleHiddenStatus(ctx context.Context, courseId int) *courseError.CourseError
 }
 
 func NewContentManagementServcie(manager ContentManager, config *config.Config, client *http.Client, grpcClient *grpc.GrpcClient) ContentManagementServcie {
@@ -280,7 +281,7 @@ func (manager ContentManagementServcie) GetCourseInfo(ctx context.Context, id, n
 		}
 
 		for _, v := range courses {
-			if fmt.Sprint(v.ID) == id {
+			if fmt.Sprint(v.CourseId) == id {
 				isCoursePurchased = true
 			}
 		}
@@ -471,6 +472,18 @@ func (manager ContentManagementServcie) ManageLesson(ctx context.Context,
 	}
 
 	if err := manager.contentManager.EditLesson(ctx, name, description, position, lessonId, videoPath, previewPath); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (manager ContentManagementServcie) ManageShowStatus(ctx context.Context, courseId int) *courseError.CourseError {
+	if err := validation.NewIdToValidate(courseId).Validate(ctx); err != nil {
+		return err
+	}
+
+	if err := manager.contentManager.ToggleHiddenStatus(ctx, courseId); err != nil {
 		return err
 	}
 

@@ -19,7 +19,7 @@ var (
 	errLessonNameAlreadyExists = errors.New("урок с таким назавнием уже существует")
 	errLessonPosAlreadyExists  = errors.New("урок с такой позицией уже существует")
 
-	errCourseNotExists = errors.New("курса с таким названием не существует")
+	errCourseNotExists = errors.New("такого курса не существует")
 	errModuleNotExists = errors.New("такого модуля не существует")
 
 	errCourseAlreadyExists = errors.New("курс с таким названием уже существует")
@@ -242,6 +242,10 @@ func (storage *Storage) GetCourse(
 
 	if id != "" {
 		query = query.Where("id = ?", id)
+
+		if !isPurchased {
+			query = query.Where("hidden = ?", false)
+		}
 	} else {
 		if name != "" {
 			query = query.Where("LOWER(name) LIKE ?", fmt.Sprint("%"+strings.ToLower(name)+"%"))
@@ -258,6 +262,8 @@ func (storage *Storage) GetCourse(
 		if discount != "" {
 			query = query.Where("discount = ?", discount)
 		}
+
+		query = query.Where("hidden = ?", false)
 	}
 
 	if err := query.Limit(limit).Offset(offset).Find(&courses).Error; err != nil {
@@ -600,6 +606,39 @@ func (storage Storage) EditLesson(ctx context.Context,
 	}
 
 	if err := tx.Save(&originalLesson).Error; err != nil {
+		return courseError.CreateError(err, 10003)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10010)
+	}
+
+	return nil
+}
+
+func (storage Storage) ToggleHiddenStatus(ctx context.Context, courseId int) *courseError.CourseError {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	course := dto.CreateNewCourse()
+	if err := tx.Where("id = ?", courseId).First(&course).Error; err != nil {
+		tx.Rollback()
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return courseError.CreateError(errCourseNotExists, 13003)
+		}
+		return courseError.CreateError(err, 10002)
+	}
+
+	toggle := course.Hidden
+
+	if toggle {
+		toggle = false
+	}
+	if !toggle {
+		toggle = true
+	}
+
+	if err := tx.Model(&dto.Course{}).Where("id = ?", courseId).Update("hidden", toggle).Error; err != nil {
 		return courseError.CreateError(err, 10003)
 	}
 

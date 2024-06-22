@@ -138,6 +138,7 @@ type Course struct {
 	PreviewImgUrl string `gorm:"not null"`
 	Cost          uint   `gorm:"not null"`
 	Discount      *uint
+	Hidden        bool `gorm:"default:false"`
 }
 
 func CreateNewCourse() *Course {

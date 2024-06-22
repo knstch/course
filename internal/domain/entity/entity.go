@@ -226,13 +226,13 @@ type Id struct {
 	Id uint `json:"id"`
 }
 
-func NewId() *Id {
-	return &Id{}
-}
-
-func (id *Id) AddId(Id *uint) *Id {
-	id.Id = *Id
-	return id
+func NewId(id *uint) *Id {
+	if id == nil {
+		return &Id{}
+	}
+	return &Id{
+		Id: *id,
+	}
 }
 
 type Module struct {

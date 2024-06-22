@@ -13,7 +13,7 @@ var (
 	errBadFormData = errors.New("одно или несколько полей не заполнены")
 )
 
-func (h *Handlers) CreateNewCourse(ctx *gin.Context) {
+func (h Handlers) CreateNewCourse(ctx *gin.Context) {
 	name := ctx.PostForm("name")
 	description := ctx.PostForm("description")
 	cost := ctx.PostForm("cost")
@@ -46,10 +46,10 @@ func (h *Handlers) CreateNewCourse(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, entity.NewId().AddId(id))
+	ctx.JSON(http.StatusOK, entity.NewId(id))
 }
 
-func (h *Handlers) CreateNewModule(ctx *gin.Context) {
+func (h Handlers) CreateNewModule(ctx *gin.Context) {
 	module := entity.NewModule()
 	if err := ctx.ShouldBindJSON(&module); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
@@ -70,10 +70,10 @@ func (h *Handlers) CreateNewModule(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, entity.NewId().AddId(id))
+	ctx.JSON(http.StatusOK, entity.NewId(id))
 }
 
-func (h *Handlers) UploadNewLesson(ctx *gin.Context) {
+func (h Handlers) UploadNewLesson(ctx *gin.Context) {
 	lesson, err := ctx.FormFile("lesson")
 	if err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(err, 400))
@@ -110,10 +110,10 @@ func (h *Handlers) UploadNewLesson(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, entity.NewId().AddId(lessonId))
+	ctx.JSON(http.StatusOK, entity.NewId(lessonId))
 }
 
-func (h *Handlers) UpdateCourse(ctx *gin.Context) {
+func (h Handlers) UpdateCourse(ctx *gin.Context) {
 	var fileNotExists bool
 	name := ctx.PostForm("name")
 	description := ctx.PostForm("description")
@@ -150,7 +150,7 @@ func (h *Handlers) UpdateCourse(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("данные о курсе успешно отредактированы", true))
 }
 
-func (h *Handlers) UpdateModule(ctx *gin.Context) {
+func (h Handlers) UpdateModule(ctx *gin.Context) {
 	module := entity.NewModule()
 	if err := ctx.ShouldBindJSON(&module); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
@@ -229,4 +229,27 @@ func (h Handlers) UpdateLesson(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("урок успешно отредактирован", true))
+}
+
+func (h Handlers) ManageVisibility(ctx *gin.Context) {
+	id := entity.NewId(nil)
+	if err := ctx.ShouldBindJSON(&id); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
+		return
+	}
+
+	if err := h.contentManagementService.ManageShowStatus(ctx, int(id.Id)); err != nil {
+		if err.Code == 400 {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			return
+		}
+		if err.Code == 13003 {
+			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
+			return
+		}
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("видимость модуля успешно изменена", true))
 }
