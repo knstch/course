@@ -41,6 +41,7 @@ func RequestsRouter(h *handlers.Handlers) *gin.Engine {
 	admin.POST("/uploadLesson", h.UploadNewLesson)
 	admin.PATCH("/editCourse", h.UpdateCourse)
 	admin.PATCH("/editModule", h.UpdateModule)
+	admin.PATCH("/editLesson", h.UpdateLesson)
 
 	content := v1.Group("content")
 	content.GET("/courses", h.RetreiveCourses)

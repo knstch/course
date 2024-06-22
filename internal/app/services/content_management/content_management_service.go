@@ -46,7 +46,7 @@ type ContentManager interface {
 	GetLessons(ctx context.Context, name, description, moduleName, courseName string, limit, offset int) ([]entity.LessonInfo, *courseError.CourseError)
 	EditCourse(ctx context.Context, courseId, name, description string, previewUrl *string, cost, discount *uint) *courseError.CourseError
 	EditModule(ctx context.Context, name, description string, position *uint, moduleId uint) *courseError.CourseError
-	EditLesson(ctx context.Context, name, description, position, videoPath, previewPath, lessonId string) *courseError.CourseError
+	EditLesson(ctx context.Context, name, description, position, lessonId string, videoPath, previewPath *string) *courseError.CourseError
 }
 
 func NewContentManagementServcie(manager ContentManager, config *config.Config, client *http.Client, grpcClient *grpc.GrpcClient) ContentManagementServcie {
@@ -470,7 +470,7 @@ func (manager ContentManagementServcie) ManageLesson(ctx context.Context,
 		}
 	}
 
-	if err := manager.contentManager.EditLesson(ctx, name, description, position, *videoPath, *previewPath, lessonId); err != nil {
+	if err := manager.contentManager.EditLesson(ctx, name, description, position, lessonId, videoPath, previewPath); err != nil {
 		return err
 	}
 

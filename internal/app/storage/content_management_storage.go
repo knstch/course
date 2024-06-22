@@ -541,21 +541,21 @@ func (storage *Storage) EditModule(ctx context.Context,
 }
 
 func (storage Storage) EditLesson(ctx context.Context,
-	name, description, position, videoPath, previewPath, lessonId string) *courseError.CourseError {
+	name, description, position, lessonId string, videoPath, previewPath *string) *courseError.CourseError {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	originalLesson := dto.CreateNewLesson()
 	if err := tx.Where("id = ?", lessonId).First(&originalLesson).Error; err != nil {
 		tx.Rollback()
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return courseError.CreateError(err, 13001)
+			return courseError.CreateError(err, 13005)
 		}
 		return courseError.CreateError(err, 10002)
 	}
 
 	if name != "" {
 		checkCollisionsLesson := dto.CreateNewLesson()
-		if err := tx.Where("module_id = ? AND name = ? AND id != ?", originalLesson.ModuleId, originalLesson.Name, lessonId).
+		if err := tx.Where("module_id = ? AND name = ? AND id != ?", originalLesson.ModuleId, name, lessonId).
 			First(&checkCollisionsLesson).Error; err != nil {
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				tx.Rollback()
@@ -571,13 +571,14 @@ func (storage Storage) EditLesson(ctx context.Context,
 
 	if position != "" {
 		checkCollisionsLesson := dto.CreateNewLesson()
-		if err := tx.Where("module_id = ? AND position = ? AND id != ?", originalLesson.ModuleId, originalLesson.Position, lessonId).
+		if err := tx.Where("module_id = ? AND position = ? AND id != ?", originalLesson.ModuleId, position, lessonId).
 			First(&checkCollisionsLesson).Error; err != nil {
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				tx.Rollback()
 				return courseError.CreateError(err, 10002)
 			}
 		}
+		fmt.Println("ERR: ", checkCollisionsLesson.ID)
 		if checkCollisionsLesson.ID != 0 {
 			tx.Rollback()
 			return courseError.CreateError(errLessonPosAlreadyExists, 13001)
@@ -590,12 +591,12 @@ func (storage Storage) EditLesson(ctx context.Context,
 		originalLesson.Description = &description
 	}
 
-	if videoPath != "" {
-		originalLesson.VideoUrl = videoPath
+	if videoPath != nil {
+		originalLesson.VideoUrl = *videoPath
 	}
 
-	if previewPath != "" {
-		originalLesson.PreviewImgUrl = previewPath
+	if previewPath != nil {
+		originalLesson.PreviewImgUrl = *previewPath
 	}
 
 	if err := tx.Save(&originalLesson).Error; err != nil {

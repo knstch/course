@@ -213,6 +213,20 @@ func (h Handlers) UpdateLesson(ctx *gin.Context) {
 	if err := h.contentManagementService.ManageLesson(
 		ctx, lesson, name, description, position, lessonId,
 		previewHeader, &preview, videoNotExists, previewNotExists); err != nil {
-
+		if err.Code == 13005 {
+			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
+			return
+		}
+		if err.Code == 13001 {
+			ctx.AbortWithStatusJSON(http.StatusConflict, err)
+			return
+		}
+		if err.Code == 400 {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			return
+		}
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
 	}
+
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("урок успешно отредактирован", true))
 }
