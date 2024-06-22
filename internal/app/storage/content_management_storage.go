@@ -578,7 +578,7 @@ func (storage Storage) EditLesson(ctx context.Context,
 				return courseError.CreateError(err, 10002)
 			}
 		}
-		fmt.Println("ERR: ", checkCollisionsLesson.ID)
+
 		if checkCollisionsLesson.ID != 0 {
 			tx.Rollback()
 			return courseError.CreateError(errLessonPosAlreadyExists, 13001)
