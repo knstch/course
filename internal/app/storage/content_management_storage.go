@@ -21,6 +21,7 @@ var (
 
 	errCourseNotExists = errors.New("такого курса не существует")
 	errModuleNotExists = errors.New("такого модуля не существует")
+	errLessonNotExists = errors.New("такого урока не существует")
 
 	errCourseAlreadyExists = errors.New("курс с таким названием уже существует")
 )
@@ -494,7 +495,7 @@ func (storage *Storage) EditModule(ctx context.Context,
 	if err := tx.Where("id = ?", moduleId).First(&originalModule).Error; err != nil {
 		tx.Rollback()
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return courseError.CreateError(errModuleNotExists, 13003)
+			return courseError.CreateError(errModuleNotExists, 13002)
 		}
 		return courseError.CreateError(err, 10002)
 	}
@@ -554,7 +555,7 @@ func (storage Storage) EditLesson(ctx context.Context,
 	if err := tx.Where("id = ?", lessonId).First(&originalLesson).Error; err != nil {
 		tx.Rollback()
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return courseError.CreateError(err, 13005)
+			return courseError.CreateError(errLessonNotExists, 13005)
 		}
 		return courseError.CreateError(err, 10002)
 	}
@@ -640,6 +641,56 @@ func (storage Storage) ToggleHiddenStatus(ctx context.Context, courseId int) *co
 
 	if err := tx.Model(&dto.Course{}).Where("id = ?", courseId).Update("hidden", toggle).Error; err != nil {
 		return courseError.CreateError(err, 10003)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10010)
+	}
+
+	return nil
+}
+
+func (storage Storage) DeleteModule(ctx context.Context, moduleId string) *courseError.CourseError {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	var module dto.Module
+	if err := tx.Where("id = ?", moduleId).First(&module).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return courseError.CreateError(errModuleNotExists, 13002)
+		}
+		return courseError.CreateError(err, 10002)
+	}
+
+	if err := tx.Where("module_id = ?", moduleId).Delete(&dto.Lesson{}).Error; err != nil {
+		return courseError.CreateError(err, 10004)
+	}
+
+	if err := tx.Where("id = ?", moduleId).Delete(&dto.Module{}).Error; err != nil {
+		return courseError.CreateError(err, 10004)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10010)
+	}
+
+	return nil
+}
+
+func (storage Storage) DeleteLesson(ctx context.Context, lessonId string) *courseError.CourseError {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	var module dto.Module
+	if err := tx.Where("id = ?", lessonId).First(&module).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return courseError.CreateError(errLessonNotExists, 13005)
+		}
+		return courseError.CreateError(err, 10002)
+	}
+
+	if err := tx.Where("id = ?").Delete(&dto.Lesson{}).Error; err != nil {
+		return courseError.CreateError(err, 10004)
 	}
 
 	if err := tx.Commit().Error; err != nil {

@@ -48,6 +48,8 @@ type ContentManager interface {
 	EditModule(ctx context.Context, name, description string, position *uint, moduleId uint) *courseError.CourseError
 	EditLesson(ctx context.Context, name, description, position, lessonId string, videoPath, previewPath *string) *courseError.CourseError
 	ToggleHiddenStatus(ctx context.Context, courseId int) *courseError.CourseError
+	DeleteModule(ctx context.Context, moduleId string) *courseError.CourseError
+	DeleteLesson(ctx context.Context, lessonId string) *courseError.CourseError
 }
 
 func NewContentManagementServcie(manager ContentManager, config *config.Config, client *http.Client, grpcClient *grpc.GrpcClient) ContentManagementServcie {
@@ -484,6 +486,30 @@ func (manager ContentManagementServcie) ManageShowStatus(ctx context.Context, co
 	}
 
 	if err := manager.contentManager.ToggleHiddenStatus(ctx, courseId); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (manager ContentManagementServcie) RemoveModule(ctx context.Context, moduleId string) *courseError.CourseError {
+	if err := validation.NewStringIdToValidate(moduleId).Validate(ctx); err != nil {
+		return err
+	}
+
+	if err := manager.contentManager.DeleteModule(ctx, moduleId); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (manager ContentManagementServcie) RemoveLesson(ctx context.Context, lessonId string) *courseError.CourseError {
+	if err := validation.NewStringIdToValidate(lessonId).Validate(ctx); err != nil {
+		return err
+	}
+
+	if err := manager.contentManager.DeleteLesson(ctx, lessonId); err != nil {
 		return err
 	}
 

@@ -166,7 +166,7 @@ func (h Handlers) UpdateModule(ctx *gin.Context) {
 			ctx.AbortWithStatusJSON(http.StatusConflict, err)
 			return
 		}
-		if err.Code == 13003 {
+		if err.Code == 13002 {
 			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
 			return
 		}
@@ -194,13 +194,11 @@ func (h Handlers) UpdateLesson(ctx *gin.Context) {
 
 	preview, previewHeader, err := ctx.Request.FormFile("preview")
 	if err != nil {
-		if err != nil {
-			if errors.Is(err, http.ErrMissingFile) {
-				previewNotExists = true
-			} else {
-				ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBadFormData, 400))
-				return
-			}
+		if errors.Is(err, http.ErrMissingFile) {
+			previewNotExists = true
+		} else {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBadFormData, 400))
+			return
 		}
 
 	}
@@ -219,6 +217,10 @@ func (h Handlers) UpdateLesson(ctx *gin.Context) {
 		}
 		if err.Code == 13001 {
 			ctx.AbortWithStatusJSON(http.StatusConflict, err)
+			return
+		}
+		if err.Code == 13005 {
+			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
 			return
 		}
 		if err.Code == 400 {
@@ -252,4 +254,37 @@ func (h Handlers) ManageVisibility(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("видимость модуля успешно изменена", true))
+}
+
+func (h Handlers) EraseModule(ctx *gin.Context) {
+	if err := h.contentManagementService.RemoveModule(ctx, ctx.Param("id")); err != nil {
+		if err.Code == 400 {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			return
+		}
+		if err.Code == 13002 {
+			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
+		}
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("модуль и вложенные уроки удалены", true))
+}
+
+func (h Handlers) EraseLesson(ctx *gin.Context) {
+	if err := h.contentManagementService.RemoveLesson(ctx, ctx.Param("id")); err != nil {
+		if err.Code == 400 {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			return
+		}
+		if err.Code == 13005 {
+			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
+			return
+		}
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("урок успешно удален", true))
 }
