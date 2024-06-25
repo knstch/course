@@ -45,6 +45,8 @@ func RequestsRouter(h *handlers.Handlers) *gin.Engine {
 	admin.PATCH("/editVisibility", h.ManageVisibility)
 	admin.DELETE("/deleteModule/:id", h.EraseModule)
 	admin.DELETE("/deleteLesson/:id", h.EraseLesson)
+	admin.PATCH("/manageBillingHost", h.ManageBillingHost)
+	admin.PATCH("/manageBillingToken", h.ManageAccessToken)
 
 	content := v1.Group("content")
 	content.GET("/courses", h.RetreiveCourses)

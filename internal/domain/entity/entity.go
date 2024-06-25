@@ -444,3 +444,19 @@ func CreateNewFailedPayment() *FailedPayment {
 		Status: true,
 	}
 }
+
+type BillingHost struct {
+	Url string `json:"url"`
+}
+
+func CreateBillingHost() *BillingHost {
+	return &BillingHost{}
+}
+
+type AccessToken struct {
+	Token string `json:"token"`
+}
+
+func CreateAccessToken() *AccessToken {
+	return &AccessToken{}
+}

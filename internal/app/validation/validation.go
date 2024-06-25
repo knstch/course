@@ -18,6 +18,7 @@ const (
 	passwordPattern = `^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};:"\\|,.<>\/?]*$`
 	lettersPattern  = `^\p{L}+$`
 	fileNamePattern = `\.(.+)$`
+	urlPattern      = `^(http|https)://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(\/[a-zA-Z0-9#%._-]*)*$`
 
 	errEmailIsNil                 = "email обязательно"
 	errBadEmail                   = "email передан неправильно"
@@ -54,12 +55,15 @@ const (
 
 	errBadParam  = "параметр передан неправильно"
 	errBadLength = "превышена длина параметра"
+
+	errTokenFieldCantBeEmpty = "поле token не может быть пустым"
 )
 
 var (
 	emailRegex    = regexp.MustCompile(emailPattern)
 	passwordRegex = regexp.MustCompile(passwordPattern)
 	lettersRegex  = regexp.MustCompile(lettersPattern)
+	urlRegex      = regexp.MustCompile(urlPattern)
 
 	fileExtRegex = regexp.MustCompile(fileNamePattern)
 
@@ -1044,6 +1048,37 @@ func (credentials *PaymentCredentialsToValidate) Validate(ctx context.Context) *
 		validation.Field(&credentials.IsRusCard,
 			validation.Required.Error(errFieldIsNil),
 		),
+	); err != nil {
+		return courseerror.CreateError(err, 400)
+	}
+
+	return nil
+}
+
+type WebsiteToValidate struct {
+	url string
+}
+
+func ValidateWebsite(ctx context.Context, link string) *courseerror.CourseError {
+	website := &WebsiteToValidate{
+		url: link,
+	}
+
+	if err := validation.ValidateStructWithContext(ctx, website,
+		validation.Field(&website.url,
+			validation.Match(urlRegex),
+			validation.Required.Error(errFieldIsNil),
+		),
+	); err != nil {
+		return courseerror.CreateError(err, 400)
+	}
+
+	return nil
+}
+
+func ValidateToken(ctx context.Context, token string) *courseerror.CourseError {
+	if err := validation.Validate(token,
+		validation.Required.Error(errTokenFieldCantBeEmpty),
 	); err != nil {
 		return courseerror.CreateError(err, 400)
 	}

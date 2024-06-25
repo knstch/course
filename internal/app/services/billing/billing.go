@@ -167,3 +167,23 @@ func (billing SberBillingService) FailPayment(ctx context.Context, hashedUserDat
 
 	return nil
 }
+
+func (billing *SberBillingService) ChangeApiHost(ctx context.Context, apiHost string) *courseError.CourseError {
+	if err := validation.ValidateWebsite(ctx, apiHost); err != nil {
+		return err
+	}
+
+	billing.apiHost = apiHost
+
+	return nil
+}
+
+func (billing *SberBillingService) ChangeAccessToken(ctx context.Context, token string) *courseError.CourseError {
+	if err := validation.ValidateToken(ctx, token); err != nil {
+		return err
+	}
+
+	billing.accessToken = token
+
+	return nil
+}
