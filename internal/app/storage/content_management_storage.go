@@ -656,6 +656,7 @@ func (storage Storage) DeleteModule(ctx context.Context, moduleId string) *cours
 
 	var module dto.Module
 	if err := tx.Where("id = ?", moduleId).First(&module).Error; err != nil {
+		tx.Rollback()
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return courseError.CreateError(errModuleNotExists, 13002)
 		}
@@ -663,10 +664,12 @@ func (storage Storage) DeleteModule(ctx context.Context, moduleId string) *cours
 	}
 
 	if err := tx.Where("module_id = ?", moduleId).Delete(&dto.Lesson{}).Error; err != nil {
+		tx.Rollback()
 		return courseError.CreateError(err, 10004)
 	}
 
 	if err := tx.Where("id = ?", moduleId).Delete(&dto.Module{}).Error; err != nil {
+		tx.Rollback()
 		return courseError.CreateError(err, 10004)
 	}
 
@@ -683,13 +686,15 @@ func (storage Storage) DeleteLesson(ctx context.Context, lessonId string) *cours
 
 	var module dto.Module
 	if err := tx.Where("id = ?", lessonId).First(&module).Error; err != nil {
+		tx.Rollback()
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return courseError.CreateError(errLessonNotExists, 13005)
 		}
 		return courseError.CreateError(err, 10002)
 	}
 
-	if err := tx.Where("id = ?").Delete(&dto.Lesson{}).Error; err != nil {
+	if err := tx.Where("id = ?", lessonId).Delete(&dto.Lesson{}).Error; err != nil {
+		tx.Rollback()
 		return courseError.CreateError(err, 10004)
 	}
 
