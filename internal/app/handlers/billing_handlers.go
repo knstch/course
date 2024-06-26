@@ -79,6 +79,12 @@ func (h Handlers) DeclineOrder(ctx *gin.Context) {
 }
 
 func (h Handlers) ManageBillingHost(ctx *gin.Context) {
+	role := ctx.Value("role").(string)
+	if role != "super_admin" {
+		ctx.AbortWithStatusJSON(http.StatusForbidden, courseError.CreateError(errNoRights, 16004))
+		return
+	}
+
 	host := entity.CreateBillingHost()
 	if err := ctx.ShouldBindJSON(&host); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
@@ -98,6 +104,12 @@ func (h Handlers) ManageBillingHost(ctx *gin.Context) {
 }
 
 func (h Handlers) ManageAccessToken(ctx *gin.Context) {
+	role := ctx.Value("role").(string)
+	if role != "super_admin" {
+		ctx.AbortWithStatusJSON(http.StatusForbidden, courseError.CreateError(errNoRights, 16004))
+		return
+	}
+
 	token := entity.CreateAccessToken()
 	if err := ctx.ShouldBindJSON(&token); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))

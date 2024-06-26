@@ -60,6 +60,7 @@ const (
 	errTokenFieldCantBeEmpty = "поле token не может быть пустым"
 
 	errBadLogin = "логин передан неверно"
+	errBadRole  = "такой роли не существует"
 )
 
 var (
@@ -89,7 +90,15 @@ var (
 		"mp4",
 	}
 
+	allowedRoles = []string{
+		"super_admin",
+		"admin",
+		"editor",
+		"moderator",
+	}
+
 	boolsInterfaces = stringSliceTOInterfaceSlice(bools)
+	rolesInterfaces = stringSliceTOInterfaceSlice(allowedRoles)
 
 	errValueNotInt = errors.New("значение передано не как число")
 	errBadFile     = errors.New("загруженный файл имеет неверный формат")
@@ -1103,6 +1112,31 @@ func (admin *AdminCredentialsToValidate) Validate(ctx context.Context) *courseer
 		),
 		validation.Field(&admin.Password,
 			validation.By(validatePassword(admin.Password)),
+		),
+		validation.Field(&admin.Role,
+			validation.In(rolesInterfaces...).Error(errBadRole),
+		),
+	); err != nil {
+		return courseerror.CreateError(err, 400)
+	}
+
+	return nil
+}
+
+type RoleToValidate struct {
+	role string
+}
+
+func CreateNewRoleToValidate(role string) *RoleToValidate {
+	return &RoleToValidate{
+		role: role,
+	}
+}
+
+func (role *RoleToValidate) Validate(ctx context.Context) *courseerror.CourseError {
+	if err := validation.ValidateStructWithContext(ctx, role,
+		validation.Field(&role.role,
+			validation.In(rolesInterfaces...).Error(errBadRole),
 		),
 	); err != nil {
 		return courseerror.CreateError(err, 400)
