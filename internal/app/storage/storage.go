@@ -7,6 +7,7 @@ import (
 	"github.com/knstch/course/internal/app/config"
 	courseError "github.com/knstch/course/internal/app/course_error"
 	"github.com/knstch/course/internal/domain/dto"
+	"github.com/pquerna/otp/totp"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -57,13 +58,16 @@ func (storage *Storage) Automigrate(config *config.Config) error {
 			return err
 		}
 
-		hashedLogin, err := bcrypt.GenerateFromPassword([]byte(config.SuperAdminLogin+storage.secret), bcrypt.DefaultCost)
+		key, err := totp.Generate(totp.GenerateOpts{
+			Issuer:      "Course",
+			AccountName: config.SuperAdminLogin,
+		})
 		if err != nil {
 			return err
 		}
 
-		admin := dto.CreateNewAdmin(string(hashedLogin), string(hashedPassword), "super_admin", "", false)
-		if err := storage.db.Create(&admin).Error; err != nil {
+		admin := dto.CreateNewAdmin(config.SuperAdminLogin, string(hashedPassword), "super_admin", key.Secret(), false)
+		if err := storage.db.Where("login = ?", config.SuperAdminLogin).FirstOrCreate(&admin).Error; err != nil {
 			return err
 		}
 	}
