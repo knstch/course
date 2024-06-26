@@ -58,3 +58,37 @@ func (storage Storage) ChangeRole(ctx context.Context, login, role string) *cour
 
 	return nil
 }
+
+func (storage Storage) GetAdmins(ctx context.Context, login, role, auth string, limit, offset int) ([]dto.Admin, *courseError.CourseError) {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	query := tx.Model(&dto.Admin{})
+
+	if login != "" {
+		query = query.Where("login = ?", login)
+	}
+
+	if role != "" {
+		query = query.Where("role = ?", role)
+	}
+
+	if auth != "" {
+		var authStatus bool
+		if auth == "true" {
+			authStatus = true
+		}
+		query = query.Where("two_steps_auth_enabled = ?", authStatus)
+	}
+
+	var admins []dto.Admin
+	if err := query.Offset(offset).Limit(limit).Find(&admins).Error; err != nil {
+		return nil, courseError.CreateError(err, 10002)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 10010)
+	}
+
+	return admins, nil
+}

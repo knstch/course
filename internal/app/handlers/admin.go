@@ -53,3 +53,17 @@ func (h Handlers) ChangeRole(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("роль успешно изменена", true))
 }
+
+func (h Handlers) FindAdmins(ctx *gin.Context) {
+	admins, err := h.adminService.RetreiveAdmins(ctx, ctx.Query("login"), ctx.Query("role"), ctx.Query("twoStepsAuth"), ctx.Query("page"), ctx.Query("limit"))
+	if err != nil {
+		if err.Code == 400 {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			return
+		}
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, admins)
+}

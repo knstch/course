@@ -31,6 +31,9 @@ func RequestsRouter(h *handlers.Handlers) *gin.Engine {
 	profile.POST("/setPhoto", h.ChangeProfilePhoto)
 	profile.GET("/getUser", h.GetUser)
 	profile.GET("/getCourses", h.RetreiveCourses)
+	profile.GET("/courses", h.RetreiveCourses)
+	profile.GET("/modules", h.RetreiveModules)
+	profile.GET("/lessons", h.RetreiveLessons)
 
 	admin := v1.Group("admin")
 	admin.POST("/login", h.LogIn)
@@ -55,6 +58,10 @@ func RequestsRouter(h *handlers.Handlers) *gin.Engine {
 	management.PATCH("/manageBillingToken", h.ManageAccessToken)
 	management.DELETE("/removeAdmin", h.DeleteAdmin)
 	management.PATCH("/changeRole", h.ChangeRole)
+	management.GET("/getAdmins", h.FindAdmins)
+	management.GET("/courses", h.RetreiveCourses)
+	management.GET("/modules", h.RetreiveModules)
+	management.GET("/lessons", h.RetreiveLessons)
 
 	content := v1.Group("content")
 	content.GET("/courses", h.RetreiveCourses)

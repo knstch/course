@@ -1144,3 +1144,45 @@ func (role *RoleToValidate) Validate(ctx context.Context) *courseerror.CourseErr
 
 	return nil
 }
+
+type AdminQueryToValidate struct {
+	login              string
+	role               string
+	twoStepsAuthStatus string
+	page               string
+	limit              string
+}
+
+func CreateNewAdminQueryToValidate(login, role, auth, page, limit string) *AdminQueryToValidate {
+	return &AdminQueryToValidate{
+		login:              login,
+		role:               role,
+		twoStepsAuthStatus: auth,
+		page:               page,
+		limit:              limit,
+	}
+}
+
+func (admin *AdminQueryToValidate) Validate(ctx context.Context) *courseerror.CourseError {
+	if err := validation.ValidateStructWithContext(ctx, admin,
+		validation.Field(&admin.login,
+			validation.RuneLength(1, 200).Error(errBadLength),
+		),
+		validation.Field(&admin.role,
+			validation.RuneLength(1, 200).Error(errBadLength),
+		),
+		validation.Field(&admin.twoStepsAuthStatus,
+			validation.In(boolsInterfaces...).Error(errBadBool),
+		),
+		validation.Field(&admin.page,
+			validation.By(validatePage(admin.page)),
+		),
+		validation.Field(&admin.limit,
+			validation.By(validateLimit(admin.limit)),
+		),
+	); err != nil {
+		return courseerror.CreateError(err, 400)
+	}
+
+	return nil
+}

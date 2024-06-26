@@ -486,3 +486,24 @@ func (admin *AdminCredentials) AddRole(role string) *AdminCredentials {
 	admin.Role = role
 	return admin
 }
+
+type Admin struct {
+	Id         uint   `json:"id"`
+	Login      string `json:"login"`
+	Role       string `json:"role"`
+	AuthStatus bool   `json:"2 steps auth enabled"`
+}
+
+func CovertDtoAdmin(admin *dto.Admin) *Admin {
+	return &Admin{
+		Id:         admin.ID,
+		Login:      admin.Login,
+		Role:       admin.Role,
+		AuthStatus: admin.TwoStepsAuthEnabled,
+	}
+}
+
+type AdminsInfoWithPagination struct {
+	Pagination Pagination `json:"pagination"`
+	AdminInfo  []Admin    `json:"adminInfo"`
+}

@@ -5,6 +5,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	courseError "github.com/knstch/course/internal/app/course_error"
+	"github.com/knstch/course/internal/domain/dto"
 )
 
 type adminManager interface {
@@ -17,6 +18,7 @@ type adminManager interface {
 	DisableAdminToken(ctx context.Context, token *string) *courseError.CourseError
 	RemoveAdmin(ctx context.Context, login string) *courseError.CourseError
 	ChangeRole(ctx context.Context, login, role string) *courseError.CourseError
+	GetAdmins(ctx context.Context, login, role, auth string, limit, offset int) ([]dto.Admin, *courseError.CourseError)
 }
 
 type Claims struct {

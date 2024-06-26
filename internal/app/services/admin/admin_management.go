@@ -3,9 +3,11 @@ package admin
 import (
 	"context"
 	"errors"
+	"strconv"
 
 	courseError "github.com/knstch/course/internal/app/course_error"
 	"github.com/knstch/course/internal/app/validation"
+	"github.com/knstch/course/internal/domain/entity"
 )
 
 var (
@@ -38,4 +40,35 @@ func (admin AdminService) ManageRole(ctx context.Context, login, role string) *c
 	}
 
 	return nil
+}
+
+func (admin AdminService) RetreiveAdmins(ctx context.Context, login, role, auth, page, limit string) (*entity.AdminsInfoWithPagination, *courseError.CourseError) {
+	if err := validation.CreateNewAdminQueryToValidate(login, role, auth, page, limit).Validate(ctx); err != nil {
+		return nil, err
+	}
+
+	pageInt, _ := strconv.Atoi(page)
+	limitInt, _ := strconv.Atoi(limit)
+
+	offset := pageInt * limitInt
+
+	admins, err := admin.adminManager.GetAdmins(ctx, login, role, auth, limitInt, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	packedAdmins := make([]entity.Admin, 0, len(admins))
+	for _, v := range admins {
+		packedAdmins = append(packedAdmins, *entity.CovertDtoAdmin(&v))
+	}
+
+	return &entity.AdminsInfoWithPagination{
+		Pagination: entity.Pagination{
+			Page:       pageInt,
+			Limit:      limitInt,
+			TotalCount: len(admins),
+			PagesCount: len(admins) / limitInt,
+		},
+		AdminInfo: packedAdmins,
+	}, nil
 }

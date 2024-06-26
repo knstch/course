@@ -243,10 +243,6 @@ func (storage *Storage) GetCourse(
 
 	if id != "" {
 		query = query.Where("id = ?", id)
-
-		if !isPurchased {
-			query = query.Where("hidden = ?", false)
-		}
 	} else {
 		if name != "" {
 			query = query.Where("LOWER(name) LIKE ?", fmt.Sprint("%"+strings.ToLower(name)+"%"))
@@ -263,7 +259,9 @@ func (storage *Storage) GetCourse(
 		if discount != "" {
 			query = query.Where("discount = ?", discount)
 		}
+	}
 
+	if !isPurchased {
 		query = query.Where("hidden = ?", false)
 	}
 
@@ -324,7 +322,7 @@ func (storage *Storage) GetCourse(
 
 func (storage *Storage) GetModules(ctx context.Context,
 	name, description, courseName string,
-	limit, offset int) ([]entity.ModuleInfo, *courseError.CourseError) {
+	limit, offset int, isPurchased bool) ([]entity.ModuleInfo, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	query := tx.Model(&dto.Module{})
@@ -359,7 +357,7 @@ func (storage *Storage) GetModules(ctx context.Context,
 
 	lessonsInfo := make([]entity.LessonInfo, 0, len(lessons))
 	for _, v := range lessons {
-		lessonInfo := entity.CreateLessonInfo(&v, true)
+		lessonInfo := entity.CreateLessonInfo(&v, isPurchased)
 		lessonsInfo = append(lessonsInfo, *lessonInfo)
 	}
 
@@ -386,7 +384,8 @@ func (storage *Storage) GetModules(ctx context.Context,
 
 func (storage *Storage) GetLessons(ctx context.Context,
 	name, description, moduleName, courseName string,
-	limit, offset int) ([]entity.LessonInfo, *courseError.CourseError) {
+	limit, offset int, isPurchased bool) ([]entity.LessonInfo, *courseError.CourseError) {
+
 	tx := storage.db.WithContext(ctx).Begin()
 
 	query := tx.Model(&dto.Lesson{})
@@ -421,7 +420,7 @@ func (storage *Storage) GetLessons(ctx context.Context,
 
 	lessonsInfo := make([]entity.LessonInfo, 0, len(lessons))
 	for _, v := range lessons {
-		lessonInfo := entity.CreateLessonInfo(&v, true)
+		lessonInfo := entity.CreateLessonInfo(&v, isPurchased)
 		lessonsInfo = append(lessonsInfo, *lessonInfo)
 	}
 
@@ -704,4 +703,23 @@ func (storage Storage) DeleteLesson(ctx context.Context, lessonId string) *cours
 	}
 
 	return nil
+}
+
+func (storage *Storage) GetCourseByName(ctx context.Context, name string) (*dto.Course, *courseError.CourseError) {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	var course *dto.Course
+	if err := tx.Where("name = ?", name).First(&course).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, courseError.CreateError(err, 10002)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 10010)
+	}
+
+	return course, nil
 }

@@ -40,16 +40,17 @@ type ContentManager interface {
 	CreateModule(ctx context.Context, name, description, courseName string, position uint) (*uint, *courseError.CourseError)
 	CheckIfLessonCanBeCreated(ctx context.Context, name, moduleName, position, courseName string) *courseError.CourseError
 	CreateLesson(ctx context.Context, name, moduleName, description, position, videoPath, previewPath string) (*uint, *courseError.CourseError)
-	GetCourse(ctx context.Context, id, name, descr, cost, discount string, page, offset int, isPurchased bool) ([]entity.CourseInfo, *courseError.CourseError)
+	GetCourse(ctx context.Context, id, name, descr, cost, discount string, limit, offset int, isPurchased bool) ([]entity.CourseInfo, *courseError.CourseError)
 	GetUserCourses(ctx context.Context) ([]dto.Order, *courseError.CourseError)
-	GetModules(ctx context.Context, name, description, courseName string, limit, offset int) ([]entity.ModuleInfo, *courseError.CourseError)
-	GetLessons(ctx context.Context, name, description, moduleName, courseName string, limit, offset int) ([]entity.LessonInfo, *courseError.CourseError)
+	GetModules(ctx context.Context, name, description, courseName string, limit, offset int, isPurchased bool) ([]entity.ModuleInfo, *courseError.CourseError)
+	GetLessons(ctx context.Context, name, description, moduleName, courseName string, limit, offset int, isPurchased bool) ([]entity.LessonInfo, *courseError.CourseError)
 	EditCourse(ctx context.Context, courseId, name, description string, previewUrl *string, cost, discount *uint) *courseError.CourseError
 	EditModule(ctx context.Context, name, description string, position *uint, moduleId uint) *courseError.CourseError
 	EditLesson(ctx context.Context, name, description, position, lessonId string, videoPath, previewPath *string) *courseError.CourseError
 	ToggleHiddenStatus(ctx context.Context, courseId int) *courseError.CourseError
 	DeleteModule(ctx context.Context, moduleId string) *courseError.CourseError
 	DeleteLesson(ctx context.Context, lessonId string) *courseError.CourseError
+	GetCourseByName(ctx context.Context, name string) (*dto.Course, *courseError.CourseError)
 }
 
 func NewContentManagementServcie(manager ContentManager, config *config.Config, client *http.Client, grpcClient *grpc.GrpcClient) ContentManagementServcie {
@@ -269,7 +270,7 @@ func (manager ContentManagementServcie) sendVideo(ctx context.Context, file *mul
 func (manager ContentManagementServcie) GetCourseInfo(ctx context.Context, id, name, descr, cost, discount, page, limit string) (*entity.CourseInfoWithPagination, *courseError.CourseError) {
 	var isCoursePurchased bool
 	if id != "" {
-		if ctx.Value("userId") == nil {
+		if ctx.Value("userId") == nil && ctx.Value("adminId") == nil {
 			return nil, courseError.CreateError(ErrUnautharizedAccess, 13004)
 		}
 
@@ -287,6 +288,10 @@ func (manager ContentManagementServcie) GetCourseInfo(ctx context.Context, id, n
 				isCoursePurchased = true
 			}
 		}
+	}
+
+	if ctx.Value("adminId") != nil {
+		isCoursePurchased = true
 	}
 
 	if err := validation.NewCourseQueryToValidate(name, descr, cost, discount, page, limit).Validate(ctx); err != nil {
@@ -325,7 +330,33 @@ func (manager ContentManagementServcie) GetModulesInfo(ctx context.Context,
 
 	offset := pageInt * limitInt
 
-	modules, err := manager.contentManager.GetModules(ctx, name, description, courseName, limitInt, offset)
+	var isPurchased bool
+	if ctx.Value("userId") != nil && courseName != "" {
+		userCourses, err := manager.contentManager.GetUserCourses(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		course, err := manager.contentManager.GetCourseByName(ctx, courseName)
+		if err != nil {
+			return nil, err
+		}
+
+		if course != nil {
+			for _, v := range userCourses {
+				if v.CourseId == course.ID {
+					isPurchased = true
+					break
+				}
+			}
+		}
+	}
+
+	if ctx.Value("adminId") != nil {
+		isPurchased = true
+	}
+
+	modules, err := manager.contentManager.GetModules(ctx, name, description, courseName, limitInt, offset, isPurchased)
 	if err != nil {
 		return nil, err
 	}
@@ -353,7 +384,33 @@ func (manager ContentManagementServcie) GetLessonsInfo(ctx context.Context,
 
 	offset := pageInt * limitInt
 
-	lessons, err := manager.contentManager.GetLessons(ctx, name, description, moduleName, courseName, limitInt, offset)
+	var isPurchased bool
+	if ctx.Value("userId") != nil && courseName != "" {
+		userCourses, err := manager.contentManager.GetUserCourses(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		course, err := manager.contentManager.GetCourseByName(ctx, courseName)
+		if err != nil {
+			return nil, err
+		}
+
+		if course != nil {
+			for _, v := range userCourses {
+				if v.CourseId == course.ID {
+					isPurchased = true
+					break
+				}
+			}
+		}
+	}
+
+	if ctx.Value("adminId") != nil {
+		isPurchased = true
+	}
+
+	lessons, err := manager.contentManager.GetLessons(ctx, name, description, moduleName, courseName, limitInt, offset, isPurchased)
 	if err != nil {
 		return nil, err
 	}
