@@ -33,6 +33,8 @@ func RequestsRouter(h *handlers.Handlers) *gin.Engine {
 	profile.GET("/getCourses", h.RetreiveCourses)
 
 	admin := v1.Group("admin")
+	admin.POST("/register", h.CreateAdmin)
+	admin.POST("verify", h.VerifyAuthentificator)
 	admin.GET("/users", h.FindUsersByFilters)
 	admin.POST("/ban", h.BanUser)
 	admin.GET("/user", h.GetUserById)

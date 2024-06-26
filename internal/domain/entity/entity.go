@@ -460,3 +460,29 @@ type AccessToken struct {
 func CreateAccessToken() *AccessToken {
 	return &AccessToken{}
 }
+
+type AdminCredentials struct {
+	Login    string
+	Password string
+	Role     string
+	Code     string
+}
+
+func CreateNewAdminCredentials() *AdminCredentials {
+	return &AdminCredentials{}
+}
+
+func (admin *AdminCredentials) AddLogin(login string) *AdminCredentials {
+	admin.Login = login
+	return admin
+}
+
+func (admin *AdminCredentials) AddPassword(password string) *AdminCredentials {
+	admin.Password = password
+	return admin
+}
+
+func (admin *AdminCredentials) AddRole(role string) *AdminCredentials {
+	admin.Role = role
+	return admin
+}

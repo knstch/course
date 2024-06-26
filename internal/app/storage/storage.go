@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 
+	"github.com/knstch/course/internal/app/config"
 	courseError "github.com/knstch/course/internal/app/course_error"
 	"github.com/knstch/course/internal/domain/dto"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -33,7 +35,7 @@ func NewStorage(dsn, secret string) (*Storage, error) {
 	}, nil
 }
 
-func (storage *Storage) Automigrate() error {
+func (storage *Storage) Automigrate(config *config.Config) error {
 	if err := storage.db.AutoMigrate(
 		&dto.User{},
 		&dto.Credentials{},
@@ -44,8 +46,26 @@ func (storage *Storage) Automigrate() error {
 		&dto.Course{},
 		&dto.Lesson{},
 		&dto.Billing{},
+		&dto.Admin{},
 	); err != nil {
 		return err
+	}
+
+	if config.SuperAdminLogin != "" && config.SuperAdminPassword != "" {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(config.SuperAdminPassword+storage.secret), bcrypt.DefaultCost)
+		if err != nil {
+			return err
+		}
+
+		hashedLogin, err := bcrypt.GenerateFromPassword([]byte(config.SuperAdminLogin+storage.secret), bcrypt.DefaultCost)
+		if err != nil {
+			return err
+		}
+
+		admin := dto.CreateNewAdmin(string(hashedLogin), string(hashedPassword), "super_admin", "", false)
+		if err := storage.db.Create(&admin).Error; err != nil {
+			return err
+		}
 	}
 
 	return nil

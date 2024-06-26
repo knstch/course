@@ -19,8 +19,9 @@ const (
 	lettersPattern  = `^\p{L}+$`
 	fileNamePattern = `\.(.+)$`
 	urlPattern      = `^(http|https)://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(\/[a-zA-Z0-9#%._-]*)*$`
+	loginPattern    = `^[a-zA-Z.\-]{4,20}$`
 
-	errEmailIsNil                 = "email обязательно"
+	errEmailIsNil                 = "email/логин обязательно"
 	errBadEmail                   = "email передан неправильно"
 	errPasswordIsNil              = "пароль обязателен"
 	errBadPassword                = "пароль должен содержать как миниум 8 символов и включать в себя как минимум 1 цифру"
@@ -57,6 +58,8 @@ const (
 	errBadLength = "превышена длина параметра"
 
 	errTokenFieldCantBeEmpty = "поле token не может быть пустым"
+
+	errBadLogin = "логин передан неверно"
 )
 
 var (
@@ -64,6 +67,7 @@ var (
 	passwordRegex = regexp.MustCompile(passwordPattern)
 	lettersRegex  = regexp.MustCompile(lettersPattern)
 	urlRegex      = regexp.MustCompile(urlPattern)
+	loginRegexp   = regexp.MustCompile(loginPattern)
 
 	fileExtRegex = regexp.MustCompile(fileNamePattern)
 
@@ -1079,6 +1083,27 @@ func ValidateWebsite(ctx context.Context, link string) *courseerror.CourseError 
 func ValidateToken(ctx context.Context, token string) *courseerror.CourseError {
 	if err := validation.Validate(token,
 		validation.Required.Error(errTokenFieldCantBeEmpty),
+	); err != nil {
+		return courseerror.CreateError(err, 400)
+	}
+
+	return nil
+}
+
+type AdminCredentialsToValidate entity.AdminCredentials
+
+func NewAdminCredentialsToValidate(credentials *entity.AdminCredentials) *AdminCredentialsToValidate {
+	return (*AdminCredentialsToValidate)(credentials)
+}
+
+func (admin *AdminCredentialsToValidate) Validate(ctx context.Context) *courseerror.CourseError {
+	if err := validation.ValidateStructWithContext(ctx, admin,
+		validation.Field(&admin.Login,
+			validation.Match(loginRegexp).Error(errBadLogin),
+		),
+		validation.Field(&admin.Password,
+			validation.By(validatePassword(admin.Password)),
+		),
 	); err != nil {
 		return courseerror.CreateError(err, 400)
 	}

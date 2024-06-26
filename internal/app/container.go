@@ -21,7 +21,7 @@ func InitContainer(config *config.Config) (*Container, error) {
 		return nil, err
 	}
 
-	if err := psqlStorage.Automigrate(); err != nil {
+	if err := psqlStorage.Automigrate(config); err != nil {
 		return nil, err
 	}
 

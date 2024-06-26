@@ -7,6 +7,7 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/knstch/course/internal/app/config"
 	"github.com/knstch/course/internal/app/grpc"
+	"github.com/knstch/course/internal/app/services/admin"
 	"github.com/knstch/course/internal/app/services/auth"
 	"github.com/knstch/course/internal/app/services/billing"
 	contentmanagement "github.com/knstch/course/internal/app/services/content_management"
@@ -23,6 +24,7 @@ type Handlers struct {
 	userManagementService    usermanagement.UserManagementService
 	contentManagementService contentmanagement.ContentManagementServcie
 	sberBillingService       billing.SberBillingService
+	adminService             admin.AdminService
 	address                  string
 }
 
@@ -34,6 +36,7 @@ func NewHandlers(storage *storage.Storage, config *config.Config, redisClient *r
 		userManagementService:    usermanagement.NewUserManagementService(storage),
 		contentManagementService: contentmanagement.NewContentManagementServcie(storage, config, client, grpcClient),
 		sberBillingService:       billing.NewSberBillingService(config, storage, redisClient),
+		adminService:             admin.NewAdminService(storage),
 		emailService:             emailService,
 		address:                  config.Address,
 	}

@@ -426,3 +426,22 @@ func (order *OrderEssentials) AddContactEmail() *OrderEssentials {
 	order.Purchaser.Contact = "email"
 	return order
 }
+
+type Admin struct {
+	gorm.Model
+	Login               string `gorm:"unique"`
+	Password            string
+	Key                 string
+	Role                string
+	TwoStepsAuthEnabled bool
+}
+
+func CreateNewAdmin(login, password, role, key string, twoStepAuth bool) *Admin {
+	return &Admin{
+		Login:               login,
+		Password:            password,
+		Role:                role,
+		Key:                 key,
+		TwoStepsAuthEnabled: twoStepAuth,
+	}
+}

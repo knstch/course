@@ -25,6 +25,8 @@ type Config struct {
 	CdnGrpcHost           string `envconfig:"CDN_GRPC_HOST"`
 	SberApiHost           string `envconfig:"SBER_API_HOST"`
 	SberAccessToken       string `envconfig:"SBER_ACCESS_TOKEN"`
+	SuperAdminLogin       string `envconfig:"SUPER_ADMIN_LOGIN"`
+	SuperAdminPassword    string `envconfig:"SUPER_ADMIN_PASSWORD"`
 }
 
 var (
