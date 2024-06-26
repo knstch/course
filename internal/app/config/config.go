@@ -27,6 +27,7 @@ type Config struct {
 	SberAccessToken       string `envconfig:"SBER_ACCESS_TOKEN"`
 	SuperAdminLogin       string `envconfig:"SUPER_ADMIN_LOGIN"`
 	SuperAdminPassword    string `envconfig:"SUPER_ADMIN_PASSWORD"`
+	AdminSecret           string `envconfig:"ADMIN_SECRET"`
 }
 
 var (

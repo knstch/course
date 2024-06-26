@@ -36,7 +36,7 @@ func NewHandlers(storage *storage.Storage, config *config.Config, redisClient *r
 		userManagementService:    usermanagement.NewUserManagementService(storage),
 		contentManagementService: contentmanagement.NewContentManagementServcie(storage, config, client, grpcClient),
 		sberBillingService:       billing.NewSberBillingService(config, storage, redisClient),
-		adminService:             admin.NewAdminService(storage),
+		adminService:             admin.NewAdminService(storage, config.AdminSecret),
 		emailService:             emailService,
 		address:                  config.Address,
 	}

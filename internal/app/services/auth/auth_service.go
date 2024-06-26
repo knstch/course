@@ -35,11 +35,10 @@ type AuthService struct {
 
 type Claims struct {
 	jwt.RegisteredClaims
-	Iat              int
-	Exp              int
-	UserID           uint
-	Verified         bool
-	SubscriptionType string
+	Iat      int
+	Exp      int
+	UserID   uint
+	Verified bool
 }
 
 var (

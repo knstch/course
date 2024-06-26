@@ -445,3 +445,19 @@ func CreateNewAdmin(login, password, role, key string, twoStepAuth bool) *Admin 
 		TwoStepsAuthEnabled: twoStepAuth,
 	}
 }
+
+type AdminAccessToken struct {
+	gorm.Model
+	Admin     Admin
+	AdminId   uint   `gorm:"not null"`
+	Token     string `gorm:"not null"`
+	Available bool   `gorm:"not null"`
+}
+
+func CreateNewAdminAccessToken(id uint, token string) *AdminAccessToken {
+	return &AdminAccessToken{
+		AdminId:   id,
+		Token:     token,
+		Available: true,
+	}
+}

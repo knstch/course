@@ -2,7 +2,10 @@ package admin
 
 import (
 	"context"
+	"errors"
+	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	courseError "github.com/knstch/course/internal/app/course_error"
 	"github.com/knstch/course/internal/app/validation"
 	"github.com/knstch/course/internal/domain/entity"
@@ -13,21 +16,34 @@ import (
 type adminManager interface {
 	AddAdmin(ctx context.Context, login, password, role, key string) *courseError.CourseError
 	CheckIfAdminCanBeCreated(ctx context.Context, login string) *courseError.CourseError
-	Login(ctx context.Context, login, password string) *courseError.CourseError
+	Login(ctx context.Context, login, password, code string) (*uint, *string, *courseError.CourseError)
 	EnableTwoStepAuth(ctx context.Context, login, code string) *courseError.CourseError
+	StoreAdminAccessToken(ctx context.Context, id *uint, token *string) *courseError.CourseError
+	CheckAdminAccessToken(ctx context.Context, token *string) *courseError.CourseError
+	DisableAdminToken(ctx context.Context, token *string) *courseError.CourseError
+}
+
+type Claims struct {
+	jwt.RegisteredClaims
+	Iat     int
+	Exp     int
+	AdminId uint
+	Role    string
 }
 
 type AdminService struct {
 	adminManager adminManager
+	secret       string
 }
 
-func NewAdminService(storage adminManager) AdminService {
+func NewAdminService(storage adminManager, secret string) AdminService {
 	return AdminService{
 		adminManager: storage,
+		secret:       secret,
 	}
 }
 
-func (admin *AdminService) RegisterAdmin(ctx context.Context, credentials *entity.AdminCredentials) ([]byte, *courseError.CourseError) {
+func (admin AdminService) RegisterAdmin(ctx context.Context, credentials *entity.AdminCredentials) ([]byte, *courseError.CourseError) {
 	if err := validation.NewAdminCredentialsToValidate(credentials).Validate(ctx); err != nil {
 		return nil, err
 	}
@@ -56,7 +72,7 @@ func (admin *AdminService) RegisterAdmin(ctx context.Context, credentials *entit
 	return qrCode, nil
 }
 
-func (admin *AdminService) generateQrCode(url string) ([]byte, *courseError.CourseError) {
+func (admin AdminService) generateQrCode(url string) ([]byte, *courseError.CourseError) {
 	qr, err := qrcode.Encode(url, qrcode.Medium, 256)
 	if err != nil {
 		return nil, courseError.CreateError(err, 16051)
@@ -74,7 +90,8 @@ func (admin *AdminService) ApproveTwoStepAuth(ctx context.Context, login, passwo
 		return err
 	}
 
-	if err := admin.adminManager.Login(ctx, login, password); err != nil {
+	_, _, err := admin.adminManager.Login(ctx, login, password, code)
+	if err != nil {
 		return err
 	}
 
@@ -83,4 +100,78 @@ func (admin *AdminService) ApproveTwoStepAuth(ctx context.Context, login, passwo
 	}
 
 	return nil
+}
+
+func (admin AdminService) SignIn(ctx context.Context, login, password, code string) (*string, *courseError.CourseError) {
+	signInCredentials := entity.Credentials{
+		Email:    login,
+		Password: password,
+	}
+
+	if err := validation.NewSignInCredentials(&signInCredentials).Validate(ctx); err != nil {
+		return nil, err
+	}
+
+	id, role, err := admin.adminManager.Login(ctx, login, password, code)
+	if err != nil {
+		return nil, err
+	}
+
+	token, err := admin.mintJWT(id, role)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := admin.adminManager.StoreAdminAccessToken(ctx, id, token); err != nil {
+		return nil, err
+	}
+
+	return token, nil
+}
+
+func (admin AdminService) mintJWT(id *uint, role *string) (*string, *courseError.CourseError) {
+	timeNow := time.Now()
+	authToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"iat":     timeNow.Unix(),
+		"exp":     timeNow.Add(3 * 24 * time.Hour).Unix(),
+		"adminId": *id,
+		"role":    *role,
+	})
+
+	signedAuthToken, err := authToken.SignedString([]byte(admin.secret))
+	if err != nil {
+		return nil, courseError.CreateError(err, 11010)
+	}
+
+	return &signedAuthToken, nil
+}
+
+func (admin AdminService) ValidateAdminAccessToken(ctx context.Context, token *string) *courseError.CourseError {
+	if err := admin.adminManager.CheckAdminAccessToken(ctx, token); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (admin AdminService) DecodeToken(ctx context.Context, tokenString string) (*Claims, *courseError.CourseError) {
+	claims := &Claims{}
+
+	_, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, nil
+		}
+		return []byte(admin.secret), nil
+	})
+	if err != nil {
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			if err := admin.adminManager.DisableAdminToken(ctx, &tokenString); err != nil {
+				return nil, err
+			}
+			return nil, courseError.CreateError(err, 11007)
+		}
+		return nil, courseError.CreateError(err, 11011)
+	}
+
+	return claims, nil
 }
