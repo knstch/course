@@ -48,6 +48,7 @@ func (storage *Storage) Automigrate(config *config.Config) error {
 		&dto.Lesson{},
 		&dto.Billing{},
 		&dto.Admin{},
+		&dto.AdminAccessToken{},
 	); err != nil {
 		return err
 	}

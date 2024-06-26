@@ -22,7 +22,7 @@ func (h Handlers) CreateAdmin(ctx *gin.Context) {
 
 	role := ctx.Value("role").(string)
 	if role != "super_admin" {
-		ctx.AbortWithStatusJSON(http.StatusForbidden, errNoRights)
+		ctx.AbortWithStatusJSON(http.StatusForbidden, courseError.CreateError(errNoRights, 16004))
 		return
 	}
 
