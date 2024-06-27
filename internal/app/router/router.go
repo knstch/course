@@ -42,6 +42,8 @@ func RequestsRouter(h *handlers.Handlers) *gin.Engine {
 	management := admin.Group("management")
 	management.Use(h.WithAdminCookieAuth())
 	management.POST("/register", h.CreateAdmin)
+	management.PATCH("/resetPassword", h.ChangeAdminPassword)
+	management.PATCH("/resetKey", h.ChangeAdminAuthKey)
 	management.GET("/users", h.FindUsersByFilters)
 	management.POST("/ban", h.BanUser)
 	management.GET("/user", h.GetUserById)

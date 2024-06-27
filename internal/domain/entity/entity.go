@@ -492,6 +492,7 @@ type Admin struct {
 	Login      string `json:"login"`
 	Role       string `json:"role"`
 	AuthStatus bool   `json:"2 steps auth enabled"`
+	Key        string `json:"key"`
 }
 
 func CovertDtoAdmin(admin *dto.Admin) *Admin {
@@ -500,6 +501,7 @@ func CovertDtoAdmin(admin *dto.Admin) *Admin {
 		Login:      admin.Login,
 		Role:       admin.Role,
 		AuthStatus: admin.TwoStepsAuthEnabled,
+		Key:        admin.Key,
 	}
 }
 

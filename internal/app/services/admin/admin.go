@@ -19,6 +19,8 @@ type adminManager interface {
 	RemoveAdmin(ctx context.Context, login string) *courseError.CourseError
 	ChangeRole(ctx context.Context, login, role string) *courseError.CourseError
 	GetAdmins(ctx context.Context, login, role, auth string, limit, offset int) ([]dto.Admin, *courseError.CourseError)
+	ResetAdminPassword(ctx context.Context, login, newPassword string) *courseError.CourseError
+	ResetAdminsAuthKey(ctx context.Context, login, key string) *courseError.CourseError
 }
 
 type Claims struct {

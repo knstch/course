@@ -99,7 +99,7 @@ func (storage Storage) Login(ctx context.Context, login, password, code string) 
 	if err := tx.Where("login = ?", login).First(&credentials).Error; err != nil {
 		tx.Rollback()
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil, courseError.CreateError(ErrAdminNotFound, 16002)
+			return nil, nil, courseError.CreateError(ErrAdminAccessProhibited, 16002)
 		}
 		return nil, nil, courseError.CreateError(err, 10002)
 	}
@@ -170,6 +170,62 @@ func (storage Storage) DisableAdminToken(ctx context.Context, token *string) *co
 	tx := storage.db.WithContext(ctx).Begin()
 
 	if err := tx.Model(&dto.AdminAccessToken{}).Where("token = ?", token).Update("available", false).Error; err != nil {
+		return courseError.CreateError(err, 10003)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10010)
+	}
+
+	return nil
+}
+
+func (storage Storage) ResetAdminPassword(ctx context.Context, login, newPassword string) *courseError.CourseError {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	var admin *dto.Admin
+	if err := tx.Where("login = ?", login).First(&admin).Error; err != nil {
+		tx.Rollback()
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return courseError.CreateError(ErrAdminNotFound, 16002)
+		}
+		return courseError.CreateError(err, 10002)
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword+storage.secret), bcrypt.DefaultCost)
+	if err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 11020)
+	}
+
+	if err := tx.Model(&dto.Admin{}).Where("login = ?", login).Update("password", hashedPassword).Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10003)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10010)
+	}
+
+	return nil
+}
+
+func (storage Storage) ResetAdminsAuthKey(ctx context.Context, login, key string) *courseError.CourseError {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	var admin *dto.Admin
+	if err := tx.Where("login = ?", login).First(&admin).Error; err != nil {
+		tx.Rollback()
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return courseError.CreateError(ErrAdminNotFound, 16002)
+		}
+		return courseError.CreateError(err, 10002)
+	}
+
+	if err := tx.Model(&dto.Admin{}).Where("login = ?", login).Update("key", key).Error; err != nil {
+		tx.Rollback()
 		return courseError.CreateError(err, 10003)
 	}
 

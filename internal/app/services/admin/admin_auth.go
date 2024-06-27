@@ -3,6 +3,7 @@ package admin
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -144,4 +145,41 @@ func (admin AdminService) DecodeToken(ctx context.Context, tokenString string) (
 	}
 
 	return claims, nil
+}
+
+func (admin AdminService) ManageAdminPassword(ctx context.Context, credentials *entity.AdminCredentials) *courseError.CourseError {
+	if err := validation.NewAdminCredentialsToValidate(credentials).Validate(ctx); err != nil {
+		return err
+	}
+
+	if err := admin.adminManager.ResetAdminPassword(ctx, credentials.Login, credentials.Password); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (admin AdminService) ManageAdminAuthKey(ctx context.Context, login string) ([]byte, *courseError.CourseError) {
+	if login == "" {
+		return nil, courseError.CreateError(fmt.Errorf("поле login не может быть пустым"), 400)
+	}
+
+	key, err := totp.Generate(totp.GenerateOpts{
+		Issuer:      "Course",
+		AccountName: login,
+	})
+	if err != nil {
+		return nil, courseError.CreateError(err, 16050)
+	}
+
+	if err := admin.adminManager.ResetAdminsAuthKey(ctx, login, key.Secret()); err != nil {
+		return nil, err
+	}
+
+	qrCode, courseErr := admin.generateQrCode(key.String())
+	if courseErr != nil {
+		return nil, courseErr
+	}
+
+	return qrCode, nil
 }

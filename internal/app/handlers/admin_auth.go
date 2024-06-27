@@ -99,7 +99,7 @@ func (h Handlers) LogIn(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("доступ разрешен", true))
 }
 
-func (h *Handlers) WithAdminCookieAuth() gin.HandlerFunc {
+func (h Handlers) WithAdminCookieAuth() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		cookie, err := ctx.Request.Cookie("admin_auth")
 		if err != nil {
@@ -131,4 +131,57 @@ func (h *Handlers) WithAdminCookieAuth() gin.HandlerFunc {
 
 		ctx.Next()
 	}
+}
+
+func (h Handlers) ChangeAdminPassword(ctx *gin.Context) {
+	role := ctx.Value("role").(string)
+	if role != "super_admin" {
+		ctx.AbortWithStatusJSON(http.StatusForbidden, courseError.CreateError(errNoRights, 16004))
+		return
+	}
+
+	var credentials *entity.AdminCredentials
+	if err := ctx.ShouldBindJSON(&credentials); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
+		return
+	}
+
+	if err := h.adminService.ManageAdminPassword(ctx, credentials); err != nil {
+		if err.Code == 400 {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			return
+		}
+		if err.Code == 16002 {
+			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
+			return
+		}
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("пароль успешно изменен", true))
+}
+
+func (h Handlers) ChangeAdminAuthKey(ctx *gin.Context) {
+	role := ctx.Value("role").(string)
+	if role != "super_admin" {
+		ctx.AbortWithStatusJSON(http.StatusForbidden, courseError.CreateError(errNoRights, 16004))
+		return
+	}
+
+	qr, err := h.adminService.ManageAdminAuthKey(ctx, ctx.Query("login"))
+	if err != nil {
+		if err.Code == 400 {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			return
+		}
+		if err.Code == 16002 {
+			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
+			return
+		}
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.Data(http.StatusOK, "image/png", qr)
 }
