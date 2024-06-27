@@ -61,6 +61,11 @@ const (
 
 	errBadLogin = "логин передан неверно"
 	errBadRole  = "такой роли не существует"
+
+	errBadPaymentMethodParam = `допустимы значения только "ru-card" и "foreign-card"`
+	errBadDate               = "параметр дата передан неверно"
+
+	dateLayout = "2006-01-02"
 )
 
 var (
@@ -97,8 +102,14 @@ var (
 		"moderator",
 	}
 
-	boolsInterfaces = stringSliceTOInterfaceSlice(bools)
-	rolesInterfaces = stringSliceTOInterfaceSlice(allowedRoles)
+	allowrdPaymentMethods = []string{
+		"ru-card",
+		"foreign-card",
+	}
+
+	boolsInterfaces          = stringSliceTOInterfaceSlice(bools)
+	rolesInterfaces          = stringSliceTOInterfaceSlice(allowedRoles)
+	paymentMethodsInterfaces = stringSliceTOInterfaceSlice(allowrdPaymentMethods)
 
 	errValueNotInt = errors.New("значение передано не как число")
 	errBadFile     = errors.New("загруженный файл имеет неверный формат")
@@ -1179,6 +1190,44 @@ func (admin *AdminQueryToValidate) Validate(ctx context.Context) *courseerror.Co
 		),
 		validation.Field(&admin.limit,
 			validation.By(validateLimit(admin.limit)),
+		),
+	); err != nil {
+		return courseerror.CreateError(err, 400)
+	}
+
+	return nil
+}
+
+type PaymentsQueryToValidate struct {
+	from,
+	due,
+	courseName,
+	paymentMethod string
+}
+
+func CreateNewPaymentsQueryToValidate(from, due, courseName, paymentMethod string) *PaymentsQueryToValidate {
+	return &PaymentsQueryToValidate{
+		from:          from,
+		due:           due,
+		courseName:    courseName,
+		paymentMethod: paymentMethod,
+	}
+}
+
+func (query *PaymentsQueryToValidate) Validate(ctx context.Context) *courseerror.CourseError {
+	if err := validation.ValidateStructWithContext(ctx, query,
+		validation.Field(&query.courseName,
+			validation.RuneLength(1, 100).Error(errBadLength),
+		),
+		validation.Field(&query.paymentMethod,
+			validation.In(paymentMethodsInterfaces...).Error(errBadPaymentMethodParam),
+		),
+		validation.Field(&query.due,
+			validation.Date(query.due).Error(errBadDate),
+		),
+		validation.Field(&query.from,
+			validation.Required.Error(errFieldIsNil),
+			validation.Date(dateLayout).Error(errBadDate),
 		),
 	); err != nil {
 		return courseerror.CreateError(err, 400)

@@ -2,10 +2,12 @@ package admin
 
 import (
 	"context"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	courseError "github.com/knstch/course/internal/app/course_error"
 	"github.com/knstch/course/internal/domain/dto"
+	"github.com/knstch/course/internal/domain/entity"
 )
 
 type adminManager interface {
@@ -21,6 +23,7 @@ type adminManager interface {
 	GetAdmins(ctx context.Context, login, role, auth string, limit, offset int) ([]dto.Admin, *courseError.CourseError)
 	ResetAdminPassword(ctx context.Context, login, newPassword string) *courseError.CourseError
 	ResetAdminsAuthKey(ctx context.Context, login, key string) *courseError.CourseError
+	GetStats(ctx context.Context, from, due time.Time, courseName, paymentMethod string) ([]entity.PaymentStats, *courseError.CourseError)
 }
 
 type Claims struct {

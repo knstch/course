@@ -545,3 +545,23 @@ type AdminsInfoWithPagination struct {
 	Pagination Pagination `json:"pagination"`
 	AdminInfo  []Admin    `json:"adminInfo"`
 }
+
+type PaymentStats struct {
+	Date           time.Time `json:"date"`
+	TotalPaid      uint      `json:"totalPaid"`
+	TotalPurchased int       `json:"totalPurchased"`
+}
+
+func CreateNewPaymentStats(date time.Time, billing []dto.Billing) *PaymentStats {
+	var paid uint
+
+	for _, v := range billing {
+		paid += uint(v.Price)
+	}
+
+	return &PaymentStats{
+		Date:           date,
+		TotalPaid:      paid,
+		TotalPurchased: len(billing),
+	}
+}
