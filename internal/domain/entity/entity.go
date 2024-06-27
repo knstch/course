@@ -97,13 +97,26 @@ type UserCourses struct {
 	Billing    UserBilling `json:"billingInfo"`
 }
 
+func (courses *UserCourses) AddBilling(id uint, order string, paidStatus bool, paid float64, paymentMethod string, invoiceId uint, time time.Time) *UserCourses {
+	courses.Billing.Id = id
+	courses.Billing.Order = order
+	courses.Billing.PaidStatus = paidStatus
+	courses.Billing.Paid = paid
+	courses.Billing.PaymentMethod = paymentMethod
+	courses.Billing.InvoiceId = invoiceId
+	courses.Billing.Timestamp = time
+
+	return courses
+}
+
 type UserBilling struct {
-	Id            uint   `json:"id"`
-	Order         string `json:"order"`
-	PaidStatus    bool   `json:"paidStatus"`
-	Paid          int    `json:"paid"`
-	PaymentMethod string `json:"paymentMethod"`
-	InvoiceId     uint   `json:"invoice"`
+	Id            uint      `json:"id"`
+	Order         string    `json:"order"`
+	PaidStatus    bool      `json:"paidStatus"`
+	Paid          float64   `json:"paid"`
+	PaymentMethod string    `json:"paymentMethod"`
+	InvoiceId     uint      `json:"invoice"`
+	Timestamp     time.Time `json:"timestamp"`
 }
 
 type UserData struct {
@@ -213,20 +226,14 @@ func (user *UserDataAdmin) AddCourses(courses []dto.Course, orders []dto.Order, 
 			Name:       v.Name,
 			PreviewUrl: v.PreviewImgUrl,
 		}
+
+	ordersLoop:
 		for _, j := range orders {
 			if v.ID == j.CourseId {
 				for _, k := range billing {
 					if j.ID == k.OrderId {
-						course = UserCourses{
-							Billing: UserBilling{
-								Id:            k.ID,
-								Order:         j.Order,
-								PaidStatus:    k.Paid,
-								PaymentMethod: k.PaymentMethod,
-								InvoiceId:     k.InvoiceId,
-							},
-						}
-						break
+						course.AddBilling(k.ID, j.Order, k.Paid, k.Price, k.PaymentMethod, k.InvoiceId, k.CreatedAt)
+						break ordersLoop
 					}
 				}
 			}
