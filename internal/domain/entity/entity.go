@@ -91,9 +91,19 @@ func NewCdnResponse() *CdnResponse {
 }
 
 type UserCourses struct {
-	Id         uint   `json:"id"`
-	Name       string `json:"name"`
-	PreviewUrl string `json:"previewUrl"`
+	Id         uint        `json:"id"`
+	Name       string      `json:"name"`
+	PreviewUrl string      `json:"previewUrl"`
+	Billing    UserBilling `json:"billingInfo"`
+}
+
+type UserBilling struct {
+	Id            uint   `json:"id"`
+	Order         string `json:"order"`
+	PaidStatus    bool   `json:"paidStatus"`
+	Paid          int    `json:"paid"`
+	PaymentMethod string `json:"paymentMethod"`
+	InvoiceId     uint   `json:"invoice"`
 }
 
 type UserData struct {
@@ -195,7 +205,7 @@ func CreateUserDataAdmin(user dto.User) *UserDataAdmin {
 	return &userData
 }
 
-func (user *UserDataAdmin) AddCourses(courses []dto.Course) *UserDataAdmin {
+func (user *UserDataAdmin) AddCourses(courses []dto.Course, orders []dto.Order, billing []dto.Billing) *UserDataAdmin {
 	user.Courses = make([]UserCourses, 0, len(courses))
 	for _, v := range courses {
 		course := UserCourses{
@@ -203,6 +213,25 @@ func (user *UserDataAdmin) AddCourses(courses []dto.Course) *UserDataAdmin {
 			Name:       v.Name,
 			PreviewUrl: v.PreviewImgUrl,
 		}
+		for _, j := range orders {
+			if v.ID == j.CourseId {
+				for _, k := range billing {
+					if j.ID == k.OrderId {
+						course = UserCourses{
+							Billing: UserBilling{
+								Id:            k.ID,
+								Order:         j.Order,
+								PaidStatus:    k.Paid,
+								PaymentMethod: k.PaymentMethod,
+								InvoiceId:     k.InvoiceId,
+							},
+						}
+						break
+					}
+				}
+			}
+		}
+
 		user.Courses = append(user.Courses, course)
 	}
 

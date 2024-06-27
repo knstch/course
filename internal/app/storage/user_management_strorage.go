@@ -103,7 +103,24 @@ func (storage *Storage) GetAllUsersData(ctx context.Context,
 			tx.Rollback()
 			return nil, courseError.CreateError(err, 10002)
 		}
-		user.AddCourses(userCourses)
+
+		var userOrders []dto.Order
+		if err := tx.Where("user_id = ?", v.ID).Find(&userOrders).Error; err != nil {
+			tx.Rollback()
+			return nil, courseError.CreateError(err, 10002)
+		}
+
+		orderIds := dto.ExtractIds(userOrders, func(item interface{}) uint {
+			return item.(dto.Order).ID
+		})
+
+		var userBilling []dto.Billing
+		if err := tx.Where("id IN (?)", orderIds).Find(&userBilling).Error; err != nil {
+			tx.Rollback()
+			return nil, courseError.CreateError(err, 10002)
+		}
+
+		user.AddCourses(userCourses, userOrders, userBilling)
 
 		usersEntity = append(usersEntity, *user)
 	}
@@ -182,7 +199,24 @@ func (storage *Storage) GetAllUserDataById(ctx context.Context, id string) (*ent
 		tx.Rollback()
 		return nil, courseError.CreateError(err, 10002)
 	}
-	userEntity.AddCourses(userCourses)
+
+	var userOrders []dto.Order
+	if err := tx.Where("user_id = ?", id).Find(&userOrders).Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 10002)
+	}
+
+	orderIds := dto.ExtractIds(userOrders, func(item interface{}) uint {
+		return item.(dto.Order).ID
+	})
+
+	var userBilling []dto.Billing
+	if err := tx.Where("id IN (?)", orderIds).Find(&userBilling).Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 10002)
+	}
+
+	userEntity.AddCourses(userCourses, userOrders, userBilling)
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
