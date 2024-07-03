@@ -7,6 +7,7 @@ import (
 	"github.com/knstch/course/internal/app/config"
 	"github.com/knstch/course/internal/app/grpc"
 	"github.com/knstch/course/internal/app/handlers"
+	"github.com/knstch/course/internal/app/logger"
 	"github.com/knstch/course/internal/app/storage"
 )
 
@@ -39,7 +40,12 @@ func InitContainer(config *config.Config) (*Container, error) {
 		return nil, err
 	}
 
-	handlers := handlers.NewHandlers(psqlStorage, config, redisClient, httpClient, grpcClient)
+	defaultLogger, err := logger.InitLogger(config.LogFileName)
+	if err != nil {
+		return nil, err
+	}
+
+	handlers := handlers.NewHandlers(psqlStorage, config, redisClient, httpClient, grpcClient, defaultLogger)
 
 	return &Container{
 		Storage:  psqlStorage,

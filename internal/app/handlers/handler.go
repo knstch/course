@@ -26,9 +26,15 @@ type Handlers struct {
 	sberBillingService       billing.SberBillingService
 	adminService             admin.AdminService
 	address                  string
+	logger                   logger
 }
 
-func NewHandlers(storage *storage.Storage, config *config.Config, redisClient *redis.Client, client *http.Client, grpcClient *grpc.GrpcClient) *Handlers {
+type logger interface {
+	Error(message, method, errMessage string, code int)
+	Info(message, actionName, request string)
+}
+
+func NewHandlers(storage *storage.Storage, config *config.Config, redisClient *redis.Client, client *http.Client, grpcClient *grpc.GrpcClient, logger logger) *Handlers {
 	emailService := email.NewEmailService(redisClient)
 	return &Handlers{
 		authService:              auth.NewAuthService(storage, config, redisClient, emailService),
@@ -39,6 +45,7 @@ func NewHandlers(storage *storage.Storage, config *config.Config, redisClient *r
 		adminService:             admin.NewAdminService(storage, config.AdminSecret),
 		emailService:             emailService,
 		address:                  config.Address,
+		logger:                   logger,
 	}
 }
 
