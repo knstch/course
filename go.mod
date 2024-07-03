@@ -18,7 +18,10 @@ require (
 	gorm.io/gorm v1.25.10
 )
 
-require github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc // indirect
+require (
+	github.com/asaskevich/govalidator v0.0.0-20200108200545-475eaeb16496 // indirect
+	github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc // indirect
+)
 
 require (
 	github.com/bytedance/sonic v1.11.6 // indirect

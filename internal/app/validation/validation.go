@@ -10,16 +10,15 @@ import (
 	"unicode"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/go-ozzo/ozzo-validation/v4/is"
 	courseerror "github.com/knstch/course/internal/app/course_error"
 	"github.com/knstch/course/internal/domain/entity"
 )
 
 const (
-	emailPattern    = `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
 	passwordPattern = `^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};:"\\|,.<>\/?]*$`
 	lettersPattern  = `^\p{L}+$`
 	fileNamePattern = `\.(.+)$`
-	urlPattern      = `^(http|https)://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(\/[a-zA-Z0-9#%._-]*)*$`
 	loginPattern    = `^[a-zA-Z.\-]{4,20}$`
 
 	errEmailIsNil                 = "email/логин обязательно"
@@ -67,13 +66,12 @@ const (
 	errBadDate               = "параметр дата передан неверно"
 
 	errDueEarlierThenFrom = "период задан некорректно"
+	errBadUrl             = "ссылка передана неверно"
 )
 
 var (
-	emailRegex    = regexp.MustCompile(emailPattern)
 	passwordRegex = regexp.MustCompile(passwordPattern)
 	lettersRegex  = regexp.MustCompile(lettersPattern)
-	urlRegex      = regexp.MustCompile(urlPattern)
 	loginRegexp   = regexp.MustCompile(loginPattern)
 
 	fileExtRegex = regexp.MustCompile(fileNamePattern)
@@ -138,8 +136,7 @@ func (cr *CredentialsToValidate) Validate(ctx context.Context) *courseerror.Cour
 	if err := validation.ValidateStructWithContext(ctx, cr,
 		validation.Field(&cr.Email,
 			validation.Required.Error(errEmailIsNil),
-			validation.Match(emailRegex).Error(errBadEmail),
-			validation.RuneLength(5, 40).Error(errBadEmail),
+			is.Email.Error(errBadEmail),
 		),
 		validation.Field(&cr.Password,
 			validation.Required.Error(errPasswordIsNil),
@@ -274,7 +271,7 @@ func (email *EmailToValidate) Validate(ctx context.Context) *courseerror.CourseE
 	if err := validation.ValidateStructWithContext(ctx, email,
 		validation.Field(&email.email,
 			validation.Required.Error(errEmailIsNil),
-			validation.Match(emailRegex).Error(errBadEmail),
+			is.Email.Error(errBadEmail),
 			validation.RuneLength(5, 40).Error(errBadEmail),
 		),
 	); err != nil {
@@ -317,8 +314,7 @@ func (credentials *PasswordRecoverCredentials) Validate(ctx context.Context) *co
 	if err := validation.ValidateStructWithContext(ctx, credentials,
 		validation.Field(&credentials.Email,
 			validation.Required.Error(errEmailIsNil),
-			validation.Match(emailRegex).Error(errBadEmail),
-			validation.RuneLength(5, 40).Error(errBadEmail),
+			is.Email.Error(errBadEmail),
 		),
 		validation.Field(&credentials.Password,
 			validation.Required.Error(errPasswordIsNil),
@@ -378,7 +374,7 @@ func (userFilters *UserFiltersToValidate) Validate(ctx context.Context) *coursee
 			validation.In(boolsInterfaces...).Error(errBadBool),
 		),
 		validation.Field(&userFilters.email,
-			validation.Match(emailRegex).Error(errBadEmail),
+			is.Email.Error(errBadEmail),
 		),
 		validation.Field(&userFilters.page,
 			validation.By(validatePage(userFilters.page)),
@@ -1091,7 +1087,7 @@ func ValidateWebsite(ctx context.Context, link string) *courseerror.CourseError 
 
 	if err := validation.ValidateStructWithContext(ctx, website,
 		validation.Field(&website.url,
-			validation.Match(urlRegex),
+			is.URL.Error(errBadUrl),
 			validation.Required.Error(errFieldIsNil),
 		),
 	); err != nil {
