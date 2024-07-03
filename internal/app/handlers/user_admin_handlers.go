@@ -8,7 +8,7 @@ import (
 	"github.com/knstch/course/internal/domain/entity"
 )
 
-func (h *Handlers) FindUsersByFilters(ctx *gin.Context) {
+func (h Handlers) FindUsersByFilters(ctx *gin.Context) {
 	users, err := h.userManagementService.RetreiveUsersByFilters(ctx, ctx.Query("firstName"), ctx.Query("surname"),
 		ctx.Query("phoneNumber"), ctx.Query("email"), ctx.Query("active"), ctx.Query("verified"), ctx.Query("courseName"),
 		ctx.Query("banned"), ctx.Query("page"), ctx.Query("limit"))
@@ -25,7 +25,7 @@ func (h *Handlers) FindUsersByFilters(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, users)
 }
 
-func (h *Handlers) BanUser(ctx *gin.Context) {
+func (h Handlers) BanUser(ctx *gin.Context) {
 	Id := entity.NewId(nil)
 	if err := ctx.ShouldBindJSON(&Id); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
@@ -44,7 +44,7 @@ func (h *Handlers) BanUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("пользователь успешно заблокирован", true))
 }
 
-func (h *Handlers) GetUserById(ctx *gin.Context) {
+func (h Handlers) GetUserById(ctx *gin.Context) {
 	user, err := h.userManagementService.RetreiveUserById(ctx, ctx.Query("id"))
 	if err != nil {
 		if err.Code == 400 {

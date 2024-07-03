@@ -8,7 +8,7 @@ import (
 	"github.com/knstch/course/internal/domain/entity"
 )
 
-func (h *Handlers) ManageProfile(ctx *gin.Context) {
+func (h Handlers) ManageProfile(ctx *gin.Context) {
 	userInfo := entity.NewUserInfo()
 	if err := ctx.ShouldBindJSON(&userInfo); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
@@ -37,7 +37,7 @@ func (h *Handlers) ManageProfile(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("данные успешно изменены", true))
 }
 
-func (h *Handlers) ManagePassword(ctx *gin.Context) {
+func (h Handlers) ManagePassword(ctx *gin.Context) {
 	passwords := entity.CreateNewPasswords()
 	if err := ctx.ShouldBindJSON(&passwords); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
@@ -60,7 +60,7 @@ func (h *Handlers) ManagePassword(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("пароль успешно изменен", true))
 }
 
-func (h *Handlers) ManageEmail(ctx *gin.Context) {
+func (h Handlers) ManageEmail(ctx *gin.Context) {
 	email := entity.CreateNewEmail()
 	if err := ctx.ShouldBindJSON(&email); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
@@ -85,7 +85,7 @@ func (h *Handlers) ManageEmail(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("код успешнот отправлен", true))
 }
 
-func (h *Handlers) ConfirmEmailChange(ctx *gin.Context) {
+func (h Handlers) ConfirmEmailChange(ctx *gin.Context) {
 	confirmCode := entity.NewConfirmCodeEntity()
 	if err := ctx.ShouldBindJSON(&confirmCode); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
@@ -114,7 +114,7 @@ func (h *Handlers) ConfirmEmailChange(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("почта успешно изменена", true))
 }
 
-func (h *Handlers) ChangeProfilePhoto(ctx *gin.Context) {
+func (h Handlers) ChangeProfilePhoto(ctx *gin.Context) {
 	file, header, err := ctx.Request.FormFile("file")
 	if err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(err, 400))
@@ -137,7 +137,7 @@ func (h *Handlers) ChangeProfilePhoto(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("фото успешно обновлено", true))
 }
 
-func (h *Handlers) GetUser(ctx *gin.Context) {
+func (h Handlers) GetUser(ctx *gin.Context) {
 	user, err := h.userService.GetUserInfo(ctx)
 	if err != nil {
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
@@ -145,4 +145,19 @@ func (h *Handlers) GetUser(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, user)
+}
+
+func (h Handlers) FreezeProfile(ctx *gin.Context) {
+	_, ok := ctx.Get("userId")
+	if !ok {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errEmailNotFoundInCtx, 11005))
+		return
+	}
+
+	if err := h.userService.DisableProfile(ctx); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("профиль успешно заморожен", true))
 }

@@ -12,7 +12,8 @@ import (
 )
 
 var (
-	errUserInactive = errors.New("пользователь неактивен, обратитесь к администратору")
+	errUserInactive = errors.New("пользователь неактивен, восстановите аккаунт")
+	errUserBanned   = errors.New("пользователь заблокирован, обратитесь к администратору")
 )
 
 func (storage *Storage) RegisterUser(ctx context.Context, email, password string) (*uint, *courseError.CourseError) {
@@ -97,7 +98,12 @@ func (storage *Storage) SignIn(ctx context.Context, email, password string) (use
 
 	if user.Banned {
 		tx.Rollback()
-		return nil, nil, courseError.CreateError(errUserInactive, 11010)
+		return nil, nil, courseError.CreateError(errUserBanned, 11010)
+	}
+
+	if !user.Active {
+		tx.Rollback()
+		return nil, nil, courseError.CreateError(errUserInactive, 11011)
 	}
 
 	if err := tx.Commit().Error; err != nil {
@@ -159,6 +165,13 @@ func (storage *Storage) RecoverPassword(ctx context.Context, email, password str
 	}
 
 	if err := tx.Model(&dto.Credentials{}).Where("email = ?", email).Update("password", hashedPassword).Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10003)
+	}
+
+	if err := tx.Exec(`UPDATE "users" SET active = true
+ 					   WHERE credentials_id = (SELECT id from "credentials" WHERE email = ?)`, email).Error; err != nil {
+		tx.Rollback()
 		return courseError.CreateError(err, 10003)
 	}
 

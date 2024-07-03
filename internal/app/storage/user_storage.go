@@ -265,3 +265,26 @@ func (storage *Storage) GetCourseCost(ctx context.Context, courseId uint) (*uint
 	}
 	return &course.Cost, nil
 }
+
+func (storage *Storage) DeactivateProfile(ctx context.Context) *courseError.CourseError {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	userId := ctx.Value("userId").(uint)
+
+	if err := tx.Table("users").Where("id = ?", userId).Update("active", false).Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10003)
+	}
+
+	if err := tx.Table("access_tokens").Where("user_id = ?", userId).Update("available", false).Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10003)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10010)
+	}
+
+	return nil
+}

@@ -34,6 +34,7 @@ func RequestsRouter(h *handlers.Handlers) *gin.Engine {
 	profile.GET("/courses", h.RetreiveCourses)
 	profile.GET("/modules", h.RetreiveModules)
 	profile.GET("/lessons", h.RetreiveLessons)
+	profile.POST("/disable", h.FreezeProfile)
 
 	admin := v1.Group("admin")
 	admin.POST("/login", h.LogIn)

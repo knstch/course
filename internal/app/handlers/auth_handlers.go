@@ -17,7 +17,7 @@ var (
 	errUserNotAuthentificated          = errors.New("пользователь не авторизован")
 )
 
-func (h *Handlers) SignUp(ctx *gin.Context) {
+func (h Handlers) SignUp(ctx *gin.Context) {
 	credentials := entity.NewCredentials()
 	if err := ctx.ShouldBindJSON(&credentials); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
@@ -39,7 +39,7 @@ func (h *Handlers) SignUp(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("пользователь зарегистрирован", true))
 }
 
-func (h *Handlers) SignIn(ctx *gin.Context) {
+func (h Handlers) SignIn(ctx *gin.Context) {
 	credentials := entity.NewCredentials()
 	if err := ctx.ShouldBindJSON(&credentials); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
@@ -52,6 +52,10 @@ func (h *Handlers) SignIn(ctx *gin.Context) {
 			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
 			return
 		}
+		if err.Code == 11011 {
+			ctx.AbortWithStatusJSON(http.StatusMethodNotAllowed, err)
+			return
+		}
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
 		return
 	}
@@ -61,7 +65,7 @@ func (h *Handlers) SignIn(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("доступ разрешен", true))
 }
 
-func (h *Handlers) Verification(ctx *gin.Context) {
+func (h Handlers) Verification(ctx *gin.Context) {
 	confirmCode := entity.NewConfirmCodeEntity()
 	if err := ctx.ShouldBindJSON(&confirmCode); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
@@ -104,7 +108,7 @@ func (h *Handlers) Verification(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("email верифицирован", true))
 }
 
-func (h *Handlers) SendNewCode(ctx *gin.Context) {
+func (h Handlers) SendNewCode(ctx *gin.Context) {
 	verified, ok := ctx.Get("verified")
 	if !ok {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errVerificationStatusNotFoundInCtx, 11005))
@@ -124,7 +128,7 @@ func (h *Handlers) SendNewCode(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("код успешно отправлен", true))
 }
 
-func (h *Handlers) SendRecoverPasswordCode(ctx *gin.Context) {
+func (h Handlers) SendRecoverPasswordCode(ctx *gin.Context) {
 	email := entity.CreateEmail()
 	if err := ctx.ShouldBindJSON(&email); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
@@ -143,7 +147,7 @@ func (h *Handlers) SendRecoverPasswordCode(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("код для восстановления успешно отправлен", true))
 }
 
-func (h *Handlers) SetNewPassword(ctx *gin.Context) {
+func (h Handlers) SetNewPassword(ctx *gin.Context) {
 	recoverCredentials := entity.NewPasswordRecoverCredentials()
 	if err := ctx.ShouldBindJSON(&recoverCredentials); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
@@ -170,7 +174,7 @@ func (h *Handlers) SetNewPassword(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("пароль успешно восстановлен", true))
 }
 
-func (h *Handlers) WithCookieAuth() gin.HandlerFunc {
+func (h Handlers) WithCookieAuth() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		cookie, err := ctx.Request.Cookie("auth")
 		if err != nil {

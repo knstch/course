@@ -56,7 +56,7 @@ func (h Handlers) RetreiveModules(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, modules)
 }
 
-func (h *Handlers) RetreiveLessons(ctx *gin.Context) {
+func (h Handlers) RetreiveLessons(ctx *gin.Context) {
 	lessons, err := h.contentManagementService.GetLessonsInfo(ctx,
 		ctx.Query("name"),
 		ctx.Query("description"),
