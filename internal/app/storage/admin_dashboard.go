@@ -11,13 +11,15 @@ import (
 	"github.com/knstch/course/internal/domain/entity"
 )
 
-func (storage Storage) GetStats(ctx context.Context, from, due time.Time, courseName, paymentMethod string) ([]entity.PaymentStats, *courseError.CourseError) {
+func (storage Storage) GetSalesStats(ctx context.Context, from, due time.Time, courseName, paymentMethod string) ([]entity.PaymentStats, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
+
+	due = due.AddDate(0, 0, 1)
 
 	baseQuery := "SELECT billings.* FROM billings"
 	joins := make([]string, 0, 2)
 	whereClauses := make([]string, 0, 3)
-	whereClauses = append(whereClauses, "DATE(billings.created_at AT TIME ZONE 'UTC') = ? AND billings.paid = ?")
+	whereClauses = append(whereClauses, "DATE(billings.created_at) = ? AND billings.paid = ?")
 	params := []interface{}{}
 
 	if courseName != "" {
@@ -48,7 +50,7 @@ func (storage Storage) GetStats(ctx context.Context, from, due time.Time, course
 			tx.Rollback()
 			return nil, courseError.CreateError(err, 10002)
 		}
-		fmt.Printf("Date: %s, Billings fetched: %d\n", date.Format("2006-01-02"), len(billings))
+
 		dayStat := entity.CreateNewPaymentStats(date, billings)
 
 		stats = append(stats, *dayStat)

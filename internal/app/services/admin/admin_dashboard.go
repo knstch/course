@@ -9,10 +9,6 @@ import (
 	"github.com/knstch/course/internal/domain/entity"
 )
 
-const (
-	layoutDate = "2006-01-02"
-)
-
 func (admin AdminService) GetPaymentData(ctx context.Context, from, due, courseName, paymentMethod string) ([]entity.PaymentStats, *courseError.CourseError) {
 	if err := validation.CreateNewPaymentsQueryToValidate(from, due, courseName, paymentMethod).Validate(ctx); err != nil {
 		return nil, err
@@ -20,13 +16,13 @@ func (admin AdminService) GetPaymentData(ctx context.Context, from, due, courseN
 
 	dueDate := time.Now()
 
-	fromDate, _ := time.Parse(layoutDate, from)
+	fromDate, _ := time.Parse(time.DateOnly, from)
 
 	if due != "" {
-		dueDate, _ = time.Parse(layoutDate, due)
+		dueDate, _ = time.Parse(time.DateOnly, due)
 	}
 
-	stats, err := admin.adminManager.GetStats(ctx, fromDate, dueDate, courseName, paymentMethod)
+	stats, err := admin.adminManager.GetSalesStats(ctx, fromDate, dueDate, courseName, paymentMethod)
 	if err != nil {
 		return nil, err
 	}
