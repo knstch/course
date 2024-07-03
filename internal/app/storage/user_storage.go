@@ -242,7 +242,9 @@ func (storage *Storage) GetCourseCost(ctx context.Context, courseId uint) (*uint
 		return nil, courseError.CreateError(err, 10010)
 	}
 
-	finalCost := course.Cost - *course.Discount
-
-	return &finalCost, nil
+	if course.Discount != nil {
+		costWithDiscount := course.Cost - *course.Discount
+		return &costWithDiscount, nil
+	}
+	return &course.Cost, nil
 }

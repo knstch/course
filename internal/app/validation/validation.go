@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"time"
 	"unicode"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
@@ -65,7 +66,7 @@ const (
 	errBadPaymentMethodParam = `допустимы значения только "ru-card" и "foreign-card"`
 	errBadDate               = "параметр дата передан неверно"
 
-	dateLayout = "2006-01-02"
+	errDueEarlierThenFrom = "период задан некорректно"
 )
 
 var (
@@ -1222,16 +1223,37 @@ func (query *PaymentsQueryToValidate) Validate(ctx context.Context) *courseerror
 		validation.Field(&query.paymentMethod,
 			validation.In(paymentMethodsInterfaces...).Error(errBadPaymentMethodParam),
 		),
-		validation.Field(&query.due,
-			validation.Date(dateLayout).Error(errBadDate),
-		),
 		validation.Field(&query.from,
 			validation.Required.Error(errFieldIsNil),
-			validation.Date(dateLayout).Error(errBadDate),
+			validation.Date(time.DateOnly).Error(errBadDate),
+		),
+		validation.Field(&query.due,
+			validation.Date(time.DateOnly).Error(errBadDate),
+			validation.By(query.validateDue(query.from, query.due)),
 		),
 	); err != nil {
 		return courseerror.CreateError(err, 400)
 	}
 
 	return nil
+}
+
+func (query *PaymentsQueryToValidate) validateDue(from, due string) validation.RuleFunc {
+	return func(value interface{}) error {
+		parsedFrom, err := time.Parse(time.DateOnly, from)
+		if err != nil {
+			return fmt.Errorf(errBadDate)
+		}
+
+		parsedDue, err := time.Parse(time.DateOnly, due)
+		if err != nil {
+			return fmt.Errorf(errBadDate)
+		}
+
+		if parsedDue.Before(parsedFrom) {
+			return fmt.Errorf(errDueEarlierThenFrom)
+		}
+
+		return nil
+	}
 }

@@ -30,7 +30,6 @@ func (storage *Storage) CreateNewOrder(ctx context.Context, courseId, price uint
 		tx.Rollback()
 		return nil, courseError.CreateError(err, 10001)
 	}
-
 	invoice := dto.NewPayment().AddOrderId(order.ID).AddRusCard().AddPrice(float64(price))
 	if err := tx.Create(&invoice).Error; err != nil {
 		tx.Rollback()
