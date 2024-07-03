@@ -51,7 +51,7 @@ func (l *Log) Error(method, errMessage, message string, code int) {
 
 func (l *Log) Info(message, actionName, request string) {
 	fields := []zapcore.Field{
-		zap.String("actionName", actionName),
+		zap.String("method", actionName),
 		zap.String("request", request),
 	}
 

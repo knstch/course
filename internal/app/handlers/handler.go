@@ -31,7 +31,7 @@ type Handlers struct {
 
 type logger interface {
 	Error(message, method, errMessage string, code int)
-	Info(message, actionName, request string)
+	Info(message, method, request string)
 }
 
 func NewHandlers(storage *storage.Storage, config *config.Config, redisClient *redis.Client, client *http.Client, grpcClient *grpc.GrpcClient, logger logger) *Handlers {
