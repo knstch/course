@@ -933,12 +933,12 @@ type CourseQueryToValidate struct {
 
 func NewCourseQueryToValidate(name, descr, cost, discount, page, limit string) *CourseQueryToValidate {
 	return &CourseQueryToValidate{
-		name:        name,
-		description: descr,
-		cost:        cost,
-		discount:    discount,
-		page:        page,
-		limit:       limit,
+		name,
+		descr,
+		cost,
+		discount,
+		page,
+		limit,
 	}
 }
 
@@ -979,11 +979,11 @@ type ModuleQueryToValidate struct {
 
 func NewModuleQueryToValidate(name, description, courseName, page, limit string) *ModuleQueryToValidate {
 	return &ModuleQueryToValidate{
-		name:        name,
-		description: description,
-		courseName:  courseName,
-		page:        page,
-		limit:       limit,
+		name,
+		description,
+		courseName,
+		page,
+		limit,
 	}
 }
 
@@ -1022,12 +1022,12 @@ type LessonQueryToValidate struct {
 
 func NewLessonsQueryToValidate(name, description, courseName, moduleName, page, limit string) *LessonQueryToValidate {
 	return &LessonQueryToValidate{
-		name:        name,
-		description: description,
-		courseName:  courseName,
-		moduleName:  moduleName,
-		page:        page,
-		limit:       limit,
+		name,
+		description,
+		courseName,
+		moduleName,
+		page,
+		limit,
 	}
 }
 
@@ -1140,7 +1140,7 @@ type RoleToValidate struct {
 
 func CreateNewRoleToValidate(role string) *RoleToValidate {
 	return &RoleToValidate{
-		role: role,
+		role,
 	}
 }
 
@@ -1166,11 +1166,11 @@ type AdminQueryToValidate struct {
 
 func CreateNewAdminQueryToValidate(login, role, auth, page, limit string) *AdminQueryToValidate {
 	return &AdminQueryToValidate{
-		login:              login,
-		role:               role,
-		twoStepsAuthStatus: auth,
-		page:               page,
-		limit:              limit,
+		login,
+		role,
+		auth,
+		page,
+		limit,
 	}
 }
 
@@ -1207,10 +1207,10 @@ type PaymentsQueryToValidate struct {
 
 func CreateNewPaymentsQueryToValidate(from, due, courseName, paymentMethod string) *PaymentsQueryToValidate {
 	return &PaymentsQueryToValidate{
-		from:          from,
-		due:           due,
-		courseName:    courseName,
-		paymentMethod: paymentMethod,
+		from,
+		due,
+		courseName,
+		paymentMethod,
 	}
 }
 
@@ -1223,7 +1223,7 @@ func (query *PaymentsQueryToValidate) Validate(ctx context.Context) *courseerror
 			validation.In(paymentMethodsInterfaces...).Error(errBadPaymentMethodParam),
 		),
 		validation.Field(&query.due,
-			validation.Date(query.due).Error(errBadDate),
+			validation.Date(dateLayout).Error(errBadDate),
 		),
 		validation.Field(&query.from,
 			validation.Required.Error(errFieldIsNil),
