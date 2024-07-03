@@ -195,7 +195,24 @@ func (storage *Storage) RetreiveUserData(ctx context.Context) (*entity.UserData,
 		tx.Rollback()
 		return nil, courseError.CreateError(err, 10002)
 	}
-	userData.AddCourses(courses)
+
+	var userOrders []dto.Order
+	if err := tx.Where("user_id = ?", userId).Find(&userOrders).Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 10002)
+	}
+
+	orderIds := dto.ExtractIds(userOrders, func(item interface{}) uint {
+		return item.(dto.Order).ID
+	})
+
+	var userBilling []dto.Billing
+	if err := tx.Where("id IN (?)", orderIds).Find(&userBilling).Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 10002)
+	}
+
+	userData.AddCourses(courses, userOrders, userBilling)
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()

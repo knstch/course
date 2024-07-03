@@ -91,20 +91,22 @@ func NewCdnResponse() *CdnResponse {
 }
 
 type UserCourses struct {
-	Id         uint        `json:"id"`
-	Name       string      `json:"name"`
-	PreviewUrl string      `json:"previewUrl"`
-	Billing    UserBilling `json:"billingInfo"`
+	Id         uint          `json:"id"`
+	Name       string        `json:"name"`
+	PreviewUrl string        `json:"previewUrl"`
+	Billing    []UserBilling `json:"billingInfo"`
 }
 
 func (courses *UserCourses) AddBilling(id uint, order string, paidStatus bool, paid float64, paymentMethod string, invoiceId uint, time time.Time) *UserCourses {
-	courses.Billing.Id = id
-	courses.Billing.Order = order
-	courses.Billing.PaidStatus = paidStatus
-	courses.Billing.Paid = paid
-	courses.Billing.PaymentMethod = paymentMethod
-	courses.Billing.InvoiceId = invoiceId
-	courses.Billing.Timestamp = time
+	courses.Billing = append(courses.Billing, UserBilling{
+		Id:            id,
+		Order:         order,
+		PaidStatus:    paidStatus,
+		Paid:          paid,
+		PaymentMethod: paymentMethod,
+		InvoiceId:     invoiceId,
+		Timestamp:     time,
+	})
 
 	return courses
 }
@@ -165,7 +167,7 @@ func (user *UserData) AddEmailVerifiedStatus(verified bool) *UserData {
 	return user
 }
 
-func (user *UserData) AddCourses(courses []dto.Course) *UserData {
+func (user *UserData) AddCourses(courses []dto.Course, orders []dto.Order, billing []dto.Billing) *UserData {
 	user.Courses = make([]UserCourses, 0, len(courses))
 	for _, v := range courses {
 		course := UserCourses{
@@ -173,9 +175,19 @@ func (user *UserData) AddCourses(courses []dto.Course) *UserData {
 			Name:       v.Name,
 			PreviewUrl: v.PreviewImgUrl,
 		}
+
+		for _, j := range orders {
+			if v.ID == j.CourseId {
+				for _, k := range billing {
+					if j.ID == k.OrderId {
+						course.AddBilling(k.ID, j.Order, k.Paid, k.Price, k.PaymentMethod, k.InvoiceId, k.CreatedAt)
+					}
+				}
+			}
+		}
+
 		user.Courses = append(user.Courses, course)
 	}
-
 	return user
 }
 
@@ -201,6 +213,7 @@ type UserDataAdmin struct {
 	IsVerified  bool          `json:"isVerified"`
 	Photo       *string       `json:"photoPath,omitempty"`
 	Courses     []UserCourses `json:"courses"`
+	Banned      bool          `json:"banned"`
 }
 
 func CreateUserDataAdmin(user dto.User) *UserDataAdmin {
@@ -214,6 +227,7 @@ func CreateUserDataAdmin(user dto.User) *UserDataAdmin {
 	userData.FirstName = user.FirstName
 	userData.Surname = user.Surname
 	userData.Active = user.Active
+	userData.Banned = user.Banned
 
 	return &userData
 }
@@ -227,13 +241,11 @@ func (user *UserDataAdmin) AddCourses(courses []dto.Course, orders []dto.Order, 
 			PreviewUrl: v.PreviewImgUrl,
 		}
 
-	ordersLoop:
 		for _, j := range orders {
 			if v.ID == j.CourseId {
 				for _, k := range billing {
 					if j.ID == k.OrderId {
 						course.AddBilling(k.ID, j.Order, k.Paid, k.Price, k.PaymentMethod, k.InvoiceId, k.CreatedAt)
-						break ordersLoop
 					}
 				}
 			}

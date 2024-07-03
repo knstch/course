@@ -17,6 +17,7 @@ type User struct {
 	Active        bool `gorm:"not null;default:true"`
 	PhotoId       *uint
 	Photo         Photo
+	Banned        bool `gorm:"not null;default:false"`
 }
 
 func CreateNewUser() *User {

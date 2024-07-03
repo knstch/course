@@ -341,9 +341,10 @@ type UserFiltersToValidate struct {
 	isVerified  string
 	page        string
 	limit       string
+	banned      string
 }
 
-func NewUserFiltersToValidate(firstName, surname, phoneNumber, email, active, isVerified, page, limit string) *UserFiltersToValidate {
+func NewUserFiltersToValidate(firstName, surname, phoneNumber, email, active, isVerified, banned, page, limit string) *UserFiltersToValidate {
 	return &UserFiltersToValidate{
 		firstName:   firstName,
 		surname:     surname,
@@ -353,6 +354,7 @@ func NewUserFiltersToValidate(firstName, surname, phoneNumber, email, active, is
 		isVerified:  isVerified,
 		page:        page,
 		limit:       limit,
+		banned:      banned,
 	}
 }
 
@@ -371,6 +373,9 @@ func (userFilters *UserFiltersToValidate) Validate(ctx context.Context) *coursee
 			validation.In(boolsInterfaces...).Error(errBadBool),
 		),
 		validation.Field(&userFilters.active,
+			validation.In(boolsInterfaces...).Error(errBadBool),
+		),
+		validation.Field(&userFilters.banned,
 			validation.In(boolsInterfaces...).Error(errBadBool),
 		),
 		validation.Field(&userFilters.email,

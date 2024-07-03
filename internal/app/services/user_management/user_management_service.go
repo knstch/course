@@ -14,7 +14,7 @@ type UserManagementService struct {
 
 type UserManager interface {
 	GetAllUsersData(ctx context.Context,
-		firstName, surname, phoneNumber, email, active, isVerified, courseName, page, limit string) (
+		firstName, surname, phoneNumber, email, active, isVerified, courseName, banned, page, limit string) (
 		*entity.UserDataWithPagination, *courseError.CourseError)
 	DisableUser(ctx context.Context, userId int) *courseError.CourseError
 	GetAllUserDataById(ctx context.Context, id string) (*entity.UserDataAdmin, *courseError.CourseError)
@@ -27,14 +27,14 @@ func NewUserManagementService(userManager UserManager) UserManagementService {
 }
 
 func (user UserManagementService) RetreiveUsersByFilters(ctx context.Context,
-	firstName, surname, phoneNumber, email, active, isVerified, courseName, page, limit string) (
+	firstName, surname, phoneNumber, email, active, isVerified, courseName, banned, page, limit string) (
 	*entity.UserDataWithPagination, *courseError.CourseError) {
 
-	if err := validation.NewUserFiltersToValidate(firstName, surname, phoneNumber, email, active, isVerified, page, limit).Validate(ctx); err != nil {
+	if err := validation.NewUserFiltersToValidate(firstName, surname, phoneNumber, email, active, isVerified, banned, page, limit).Validate(ctx); err != nil {
 		return nil, err
 	}
 
-	userData, err := user.manager.GetAllUsersData(ctx, firstName, surname, phoneNumber, email, active, isVerified, courseName, page, limit)
+	userData, err := user.manager.GetAllUsersData(ctx, firstName, surname, phoneNumber, email, active, isVerified, courseName, banned, page, limit)
 	if err != nil {
 		return nil, err
 	}

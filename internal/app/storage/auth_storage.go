@@ -95,7 +95,7 @@ func (storage *Storage) SignIn(ctx context.Context, email, password string) (use
 		return nil, nil, courseError.CreateError(err, 10002)
 	}
 
-	if !user.Active {
+	if user.Banned {
 		tx.Rollback()
 		return nil, nil, courseError.CreateError(errUserInactive, 11010)
 	}

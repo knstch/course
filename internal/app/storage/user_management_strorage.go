@@ -14,13 +14,14 @@ import (
 )
 
 func (storage *Storage) GetAllUsersData(ctx context.Context,
-	firstName, surname, phoneNumber, email, active, isVerified, courseName, page,
+	firstName, surname, phoneNumber, email, active, isVerified, courseName, banned, page,
 	limit string) (*entity.UserDataWithPagination, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	var (
 		boolIsActive   bool
 		boolIsVerified bool
+		boolIsBanned   bool
 	)
 
 	users := dto.CreateNewUsers()
@@ -31,6 +32,10 @@ func (storage *Storage) GetAllUsersData(ctx context.Context,
 
 	if isVerified == "true" {
 		boolIsVerified = true
+	}
+
+	if banned == "true" {
+		boolIsBanned = true
 	}
 
 	query := tx.Model(&dto.User{})
@@ -59,6 +64,10 @@ func (storage *Storage) GetAllUsersData(ctx context.Context,
 
 	if active != "" {
 		query.Where("active = ?", boolIsActive)
+	}
+
+	if banned != "" {
+		query.Where("banned = ?", boolIsBanned)
 	}
 
 	if courseName != "" {
@@ -144,7 +153,7 @@ func (storage *Storage) GetAllUsersData(ctx context.Context,
 func (storage *Storage) DisableUser(ctx context.Context, userId int) *courseError.CourseError {
 	tx := storage.db.WithContext(ctx).Begin()
 
-	if err := tx.Model(&dto.User{}).Where("id = ?", userId).Update("active", false).Error; err != nil {
+	if err := tx.Model(&dto.User{}).Where("id = ?", userId).Update("banned", true).Error; err != nil {
 		tx.Rollback()
 		return courseError.CreateError(err, 10003)
 	}
@@ -195,7 +204,7 @@ func (storage *Storage) GetAllUserDataById(ctx context.Context, id string) (*ent
 
 	userCourses := dto.CreateNewCourses()
 	if err := tx.Joins("JOIN orders ON courses.id = orders.course_id").
-		Where("orders.user_id = ?", id).Find(&userCourses).Error; err != nil {
+		Where("orders.user_id = ?", id).Distinct("courses.id").Find(&userCourses).Error; err != nil {
 		tx.Rollback()
 		return nil, courseError.CreateError(err, 10002)
 	}

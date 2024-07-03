@@ -11,7 +11,7 @@ import (
 func (h *Handlers) FindUsersByFilters(ctx *gin.Context) {
 	users, err := h.userManagementService.RetreiveUsersByFilters(ctx, ctx.Query("firstName"), ctx.Query("surname"),
 		ctx.Query("phoneNumber"), ctx.Query("email"), ctx.Query("active"), ctx.Query("verified"), ctx.Query("courseName"),
-		ctx.Query("page"), ctx.Query("limit"))
+		ctx.Query("banned"), ctx.Query("page"), ctx.Query("limit"))
 
 	if err != nil {
 		if err.Code == 400 {
