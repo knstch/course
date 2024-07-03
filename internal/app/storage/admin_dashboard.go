@@ -63,3 +63,31 @@ func (storage Storage) GetSalesStats(ctx context.Context, from, due time.Time, c
 
 	return stats, nil
 }
+
+func (storage Storage) GetUsersStats(ctx context.Context, from, due time.Time) ([]entity.UsersStats, *courseError.CourseError) {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	due = due.AddDate(0, 0, 1)
+
+	duration := due.Sub(from)
+	daysLeft := int(duration.Hours() / 24)
+
+	userStats := make([]entity.UsersStats, 0, daysLeft)
+
+	for date := from; date.Before(due); date = date.AddDate(0, 0, 1) {
+		var users []dto.User
+		if err := tx.Where("DATE(created_at) = ?", date.Format(time.DateOnly)).Find(&users).Error; err != nil {
+			tx.Rollback()
+			return nil, courseError.CreateError(err, 10002)
+		}
+
+		userStats = append(userStats, *entity.CreateNewUsersStats(date, len(users)))
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 10010)
+	}
+
+	return userStats, nil
+}

@@ -1195,15 +1195,15 @@ func (admin *AdminQueryToValidate) Validate(ctx context.Context) *courseerror.Co
 	return nil
 }
 
-type PaymentsQueryToValidate struct {
+type StatsQueryToValidate struct {
 	from,
 	due,
 	courseName,
 	paymentMethod string
 }
 
-func CreateNewPaymentsQueryToValidate(from, due, courseName, paymentMethod string) *PaymentsQueryToValidate {
-	return &PaymentsQueryToValidate{
+func CreateNewStatsQueryToValidate(from, due, courseName, paymentMethod string) *StatsQueryToValidate {
+	return &StatsQueryToValidate{
 		from,
 		due,
 		courseName,
@@ -1211,7 +1211,7 @@ func CreateNewPaymentsQueryToValidate(from, due, courseName, paymentMethod strin
 	}
 }
 
-func (query *PaymentsQueryToValidate) Validate(ctx context.Context) *courseerror.CourseError {
+func (query *StatsQueryToValidate) Validate(ctx context.Context) *courseerror.CourseError {
 	if err := validation.ValidateStructWithContext(ctx, query,
 		validation.Field(&query.courseName,
 			validation.RuneLength(1, 100).Error(errBadLength),
@@ -1234,20 +1234,22 @@ func (query *PaymentsQueryToValidate) Validate(ctx context.Context) *courseerror
 	return nil
 }
 
-func (query *PaymentsQueryToValidate) validateDue(from, due string) validation.RuleFunc {
+func (query *StatsQueryToValidate) validateDue(from, due string) validation.RuleFunc {
 	return func(value interface{}) error {
-		parsedFrom, err := time.Parse(time.DateOnly, from)
-		if err != nil {
-			return fmt.Errorf(errBadDate)
-		}
+		if due != "" {
+			parsedFrom, err := time.Parse(time.DateOnly, from)
+			if err != nil {
+				return fmt.Errorf(errBadDate)
+			}
 
-		parsedDue, err := time.Parse(time.DateOnly, due)
-		if err != nil {
-			return fmt.Errorf(errBadDate)
-		}
+			parsedDue, err := time.Parse(time.DateOnly, due)
+			if err != nil {
+				return fmt.Errorf(errBadDate)
+			}
 
-		if parsedDue.Before(parsedFrom) {
-			return fmt.Errorf(errDueEarlierThenFrom)
+			if parsedDue.Before(parsedFrom) {
+				return fmt.Errorf(errDueEarlierThenFrom)
+			}
 		}
 
 		return nil

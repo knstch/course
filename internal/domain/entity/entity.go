@@ -565,3 +565,15 @@ func CreateNewPaymentStats(date time.Time, billing []dto.Billing) *PaymentStats 
 		TotalPurchased: len(billing),
 	}
 }
+
+type UsersStats struct {
+	Date           time.Time `json:"date"`
+	RegistredUsers int       `json:"registredUsers"`
+}
+
+func CreateNewUsersStats(date time.Time, users int) *UsersStats {
+	return &UsersStats{
+		Date:           date,
+		RegistredUsers: users,
+	}
+}

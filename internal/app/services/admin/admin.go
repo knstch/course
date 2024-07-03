@@ -24,6 +24,7 @@ type adminManager interface {
 	ResetAdminPassword(ctx context.Context, login, newPassword string) *courseError.CourseError
 	ResetAdminsAuthKey(ctx context.Context, login, key string) *courseError.CourseError
 	GetSalesStats(ctx context.Context, from, due time.Time, courseName, paymentMethod string) ([]entity.PaymentStats, *courseError.CourseError)
+	GetUsersStats(ctx context.Context, from, due time.Time) ([]entity.UsersStats, *courseError.CourseError)
 }
 
 type Claims struct {

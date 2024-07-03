@@ -65,6 +65,7 @@ func RequestsRouter(h *handlers.Handlers) *gin.Engine {
 	management.GET("/modules", h.RetreiveModules)
 	management.GET("/lessons", h.RetreiveLessons)
 	management.GET("/paymentStats", h.GetPaymentDashboard)
+	management.GET("/usersStats", h.GetUsersDashboard)
 
 	content := v1.Group("content")
 	content.GET("/courses", h.RetreiveCourses)

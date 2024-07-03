@@ -75,7 +75,27 @@ func (h Handlers) GetPaymentDashboard(ctx *gin.Context) {
 		return
 	}
 
-	stats, err := h.adminService.GetPaymentData(ctx, ctx.Query("from"), ctx.Query("due"), ctx.Query("courseName"), ctx.Query("paymentMethod"))
+	stats, err := h.adminService.GetPaymentsData(ctx, ctx.Query("from"), ctx.Query("due"), ctx.Query("courseName"), ctx.Query("paymentMethod"))
+	if err != nil {
+		if err.Code == 400 {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			return
+		}
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, stats)
+}
+
+func (h Handlers) GetUsersDashboard(ctx *gin.Context) {
+	role := ctx.Value("role").(string)
+	if role != "super_admin" && role != "admin" {
+		ctx.AbortWithStatusJSON(http.StatusForbidden, courseError.CreateError(errNoRights, 16004))
+		return
+	}
+
+	stats, err := h.adminService.GetUsersData(ctx, ctx.Query("from"), ctx.Query("due"))
 	if err != nil {
 		if err.Code == 400 {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
