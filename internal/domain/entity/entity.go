@@ -55,10 +55,10 @@ type SuccessResponse struct {
 	Success bool   `json:"success"`
 }
 
-func CreateSuccessResponse(message string, status bool) *SuccessResponse {
+func CreateSuccessResponse(message string) *SuccessResponse {
 	return &SuccessResponse{
 		Message: message,
-		Success: status,
+		Success: true,
 	}
 }
 

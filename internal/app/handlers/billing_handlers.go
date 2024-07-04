@@ -17,6 +17,7 @@ var (
 func (h Handlers) BuyCourse(ctx *gin.Context) {
 	verifiedStatus := ctx.GetBool("verified")
 	if !verifiedStatus {
+		h.logger.Error(fmt.Sprintf("пользователь не верифицирован, ID: %d", ctx.Value("userId").(uint)), "BuyCourse", errNotVerified.Error(), 11008)
 		ctx.AbortWithStatusJSON(http.StatusForbidden, courseError.CreateError(errNotVerified, 11008))
 	}
 
@@ -115,7 +116,7 @@ func (h Handlers) ManageBillingHost(ctx *gin.Context) {
 
 	h.logger.Info(fmt.Sprintf("BillingApiHost успешно изменен админом с ID: %d", ctx.Value("adminId")), "ManageBillingHost", host.Url)
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("хост успешно изменен", true))
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("хост успешно изменен"))
 }
 
 func (h Handlers) ManageAccessToken(ctx *gin.Context) {
@@ -145,5 +146,5 @@ func (h Handlers) ManageAccessToken(ctx *gin.Context) {
 
 	h.logger.Info(fmt.Sprintf("токен billingHost успешно изменен админом с ID: %d", ctx.Value("adminId")), "ManageAccessToken", token.Token)
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("токен успешно изменен", true))
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("токен успешно изменен"))
 }

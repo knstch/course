@@ -77,7 +77,7 @@ func (h Handlers) VerifyAuthentificator(ctx *gin.Context) {
 
 	h.logger.Info("двойная аутентификация успешно настроена", "VerifyAuthentificator", credentials.Login)
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("аккаунт успешно верифицирован", true))
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("аккаунт успешно верифицирован"))
 }
 
 func (h Handlers) LogIn(ctx *gin.Context) {
@@ -111,7 +111,7 @@ func (h Handlers) LogIn(ctx *gin.Context) {
 
 	h.logger.Info(fmt.Sprintf("админ успешно вошел c IP: %v", ctx.ClientIP()), "LogIn", credentials.Login)
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("доступ разрешен", true))
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("доступ разрешен"))
 }
 
 func (h Handlers) WithAdminCookieAuth() gin.HandlerFunc {
@@ -184,7 +184,7 @@ func (h Handlers) ChangeAdminPassword(ctx *gin.Context) {
 
 	h.logger.Info(fmt.Sprintf("пароль успешно изменен у админа с логином %v", credentials.Login), "изменение пароля", "")
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("пароль успешно изменен", true))
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("пароль успешно изменен"))
 }
 
 func (h Handlers) ChangeAdminAuthKey(ctx *gin.Context) {

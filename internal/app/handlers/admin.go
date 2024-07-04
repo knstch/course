@@ -33,7 +33,7 @@ func (h Handlers) DeleteAdmin(ctx *gin.Context) {
 
 	h.logger.Info("админ упешно удален", "DeleteAdmin", ctx.Query("login"))
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("администратор успешно удален", true))
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("администратор успешно удален"))
 }
 
 func (h Handlers) ChangeRole(ctx *gin.Context) {
@@ -60,7 +60,7 @@ func (h Handlers) ChangeRole(ctx *gin.Context) {
 
 	h.logger.Info(fmt.Sprintf("роль админа с логином %v успешно изменена", ctx.Query("login")), "ChangeRole", ctx.Query("role"))
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("роль успешно изменена", true))
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("роль успешно изменена"))
 }
 
 func (h Handlers) FindAdmins(ctx *gin.Context) {

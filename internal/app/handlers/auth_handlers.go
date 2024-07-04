@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	errEmailNotFoundInCtx              = errors.New("почта не найдена в контексте")
+	errUserIdNotFoundInCtx             = errors.New("почта не найдена в контексте")
 	errVerificationStatusNotFoundInCtx = errors.New("статус верификации не найден в контексте")
 	errUserEmailIsAlreadyVerified      = errors.New("почта пользователя уже верифицирована")
 	errUserNotAuthentificated          = errors.New("пользователь не авторизован")
@@ -41,7 +41,7 @@ func (h Handlers) SignUp(ctx *gin.Context) {
 
 	h.logger.Info("пользователь успешно зарегистрирован", "SignUp", credentials.Email)
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("пользователь зарегистрирован", true))
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("пользователь зарегистрирован"))
 }
 
 func (h Handlers) SignIn(ctx *gin.Context) {
@@ -71,7 +71,7 @@ func (h Handlers) SignIn(ctx *gin.Context) {
 
 	h.logger.Info(fmt.Sprintf("пользователь успешно залогинен c IP: %v", ctx.ClientIP()), "SignIn", credentials.Email)
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("доступ разрешен", true))
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("доступ разрешен"))
 }
 
 func (h Handlers) Verification(ctx *gin.Context) {
@@ -84,7 +84,7 @@ func (h Handlers) Verification(ctx *gin.Context) {
 
 	userId, ok := ctx.Get("userId")
 	if !ok {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errEmailNotFoundInCtx, 11005))
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errUserIdNotFoundInCtx, 11005))
 		return
 	}
 
@@ -118,7 +118,7 @@ func (h Handlers) Verification(ctx *gin.Context) {
 
 	h.logger.Info("пользователь успешно верифицирован", "Verification", fmt.Sprintf("userId: %d", userId))
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("email верифицирован", true))
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("email верифицирован"))
 }
 
 func (h Handlers) SendNewCode(ctx *gin.Context) {
@@ -141,7 +141,7 @@ func (h Handlers) SendNewCode(ctx *gin.Context) {
 
 	h.logger.Info("код подтверждения успешно отправлен юзеру", "SendNewCode", fmt.Sprint(ctx.Value("userId")))
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("код успешно отправлен", true))
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("код успешно отправлен"))
 }
 
 func (h Handlers) SendRecoverPasswordCode(ctx *gin.Context) {
@@ -164,7 +164,7 @@ func (h Handlers) SendRecoverPasswordCode(ctx *gin.Context) {
 
 	h.logger.Info(fmt.Sprintf("код для восстановления пароля успешно отправлен c IP: %v", ctx.ClientIP()), "SendRecoverPasswordCode", email.Email)
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("код для восстановления успешно отправлен", true))
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("код для восстановления успешно отправлен"))
 }
 
 func (h Handlers) SetNewPassword(ctx *gin.Context) {
@@ -195,7 +195,7 @@ func (h Handlers) SetNewPassword(ctx *gin.Context) {
 
 	h.logger.Info("пароль успешно изменен", "SetNewPassword", recoverCredentials.Email)
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("пароль успешно восстановлен", true))
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("пароль успешно восстановлен"))
 }
 
 func (h Handlers) WithCookieAuth() gin.HandlerFunc {

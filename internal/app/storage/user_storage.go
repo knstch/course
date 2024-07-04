@@ -165,6 +165,9 @@ func (storage *Storage) RetreiveUserData(ctx context.Context) (*entity.UserData,
 	user := dto.CreateNewUser()
 	if err := tx.Where("id = ?", userId).First(&user).Error; err != nil {
 		tx.Rollback()
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, courseError.CreateError(errUserNotFound, 11101)
+		}
 		return nil, courseError.CreateError(err, 10002)
 	}
 	userData.AddFirstName(user.FirstName).
