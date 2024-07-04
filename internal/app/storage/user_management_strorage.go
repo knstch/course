@@ -171,6 +171,22 @@ func (storage Storage) DisableUser(ctx context.Context, userId int) *courseError
 	return nil
 }
 
+func (storage Storage) EnableUser(ctx context.Context, userId int) *courseError.CourseError {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	if err := tx.Model(&dto.User{}).Where("id = ?", userId).Update("banned", false).Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10003)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10010)
+	}
+
+	return nil
+}
+
 func (storage Storage) GetAllUserDataById(ctx context.Context, id string) (*entity.UserDataAdmin, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
 

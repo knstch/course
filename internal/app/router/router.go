@@ -47,6 +47,7 @@ func RequestsRouter(h *handlers.Handlers) *gin.Engine {
 	management.PATCH("/resetKey", h.ChangeAdminAuthKey)
 	management.GET("/users", h.FindUsersByFilters)
 	management.POST("/ban", h.BanUser)
+	management.POST("/unban", h.UnbanUser)
 	management.GET("/user", h.GetUserById)
 	management.POST("/createCourse", h.CreateNewCourse)
 	management.POST("/createModule", h.CreateNewModule)

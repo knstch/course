@@ -18,6 +18,7 @@ type UserManager interface {
 		*entity.UserDataWithPagination, *courseError.CourseError)
 	DisableUser(ctx context.Context, userId int) *courseError.CourseError
 	GetAllUserDataById(ctx context.Context, id string) (*entity.UserDataAdmin, *courseError.CourseError)
+	EnableUser(ctx context.Context, userId int) *courseError.CourseError
 }
 
 func NewUserManagementService(userManager UserManager) UserManagementService {
@@ -48,6 +49,18 @@ func (user UserManagementService) DeactivateUser(ctx context.Context, userId uin
 	}
 
 	if err := user.manager.DisableUser(ctx, int(userId)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (user UserManagementService) ActivateUser(ctx context.Context, userId uint) *courseError.CourseError {
+	if err := validation.NewIdToValidate(int(userId)).Validate(ctx); err != nil {
+		return err
+	}
+
+	if err := user.manager.EnableUser(ctx, int(userId)); err != nil {
 		return err
 	}
 

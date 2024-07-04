@@ -46,7 +46,7 @@ func (h Handlers) FindUsersByFilters(ctx *gin.Context) {
 func (h Handlers) BanUser(ctx *gin.Context) {
 	Id := entity.NewId(nil)
 	if err := ctx.ShouldBindJSON(&Id); err != nil {
-		h.logger.Error("не получилось обработать тело запроса", "BuyCourse", err.Error(), 10101)
+		h.logger.Error("не получилось обработать тело запроса", "BanUser", err.Error(), 10101)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
 		return
 	}
@@ -65,6 +65,30 @@ func (h Handlers) BanUser(ctx *gin.Context) {
 		ctx.Value("adminId").(uint)), "BanUser", fmt.Sprintf("userId: %d", Id.Id))
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("пользователь успешно заблокирован"))
+}
+
+func (h Handlers) UnbanUser(ctx *gin.Context) {
+	Id := entity.NewId(nil)
+	if err := ctx.ShouldBindJSON(&Id); err != nil {
+		h.logger.Error("не получилось обработать тело запроса", "UnbanUser", err.Error(), 10101)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
+		return
+	}
+
+	if err := h.userManagementService.ActivateUser(ctx, Id.Id); err != nil {
+		h.logger.Error("ошибка при разблокировке пользователя", "UnbanUser", err.Message, err.Code)
+		if err.Code == 400 {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			return
+		}
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	h.logger.Info(fmt.Sprintf("пользователь успешно разблокирован админом с ID: %v",
+		ctx.Value("adminId").(uint)), "UnbanUser", fmt.Sprintf("userId: %d", Id.Id))
+
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("пользователь успешно разблокирован"))
 }
 
 func (h Handlers) GetUserById(ctx *gin.Context) {
