@@ -36,7 +36,7 @@ func NewStorage(dsn, secret string) (*Storage, error) {
 	}, nil
 }
 
-func (storage *Storage) Automigrate(config *config.Config) error {
+func (storage Storage) Automigrate(config *config.Config) error {
 	if err := storage.db.AutoMigrate(
 		&dto.User{},
 		&dto.Credentials{},
@@ -49,6 +49,7 @@ func (storage *Storage) Automigrate(config *config.Config) error {
 		&dto.Billing{},
 		&dto.Admin{},
 		&dto.AdminAccessToken{},
+		&dto.WatchHistory{},
 	); err != nil {
 		return err
 	}
@@ -76,7 +77,7 @@ func (storage *Storage) Automigrate(config *config.Config) error {
 	return nil
 }
 
-func (storage *Storage) VerifyEmail(ctx context.Context, userId uint, isEdit bool) *courseError.CourseError {
+func (storage Storage) VerifyEmail(ctx context.Context, userId uint, isEdit bool) *courseError.CourseError {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	if isEdit {

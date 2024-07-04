@@ -370,11 +370,20 @@ type LessonInfo struct {
 	PreviewUrl  string  `json:"preview"`
 	VideoUrl    *string `json:"video,omitempty"`
 	Position    uint    `json:"position"`
+	Watched     bool    `json:"watched"`
 	ModuleId    uint    `json:"-"`
 }
 
-func CreateLessonInfo(lesson *dto.Lesson, isPurchased bool) *LessonInfo {
+func CreateLessonInfo(lesson *dto.Lesson, isPurchased bool, history []dto.WatchHistory) *LessonInfo {
 	if isPurchased {
+		watched := false
+		if len(history) != 0 {
+			for _, v := range history {
+				if v.LessonId == lesson.ID {
+					watched = true
+				}
+			}
+		}
 		return &LessonInfo{
 			Id:          lesson.ID,
 			Name:        lesson.Name,
@@ -383,6 +392,7 @@ func CreateLessonInfo(lesson *dto.Lesson, isPurchased bool) *LessonInfo {
 			VideoUrl:    &lesson.VideoUrl,
 			Position:    uint(lesson.Position),
 			ModuleId:    lesson.ModuleId,
+			Watched:     watched,
 		}
 	}
 

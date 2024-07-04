@@ -16,7 +16,7 @@ var (
 	errUserBanned   = errors.New("пользователь заблокирован, обратитесь к администратору")
 )
 
-func (storage *Storage) RegisterUser(ctx context.Context, email, password string) (*uint, *courseError.CourseError) {
+func (storage Storage) RegisterUser(ctx context.Context, email, password string) (*uint, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password+storage.secret), bcrypt.DefaultCost)
@@ -52,7 +52,7 @@ func (storage *Storage) RegisterUser(ctx context.Context, email, password string
 	return &user.ID, nil
 }
 
-func (storage *Storage) StoreToken(ctx context.Context, token *string, id *uint) *courseError.CourseError {
+func (storage Storage) StoreToken(ctx context.Context, token *string, id *uint) *courseError.CourseError {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	accessToken := dto.CreateNewAccessToken().
@@ -73,7 +73,7 @@ func (storage *Storage) StoreToken(ctx context.Context, token *string, id *uint)
 	return nil
 }
 
-func (storage *Storage) SignIn(ctx context.Context, email, password string) (userId *uint, verified *bool, err *courseError.CourseError) {
+func (storage Storage) SignIn(ctx context.Context, email, password string) (userId *uint, verified *bool, err *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	credentials := dto.CreateNewCredentials()
@@ -114,7 +114,7 @@ func (storage *Storage) SignIn(ctx context.Context, email, password string) (use
 	return &user.ID, &credentials.Verified, nil
 }
 
-func (storage *Storage) verifyPassword(hashedPassword, password string) bool {
+func (storage Storage) verifyPassword(hashedPassword, password string) bool {
 	if err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password+storage.secret)); err != nil {
 		return false
 	}
@@ -122,7 +122,7 @@ func (storage *Storage) verifyPassword(hashedPassword, password string) bool {
 	return true
 }
 
-func (storage *Storage) DisableTokens(ctx context.Context, userId uint) *courseError.CourseError {
+func (storage Storage) DisableTokens(ctx context.Context, userId uint) *courseError.CourseError {
 	if err := storage.db.WithContext(ctx).
 		Model(dto.AccessToken{}).
 		Where("user_id = ?", userId).
@@ -133,7 +133,7 @@ func (storage *Storage) DisableTokens(ctx context.Context, userId uint) *courseE
 	return nil
 }
 
-func (storage *Storage) DisableToken(ctx context.Context, token string) *courseError.CourseError {
+func (storage Storage) DisableToken(ctx context.Context, token string) *courseError.CourseError {
 	if err := storage.db.WithContext(ctx).
 		Model(dto.AccessToken{}).
 		Where("token = ?", token).Update("available", false).Error; err != nil {
@@ -143,7 +143,7 @@ func (storage *Storage) DisableToken(ctx context.Context, token string) *courseE
 	return nil
 }
 
-func (storage *Storage) CheckAccessToken(ctx context.Context, token string) *courseError.CourseError {
+func (storage Storage) CheckAccessToken(ctx context.Context, token string) *courseError.CourseError {
 	accessToken := dto.CreateNewAccessToken()
 
 	if err := storage.db.WithContext(ctx).Where("token = ? AND available = ?", token, true).First(&accessToken).Error; err != nil {
@@ -156,7 +156,7 @@ func (storage *Storage) CheckAccessToken(ctx context.Context, token string) *cou
 	return nil
 }
 
-func (storage *Storage) RecoverPassword(ctx context.Context, email, password string) *courseError.CourseError {
+func (storage Storage) RecoverPassword(ctx context.Context, email, password string) *courseError.CourseError {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password+storage.secret), bcrypt.DefaultCost)

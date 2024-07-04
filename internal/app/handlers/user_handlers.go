@@ -199,3 +199,25 @@ func (h Handlers) FreezeProfile(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("профиль успешно заморожен"))
 }
+
+func (h Handlers) WatchVideo(ctx *gin.Context) {
+	lessonId := ctx.Query("id")
+	_, ok := ctx.Get("userId")
+	if !ok {
+		h.logger.Error("ошибка при получении userId", "WatchVideo", errUserIdNotFoundInCtx.Error(), 11005)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errUserIdNotFoundInCtx, 11005))
+		return
+	}
+
+	if err := h.userService.MarkLessonAsWatched(ctx, lessonId); err != nil {
+		h.logger.Error(fmt.Sprintf("ошибка при создании статуса просмотра урока с ID: %v", lessonId), "WatchVideo", err.Message, err.Code)
+		if err.Code == 13005 {
+			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
+			return
+		}
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("урок успешно помечен как просмотренный"))
+}

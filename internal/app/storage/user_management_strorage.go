@@ -13,7 +13,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func (storage *Storage) GetAllUsersData(ctx context.Context,
+func (storage Storage) GetAllUsersData(ctx context.Context,
 	firstName, surname, phoneNumber, email, active, isVerified, courseName, banned, page,
 	limit string) (*entity.UserDataWithPagination, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
@@ -150,7 +150,7 @@ func (storage *Storage) GetAllUsersData(ctx context.Context,
 	}, nil
 }
 
-func (storage *Storage) DisableUser(ctx context.Context, userId int) *courseError.CourseError {
+func (storage Storage) DisableUser(ctx context.Context, userId int) *courseError.CourseError {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	if err := tx.Model(&dto.User{}).Where("id = ?", userId).Update("banned", true).Error; err != nil {
@@ -171,7 +171,7 @@ func (storage *Storage) DisableUser(ctx context.Context, userId int) *courseErro
 	return nil
 }
 
-func (storage *Storage) GetAllUserDataById(ctx context.Context, id string) (*entity.UserDataAdmin, *courseError.CourseError) {
+func (storage Storage) GetAllUserDataById(ctx context.Context, id string) (*entity.UserDataAdmin, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	user := dto.CreateNewUser()

@@ -13,7 +13,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func (storage *Storage) CreateNewOrder(ctx context.Context, courseId, price uint, ruCard bool) (*dto.OrderEssentials, *courseError.CourseError) {
+func (storage Storage) CreateNewOrder(ctx context.Context, courseId, price uint, ruCard bool) (*dto.OrderEssentials, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	userId := ctx.Value("userId").(uint)
@@ -77,7 +77,7 @@ func (storage *Storage) CreateNewOrder(ctx context.Context, courseId, price uint
 	return placedOrder, nil
 }
 
-func (storage *Storage) SetInvoiceId(ctx context.Context, invoiceId, orderId uint) *courseError.CourseError {
+func (storage Storage) SetInvoiceId(ctx context.Context, invoiceId, orderId uint) *courseError.CourseError {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	if err := tx.Model(&dto.Billing{}).Where("order_id = ?", orderId).Update("invoice_id", invoiceId).Error; err != nil {
@@ -92,7 +92,7 @@ func (storage *Storage) SetInvoiceId(ctx context.Context, invoiceId, orderId uin
 	return nil
 }
 
-func (storage *Storage) ApprovePayment(ctx context.Context, invoiceId, hashedUserData string) (*string, *courseError.CourseError) {
+func (storage Storage) ApprovePayment(ctx context.Context, invoiceId, hashedUserData string) (*string, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	bill := dto.NewPayment()
@@ -142,7 +142,7 @@ func (storage *Storage) ApprovePayment(ctx context.Context, invoiceId, hashedUse
 	return &course.Name, nil
 }
 
-func (storage *Storage) DeleteOrder(ctx context.Context, invoiceId string) *courseError.CourseError {
+func (storage Storage) DeleteOrder(ctx context.Context, invoiceId string) *courseError.CourseError {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	bill := dto.NewPayment()

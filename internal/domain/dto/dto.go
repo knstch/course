@@ -462,3 +462,20 @@ func CreateNewAdminAccessToken(id uint, token string) *AdminAccessToken {
 		Available: true,
 	}
 }
+
+type WatchHistory struct {
+	gorm.Model
+	Lesson   Lesson
+	LessonId uint
+	User     User
+	UserId   uint
+	Watched  bool
+}
+
+func CreateNewWatchHistory(lessonId uint, userId uint) *WatchHistory {
+	return &WatchHistory{
+		LessonId: lessonId,
+		UserId:   userId,
+		Watched:  true,
+	}
+}

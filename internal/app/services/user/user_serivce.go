@@ -28,6 +28,7 @@ type Profiler interface {
 	SetPhoto(ctx context.Context, path string) *courseError.CourseError
 	RetreiveUserData(ctx context.Context) (*entity.UserData, *courseError.CourseError)
 	DeactivateProfile(ctx context.Context) *courseError.CourseError
+	SetWatchedStatus(ctx context.Context, lessonId uint) *courseError.CourseError
 }
 
 type UserService struct {
@@ -208,6 +209,20 @@ func (user UserService) GetUserInfo(ctx context.Context) (*entity.UserData, *cou
 
 func (user UserService) DisableProfile(ctx context.Context) *courseError.CourseError {
 	if err := user.Profiler.DeactivateProfile(ctx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (user UserService) MarkLessonAsWatched(ctx context.Context, lessonId string) *courseError.CourseError {
+	if err := validation.NewStringIdToValidate(lessonId).Validate(ctx); err != nil {
+		return err
+	}
+
+	id, _ := strconv.Atoi(lessonId)
+
+	if err := user.Profiler.SetWatchedStatus(ctx, uint(id)); err != nil {
 		return err
 	}
 

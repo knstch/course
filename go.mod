@@ -2,8 +2,6 @@ module github.com/knstch/course
 
 go 1.21
 
-toolchain go1.22.4
-
 require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0

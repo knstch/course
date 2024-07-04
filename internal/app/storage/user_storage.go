@@ -21,7 +21,7 @@ var (
 	errBadUserCredentials = errors.New("данные не совпадают с инвойсом")
 )
 
-func (storage *Storage) newUserProfileUpdate(firstName, surname string, phoneNumber int) map[string]interface{} {
+func (storage Storage) newUserProfileUpdate(firstName, surname string, phoneNumber int) map[string]interface{} {
 	updates := make(map[string]interface{}, 3)
 
 	updates["phone_number"] = phoneNumber
@@ -31,7 +31,7 @@ func (storage *Storage) newUserProfileUpdate(firstName, surname string, phoneNum
 	return updates
 }
 
-func (storage *Storage) FillUserProfile(ctx context.Context, firstName, surname string, phoneNumber int, userId uint) *courseError.CourseError {
+func (storage Storage) FillUserProfile(ctx context.Context, firstName, surname string, phoneNumber int, userId uint) *courseError.CourseError {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	user := dto.CreateNewUser()
@@ -57,7 +57,7 @@ func (storage *Storage) FillUserProfile(ctx context.Context, firstName, surname 
 	return nil
 }
 
-func (storage *Storage) ChangePasssword(ctx context.Context, oldPassword, newPassword string, userId uint) *courseError.CourseError {
+func (storage Storage) ChangePasssword(ctx context.Context, oldPassword, newPassword string, userId uint) *courseError.CourseError {
 	credentials := dto.CreateNewCredentials()
 
 	tx := storage.db.WithContext(ctx).Begin()
@@ -101,7 +101,7 @@ func (storage *Storage) ChangePasssword(ctx context.Context, oldPassword, newPas
 	return nil
 }
 
-func (storage *Storage) ChangeEmail(ctx context.Context, newEmail string, userId uint) *courseError.CourseError {
+func (storage Storage) ChangeEmail(ctx context.Context, newEmail string, userId uint) *courseError.CourseError {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	oldCredentials := dto.CreateNewCredentials()
@@ -133,7 +133,7 @@ func (storage *Storage) ChangeEmail(ctx context.Context, newEmail string, userId
 	return nil
 }
 
-func (storage *Storage) SetPhoto(ctx context.Context, path string) *courseError.CourseError {
+func (storage Storage) SetPhoto(ctx context.Context, path string) *courseError.CourseError {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	userId := ctx.Value("userId").(uint)
@@ -155,7 +155,7 @@ func (storage *Storage) SetPhoto(ctx context.Context, path string) *courseError.
 	return nil
 }
 
-func (storage *Storage) RetreiveUserData(ctx context.Context) (*entity.UserData, *courseError.CourseError) {
+func (storage Storage) RetreiveUserData(ctx context.Context) (*entity.UserData, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	userData := entity.CreateNewUserData()
@@ -225,7 +225,7 @@ func (storage *Storage) RetreiveUserData(ctx context.Context) (*entity.UserData,
 	return userData, nil
 }
 
-func (storage *Storage) GetUserCourses(ctx context.Context) ([]dto.Order, *courseError.CourseError) {
+func (storage Storage) GetUserCourses(ctx context.Context) ([]dto.Order, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	userId := ctx.Value("userId").(uint)
@@ -248,7 +248,7 @@ func (storage *Storage) GetUserCourses(ctx context.Context) ([]dto.Order, *cours
 	return courses, nil
 }
 
-func (storage *Storage) GetCourseCost(ctx context.Context, courseId uint) (*uint, *courseError.CourseError) {
+func (storage Storage) GetCourseCost(ctx context.Context, courseId uint) (*uint, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	course := dto.CreateNewCourse()
@@ -269,7 +269,7 @@ func (storage *Storage) GetCourseCost(ctx context.Context, courseId uint) (*uint
 	return &course.Cost, nil
 }
 
-func (storage *Storage) DeactivateProfile(ctx context.Context) *courseError.CourseError {
+func (storage Storage) DeactivateProfile(ctx context.Context) *courseError.CourseError {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	userId := ctx.Value("userId").(uint)
@@ -290,4 +290,52 @@ func (storage *Storage) DeactivateProfile(ctx context.Context) *courseError.Cour
 	}
 
 	return nil
+}
+
+func (storage Storage) SetWatchedStatus(ctx context.Context, lessonId uint) *courseError.CourseError {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	userId := ctx.Value("userId").(uint)
+
+	lesson := dto.CreateNewLesson()
+	if err := tx.Where("id = ?", lessonId).First(&lesson).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return courseError.CreateError(errLessonNotExists, 13005)
+		}
+	}
+
+	watchHistory := dto.CreateNewWatchHistory(lessonId, userId)
+	if err := tx.Create(&watchHistory).Error; err != nil {
+		return courseError.CreateError(err, 10001)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10010)
+	}
+
+	return nil
+}
+
+func (storage Storage) checkWatchedLessons(ctx context.Context, courseId string) ([]dto.WatchHistory, *courseError.CourseError) {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	userId := ctx.Value("userId").(uint)
+
+	var watched []dto.WatchHistory
+	if err := tx.Table("watch_histories").
+		Joins("JOIN lessons ON watch_histories.lesson_id = lessons.id").
+		Joins("JOIN modules ON lessons.module_id = modules.id").
+		Where("modules.course_id = ?", courseId).
+		Where("watch_histories.user_id = ?", userId).
+		Find(&watched).Error; err != nil {
+		return nil, courseError.CreateError(err, 10002)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return nil, courseError.CreateError(err, 10010)
+	}
+
+	return watched, nil
 }

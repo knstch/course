@@ -26,7 +26,7 @@ var (
 	errCourseAlreadyExists = errors.New("курс с таким названием уже существует")
 )
 
-func (storage *Storage) CreateCourse(ctx context.Context, name, description, cost, discount, path string) (*uint, *courseError.CourseError) {
+func (storage Storage) CreateCourse(ctx context.Context, name, description, cost, discount, path string) (*uint, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	var isCourseNotExists bool
@@ -64,7 +64,7 @@ func (storage *Storage) CreateCourse(ctx context.Context, name, description, cos
 	return &course.ID, nil
 }
 
-func (storage *Storage) CreateModule(ctx context.Context, name, description, courseName string, position uint) (*uint, *courseError.CourseError) {
+func (storage Storage) CreateModule(ctx context.Context, name, description, courseName string, position uint) (*uint, *courseError.CourseError) {
 	var (
 		moduleWithThisPosNotExists  bool
 		moduleWithThisNameNotExists bool
@@ -129,7 +129,7 @@ func (storage *Storage) CreateModule(ctx context.Context, name, description, cou
 	return &module.ID, nil
 }
 
-func (storage *Storage) CheckIfLessonCanBeCreated(ctx context.Context, name, moduleName, position, courseName string) *courseError.CourseError {
+func (storage Storage) CheckIfLessonCanBeCreated(ctx context.Context, name, moduleName, position, courseName string) *courseError.CourseError {
 	var (
 		lessonWithThisPosNotExists  bool
 		lessonWithThisNameNotExists bool
@@ -193,7 +193,7 @@ func (storage *Storage) CheckIfLessonCanBeCreated(ctx context.Context, name, mod
 	return nil
 }
 
-func (storage *Storage) CreateLesson(ctx context.Context, name, moduleName, description, position, videoPath, previewPath string) (*uint, *courseError.CourseError) {
+func (storage Storage) CreateLesson(ctx context.Context, name, moduleName, description, position, videoPath, previewPath string) (*uint, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	module := dto.CreateNewModule()
@@ -228,7 +228,7 @@ func (storage *Storage) CreateLesson(ctx context.Context, name, moduleName, desc
 	return &lesson.ID, nil
 }
 
-func (storage *Storage) GetCourse(
+func (storage Storage) GetCourse(
 	ctx context.Context, id, name, descr, cost, discount string,
 	limit, offset int,
 	isPurchased bool) (
@@ -291,9 +291,18 @@ func (storage *Storage) GetCourse(
 		return nil, courseError.CreateError(err, 10002)
 	}
 
+	var watched []dto.WatchHistory
+	var err *courseError.CourseError
+	if id != "" {
+		watched, err = storage.checkWatchedLessons(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	lessonsInfo := make([]entity.LessonInfo, 0, len(lessons))
 	for _, v := range lessons {
-		lessonInfo := entity.CreateLessonInfo(&v, isPurchased)
+		lessonInfo := entity.CreateLessonInfo(&v, isPurchased, watched)
 		lessonsInfo = append(lessonsInfo, *lessonInfo)
 	}
 
@@ -320,7 +329,7 @@ func (storage *Storage) GetCourse(
 	return courseInfo, nil
 }
 
-func (storage *Storage) GetModules(ctx context.Context,
+func (storage Storage) GetModules(ctx context.Context,
 	name, description, courseName string,
 	limit, offset int, isPurchased bool) ([]entity.ModuleInfo, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
@@ -357,7 +366,7 @@ func (storage *Storage) GetModules(ctx context.Context,
 
 	lessonsInfo := make([]entity.LessonInfo, 0, len(lessons))
 	for _, v := range lessons {
-		lessonInfo := entity.CreateLessonInfo(&v, isPurchased)
+		lessonInfo := entity.CreateLessonInfo(&v, isPurchased, nil)
 		lessonsInfo = append(lessonsInfo, *lessonInfo)
 	}
 
@@ -382,7 +391,7 @@ func (storage *Storage) GetModules(ctx context.Context,
 	return modulesInfo, nil
 }
 
-func (storage *Storage) GetLessons(ctx context.Context,
+func (storage Storage) GetLessons(ctx context.Context,
 	name, description, moduleName, courseName string,
 	limit, offset int, isPurchased bool) ([]entity.LessonInfo, *courseError.CourseError) {
 
@@ -420,14 +429,14 @@ func (storage *Storage) GetLessons(ctx context.Context,
 
 	lessonsInfo := make([]entity.LessonInfo, 0, len(lessons))
 	for _, v := range lessons {
-		lessonInfo := entity.CreateLessonInfo(&v, isPurchased)
+		lessonInfo := entity.CreateLessonInfo(&v, isPurchased, nil)
 		lessonsInfo = append(lessonsInfo, *lessonInfo)
 	}
 
 	return lessonsInfo, nil
 }
 
-func (storage *Storage) EditCourse(ctx context.Context,
+func (storage Storage) EditCourse(ctx context.Context,
 	courseId, name, description string, previewUrl *string,
 	cost, discount *uint) *courseError.CourseError {
 	tx := storage.db.WithContext(ctx).Begin()
@@ -486,7 +495,7 @@ func (storage *Storage) EditCourse(ctx context.Context,
 	return nil
 }
 
-func (storage *Storage) EditModule(ctx context.Context,
+func (storage Storage) EditModule(ctx context.Context,
 	name, description string, position *uint, moduleId uint) *courseError.CourseError {
 	tx := storage.db.WithContext(ctx).Begin()
 
@@ -705,7 +714,7 @@ func (storage Storage) DeleteLesson(ctx context.Context, lessonId string) *cours
 	return nil
 }
 
-func (storage *Storage) GetCourseByName(ctx context.Context, name string) (*dto.Course, *courseError.CourseError) {
+func (storage Storage) GetCourseByName(ctx context.Context, name string) (*dto.Course, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	var course *dto.Course
