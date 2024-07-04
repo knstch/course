@@ -68,7 +68,7 @@ func (storage Storage) Automigrate(config *config.Config) error {
 			return err
 		}
 
-		admin := dto.CreateNewAdmin(config.SuperAdminLogin, string(hashedPassword), "super_admin", key.Secret(), false)
+		admin := dto.CreateNewAdmin(config.SuperAdminLogin, string(hashedPassword), "super_admin", key.Secret(), true)
 		if err := storage.db.Where("login = ?", config.SuperAdminLogin).FirstOrCreate(&admin).Error; err != nil {
 			return err
 		}

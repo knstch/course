@@ -46,6 +46,8 @@ func RequestsRouter(h *handlers.Handlers) *gin.Engine {
 	management.PATCH("/resetPassword", h.ChangeAdminPassword)
 	management.PATCH("/resetKey", h.ChangeAdminAuthKey)
 	management.GET("/users", h.FindUsersByFilters)
+	management.PATCH("/editUserProfile", h.EditUserProfile)
+	management.DELETE("/deleteProfilePhoto", h.RemoveUserProfilePhoto)
 	management.POST("/ban", h.BanUser)
 	management.POST("/unban", h.UnbanUser)
 	management.GET("/user", h.GetUserById)

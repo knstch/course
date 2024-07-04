@@ -112,3 +112,46 @@ func (h Handlers) GetUserById(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, user)
 }
+
+func (h Handlers) EditUserProfile(ctx *gin.Context) {
+	userInfo := entity.NewUserInfo()
+	if err := ctx.ShouldBindJSON(&userInfo); err != nil {
+		h.logger.Error("не получилось обработать тело запроса", "EditUserProfile", err.Error(), 10101)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
+		return
+	}
+
+	if err := h.userService.FillProfile(ctx, userInfo, ctx.Query("id"), true); err != nil {
+		h.logger.Error("ошибка при заполнении профиля", "EditUserProfile", err.Message, err.Code)
+		if err.Code == 400 {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			return
+		}
+		if err.Code == 11101 {
+			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
+			return
+		}
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	h.logger.Info(fmt.Sprintf("информация профиля пользователя с ID: %v админом с ID: %d успешно изменена", ctx.Query("id"), ctx.Value("adminId").(uint)), "EditUserProfile", "")
+
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("данные успешно изменены"))
+}
+
+func (h Handlers) RemoveUserProfilePhoto(ctx *gin.Context) {
+	if err := h.userManagementService.EraseUserProfilePhoto(ctx, ctx.Query("id")); err != nil {
+		h.logger.Error(fmt.Sprintf("ошибка при удаления фото профиля пользователя с ID: %v", ctx.Query("id")), "RemoveUserProfilePhoto", err.Message, err.Code)
+		if err.Code == 400 {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			return
+		}
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	h.logger.Info(fmt.Sprintf("фото профиля пользователя с ID: %v админом с ID: %d успешно удалено", ctx.Query("id"), ctx.Value("adminId").(uint)), "RemoveUserProfilePhoto", "")
+
+	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("фото успешно удалено"))
+}

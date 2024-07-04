@@ -250,3 +250,18 @@ func (storage Storage) GetAllUserDataById(ctx context.Context, id string) (*enti
 
 	return userEntity, nil
 }
+
+func (storage Storage) DeleteUserProfilePhoto(ctx context.Context, id string) *courseError.CourseError {
+	tx := storage.db.WithContext(ctx).Begin()
+
+	if err := tx.Model(&dto.User{}).Where("id = ?", id).Update("photo_id", nil).Error; err != nil {
+		return courseError.CreateError(err, 10003)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return courseError.CreateError(err, 10010)
+	}
+
+	return nil
+}

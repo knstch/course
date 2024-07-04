@@ -24,7 +24,7 @@ func (h Handlers) ManageProfile(ctx *gin.Context) {
 		return
 	}
 
-	if err := h.userService.FillProfile(ctx, userInfo, userId.(uint)); err != nil {
+	if err := h.userService.FillProfile(ctx, userInfo, fmt.Sprint(userId), false); err != nil {
 		h.logger.Error("ошибка при заполнении профиля", "ManageProfile", err.Message, err.Code)
 		if err.Code == 400 {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)

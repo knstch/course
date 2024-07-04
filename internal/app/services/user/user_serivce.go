@@ -21,7 +21,7 @@ import (
 )
 
 type Profiler interface {
-	FillUserProfile(ctx context.Context, firstName, surname string, phoneNumber int, userId uint) *courseError.CourseError
+	FillUserProfile(ctx context.Context, firstName, surname string, phoneNumber int, userId string) *courseError.CourseError
 	ChangePasssword(ctx context.Context, oldPassword, newPassword string, userId uint) *courseError.CourseError
 	ChangeEmail(ctx context.Context, newEmail string, userId uint) *courseError.CourseError
 	VerifyEmail(ctx context.Context, userId uint, isEdit bool) *courseError.CourseError
@@ -56,9 +56,15 @@ var (
 	ErrBadConfirmCode      = errors.New("код подтверждения не найден")
 )
 
-func (user UserService) FillProfile(ctx context.Context, userInfo *entity.UserInfo, userId uint) *courseError.CourseError {
+func (user UserService) FillProfile(ctx context.Context, userInfo *entity.UserInfo, userId string, isAdminEdit bool) *courseError.CourseError {
 	if err := validation.NewUserInfoToValidate(userInfo).Validate(ctx); err != nil {
 		return err
+	}
+
+	if isAdminEdit {
+		if err := validation.NewStringIdToValidate(userId).Validate(ctx); err != nil {
+			return err
+		}
 	}
 
 	trimedPhoneNumber := strings.TrimPrefix(userInfo.PhoneNumber, "+")

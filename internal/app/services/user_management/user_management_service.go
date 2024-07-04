@@ -19,6 +19,7 @@ type UserManager interface {
 	DisableUser(ctx context.Context, userId int) *courseError.CourseError
 	GetAllUserDataById(ctx context.Context, id string) (*entity.UserDataAdmin, *courseError.CourseError)
 	EnableUser(ctx context.Context, userId int) *courseError.CourseError
+	DeleteUserProfilePhoto(ctx context.Context, id string) *courseError.CourseError
 }
 
 func NewUserManagementService(userManager UserManager) UserManagementService {
@@ -78,4 +79,16 @@ func (user UserManagementService) RetreiveUserById(ctx context.Context, id strin
 	}
 
 	return userData, nil
+}
+
+func (user UserManagementService) EraseUserProfilePhoto(ctx context.Context, id string) *courseError.CourseError {
+	if err := validation.NewStringIdToValidate(id).Validate(ctx); err != nil {
+		return err
+	}
+
+	if err := user.manager.DeleteUserProfilePhoto(ctx, id); err != nil {
+		return err
+	}
+
+	return nil
 }

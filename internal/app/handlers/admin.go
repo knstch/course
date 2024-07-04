@@ -64,9 +64,14 @@ func (h Handlers) ChangeRole(ctx *gin.Context) {
 }
 
 func (h Handlers) FindAdmins(ctx *gin.Context) {
-	admins, err := h.adminService.RetreiveAdmins(ctx, ctx.Query("login"), ctx.Query("role"), ctx.Query("twoStepsAuth"), ctx.Query("page"), ctx.Query("limit"))
+	login := ctx.Query("login")
+	role := ctx.Query("role")
+	twoStepsAuth := ctx.Query("twoStepsAuth")
+	page := ctx.Query("page")
+	limit := ctx.Query("limit")
+	admins, err := h.adminService.RetreiveAdmins(ctx, login, role, twoStepsAuth, page, limit)
 	if err != nil {
-		h.logger.Error(fmt.Sprintf("ошибка при поиске админов по запросу: %v, %v, %v, %v, %v", ctx.Query("login"), ctx.Query("role"), ctx.Query("twoStepsAuth"), ctx.Query("page"), ctx.Query("limit")), "FindAdmins", err.Message, err.Code)
+		h.logger.Error(fmt.Sprintf("ошибка при поиске админов по запросу: login - %v, role - %v, twoStepsAuth - %v, page - %v, limit - %v", login, role, twoStepsAuth, page, limit), "FindAdmins", err.Message, err.Code)
 		if err.Code == 400 {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
 			return
@@ -75,7 +80,7 @@ func (h Handlers) FindAdmins(ctx *gin.Context) {
 		return
 	}
 
-	h.logger.Info("админы успешно найдены", "FindAdmins", fmt.Sprintf("фильтры: %v, %v, %v, %v, %v", ctx.Query("login"), ctx.Query("role"), ctx.Query("twoStepsAuth"), ctx.Query("page"), ctx.Query("limit")))
+	h.logger.Info("админы успешно найдены", "FindAdmins", fmt.Sprintf("фильтры: login - %v, role - %v, twoStepsAuth - %v, page - %v, limit - %v", login, role, twoStepsAuth, page, limit))
 
 	ctx.JSON(http.StatusOK, admins)
 }
@@ -88,9 +93,14 @@ func (h Handlers) GetPaymentDashboard(ctx *gin.Context) {
 		return
 	}
 
-	stats, err := h.adminService.GetPaymentsData(ctx, ctx.Query("from"), ctx.Query("due"), ctx.Query("courseName"), ctx.Query("paymentMethod"))
+	from := ctx.Query("from")
+	due := ctx.Query("due")
+	courseName := ctx.Query("courseName")
+	paymentMethod := ctx.Query("paymentMethod")
+
+	stats, err := h.adminService.GetPaymentsData(ctx, from, due, courseName, paymentMethod)
 	if err != nil {
-		h.logger.Error(fmt.Sprintf("ошибка при получении статистики по платежам по фильтрам: %v, %v, %v, %v", ctx.Query("from"), ctx.Query("due"), ctx.Query("courseName"), ctx.Query("paymentMethod")), "GetPaymentDashboard", err.Message, err.Code)
+		h.logger.Error(fmt.Sprintf("ошибка при получении статистики по платежам по фильтрам: from -  %v, due - %v, courseName - %v, paymentMethod - %v", from, due, courseName, paymentMethod), "GetPaymentDashboard", err.Message, err.Code)
 		if err.Code == 400 {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
 			return
@@ -99,7 +109,7 @@ func (h Handlers) GetPaymentDashboard(ctx *gin.Context) {
 		return
 	}
 
-	h.logger.Info("статистика успешно получена", "GetPaymentDashboard", fmt.Sprintf("фильтры: %v, %v, %v, %v", ctx.Query("from"), ctx.Query("due"), ctx.Query("courseName"), ctx.Query("paymentMethod")))
+	h.logger.Info("статистика успешно получена", "GetPaymentDashboard", fmt.Sprintf("фильтры: from -  %v, due - %v, courseName - %v, paymentMethod - %v", from, due, courseName, paymentMethod))
 
 	ctx.JSON(http.StatusOK, stats)
 }

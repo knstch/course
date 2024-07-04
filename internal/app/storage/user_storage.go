@@ -31,7 +31,7 @@ func (storage Storage) newUserProfileUpdate(firstName, surname string, phoneNumb
 	return updates
 }
 
-func (storage Storage) FillUserProfile(ctx context.Context, firstName, surname string, phoneNumber int, userId uint) *courseError.CourseError {
+func (storage Storage) FillUserProfile(ctx context.Context, firstName, surname string, phoneNumber int, userId string) *courseError.CourseError {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	user := dto.CreateNewUser()
