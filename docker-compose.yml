@@ -15,6 +15,17 @@ services:
       - ${PORT}:${PORT}
     networks:
       - network_ext
+  nginx:
+    container_name: course-nginx
+    image: nginx:latest
+    volumes:
+      - ${PROJECT_PATH}/docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - 70:70
+    depends_on:
+      - app
+    networks:
+      - network_ext
 networks:
   network_ext:
     name: course-net
