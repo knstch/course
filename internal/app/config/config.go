@@ -18,7 +18,8 @@ type Config struct {
 	RedisEmailChannelName string `envconfig:"REDIS_EMAIL_CHANNEL_NAME"`
 	RedisDSN              string `envconfig:"REDIS_DSN"`
 	Address               string `envconfig:"ADDRESS"`
-	CdnHost               string `envconfig:"CDN_HOST"`
+	CdnHttpHost           string `envconfig:"CDN_HTTP_HOST"`
+	CdnHost               string `envconfig:"CDN_HTTP_HOST"`
 	CdnApiKey             string `envconfig:"CDN_API_KEY"`
 	CdnAdminApiKey        string `envconfig:"ADMIN_API_KEY"`
 	CdnGrpcPort           string `envconfig:"CDN_GRPC_PORT"`
