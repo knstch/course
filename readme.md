@@ -98,4 +98,8 @@ CDN_API_KEY=aboba
 CDN_HOST=http://cdn:7070
 PG_USER=course
 PG_PASSWORD=password
+SUPER_ADMIN_LOGIN=admin
+SUPER_ADMIN_PASSWORD=password
+LOG_FILE_NAME=course
+PROJECT_PATH=/home/konstantin/Desktop/course
 ````
