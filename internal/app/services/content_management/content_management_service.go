@@ -114,7 +114,7 @@ func (manager ContentManagementServcie) sendPhoto(file *multipart.File, fileName
 	}
 
 	req.Header.Add("Content-Type", writer.FormDataContentType())
-	req.Header.Add("ADMIN-API-KEY", manager.adminApiKey)
+	req.Header.Add("Admin-Api-Key", manager.adminApiKey)
 
 	resp, err := manager.client.Do(req)
 	if err != nil {

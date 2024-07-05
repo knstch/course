@@ -172,8 +172,8 @@ func (user UserService) sendPhoto(ctx context.Context, file *multipart.File, fil
 		return nil, courseError.CreateError(err, 11040)
 	}
 
-	req.Header.Add("API-KEY", user.CdnApiKey)
-	req.Header.Add("userId", fmt.Sprint(ctx.Value("userId").(uint)))
+	req.Header.Add("Api-Key", user.CdnApiKey)
+	req.Header.Add("UserId", fmt.Sprint(ctx.Value("UserId").(uint)))
 	req.Header.Add("Content-Type", writer.FormDataContentType())
 
 	resp, err := user.client.Do(req)
