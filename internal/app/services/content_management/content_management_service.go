@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"strconv"
@@ -103,7 +104,9 @@ func (manager ContentManagementServcie) sendPhoto(file *multipart.File, fileName
 		return nil, courseError.CreateError(err, 11042)
 	}
 
-	writer.Close()
+	if err := writer.Close(); err != nil {
+		return nil, courseError.CreateError(err, 500)
+	}
 
 	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%v/uploadCourseImage", manager.cdnHost), body)
 	if err != nil {
@@ -117,7 +120,12 @@ func (manager ContentManagementServcie) sendPhoto(file *multipart.File, fileName
 	if err != nil {
 		return nil, courseError.CreateError(cdnerrors.ErrCdnNotResponding, 11041)
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("ошибка при закрытии тела запроса: %v", err)
+		}
+	}()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {

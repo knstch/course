@@ -77,6 +77,9 @@ GRPC
 16051 - ошибка при генерации qr кода
 16052 - неверный код
 
+Общие системные ошибки
+500 
+
 Build:
 docker compose -f docker-compose-local.yml up -d --build --remove-orphans
 

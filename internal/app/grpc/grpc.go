@@ -6,6 +6,7 @@ import (
 	"github.com/knstch/course/internal/app/config"
 	"github.com/knstch/course/internal/app/grpc/grpcvideo"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type GrpcClient struct {
@@ -13,7 +14,7 @@ type GrpcClient struct {
 }
 
 func NewGrpcClient(config *config.Config) (*GrpcClient, error) {
-	conn, err := grpc.NewClient(fmt.Sprintf("%v:%v", config.CdnGrpcHost, config.CdnGrpcPort), grpc.WithInsecure(), grpc.WithBlock(), grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(1073741824)))
+	conn, err := grpc.NewClient(fmt.Sprintf("%v:%v", config.CdnGrpcHost, config.CdnGrpcPort), grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(1073741824)))
 	if err != nil {
 		return nil, err
 	}

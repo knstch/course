@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"strconv"
@@ -162,7 +163,9 @@ func (user UserService) sendPhoto(ctx context.Context, file *multipart.File, fil
 		return nil, courseError.CreateError(err, 11042)
 	}
 
-	writer.Close()
+	if err := writer.Close(); err != nil {
+		return nil, courseError.CreateError(err, 500)
+	}
 
 	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%v/uploadUserPhoto", user.CdnHost), body)
 	if err != nil {
@@ -177,7 +180,12 @@ func (user UserService) sendPhoto(ctx context.Context, file *multipart.File, fil
 	if err != nil {
 		return nil, courseError.CreateError(cdnerrors.ErrCdnNotResponding, 11041)
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("ошибка при закрытии тела запроса: %v", err)
+		}
+	}()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
