@@ -105,7 +105,7 @@ func (manager ContentManagementServcie) sendPhoto(file *multipart.File, fileName
 
 	writer.Close()
 
-	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%v/image", manager.cdnHost), body)
+	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%v/uploadCourseImage", manager.cdnHost), body)
 	if err != nil {
 		return nil, courseError.CreateError(err, 11040)
 	}

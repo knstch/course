@@ -164,7 +164,7 @@ func (user UserService) sendPhoto(ctx context.Context, file *multipart.File, fil
 
 	writer.Close()
 
-	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%v/upload", user.CdnHost), body)
+	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%v/uploadUserPhoto", user.CdnHost), body)
 	if err != nil {
 		return nil, courseError.CreateError(err, 11040)
 	}
