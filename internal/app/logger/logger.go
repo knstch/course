@@ -1,3 +1,4 @@
+// logger содержит методы логирования.
 package logger
 
 import (
@@ -8,10 +9,12 @@ import (
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 )
 
+// Log хранит внутри себя сущность zap.Logger, которая содержит методы логирования.
 type Log struct {
 	logger *zap.Logger
 }
 
+// InitLogger инициализирует логгер, в качестве параметра принимает названия файла лога.
 func InitLogger(fileName string) (*Log, error) {
 	logger := Log{}
 
@@ -39,6 +42,8 @@ func InitLogger(fileName string) (*Log, error) {
 	return &logger, nil
 }
 
+// Error используется для создания лога с ошибкой, принимает в качестве параметров
+// метод, ошибку, комментарий об ошибке, и код ошибки.
 func (l *Log) Error(method, errMessage, message string, code int) {
 	fields := []zapcore.Field{
 		zap.String("method", method),
@@ -49,9 +54,10 @@ func (l *Log) Error(method, errMessage, message string, code int) {
 	l.logger.Error(message, fields...)
 }
 
-func (l *Log) Info(message, actionName, request string) {
+// Info используется для создания лога уровня Info, принимает в себя сообщение, метод и параметры запроса.
+func (l *Log) Info(message, method, request string) {
 	fields := []zapcore.Field{
-		zap.String("method", actionName),
+		zap.String("method", method),
 		zap.String("request", request),
 	}
 

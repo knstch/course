@@ -14,6 +14,8 @@ var (
 	errBadLogin = errors.New("поле логин не может быть пустым")
 )
 
+// EraseAdmin используется для удаления админа и деактивации его токенов.
+// В качестве параметра принимает логин, валидирует его и отбирает доступ к платформе.
 func (admin AdminService) EraseAdmin(ctx context.Context, login string) *courseError.CourseError {
 	if login == "" {
 		return courseError.CreateError(errBadLogin, 400)
@@ -26,6 +28,8 @@ func (admin AdminService) EraseAdmin(ctx context.Context, login string) *courseE
 	return nil
 }
 
+// ManageRole используется для изменения роли администратора. Принимает в качестве
+// параметров логин и роль, далее валидирует их и вносит изменения в БД. Возвращает ошибку.
 func (admin AdminService) ManageRole(ctx context.Context, login, role string) *courseError.CourseError {
 	if login == "" {
 		return courseError.CreateError(errBadLogin, 400)
@@ -42,6 +46,10 @@ func (admin AdminService) ManageRole(ctx context.Context, login, role string) *c
 	return nil
 }
 
+// RetreiveAdmins используется для поиска администраторов по фильтрам. Принимает в качестве
+// параметра логин, роль, подключенную двойную аутентификацию, страницу и лимит.
+// Далее валидирует параметры, подготавливает offset и получает данные по заданым фильтрам.
+// Возвращает массив, содержащий список администраторов, данные пагинации и ошибку.
 func (admin AdminService) RetreiveAdmins(ctx context.Context, login, role, auth, page, limit string) (*entity.AdminsInfoWithPagination, *courseError.CourseError) {
 	if err := validation.CreateNewAdminQueryToValidate(login, role, auth, page, limit).Validate(ctx); err != nil {
 		return nil, err

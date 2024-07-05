@@ -1,3 +1,4 @@
+// admin содержит методы для администрирования платформы.
 package admin
 
 import (
@@ -10,6 +11,7 @@ import (
 	"github.com/knstch/course/internal/domain/entity"
 )
 
+// adminManager объединяет в себе методы администратора по взаимодействию с БД.
 type adminManager interface {
 	AddAdmin(ctx context.Context, login, password, role, key string) *courseError.CourseError
 	CheckIfAdminCanBeCreated(ctx context.Context, login string) *courseError.CourseError
@@ -27,6 +29,7 @@ type adminManager interface {
 	GetUsersStats(ctx context.Context, from, due time.Time) ([]entity.UsersStats, *courseError.CourseError)
 }
 
+// Claims содержит в себе типы данных, которые хранятся в JWT.
 type Claims struct {
 	jwt.RegisteredClaims
 	Iat     int
@@ -35,11 +38,13 @@ type Claims struct {
 	Role    string
 }
 
+// AdminService объединяет в себе методы администратора и ключ для шифрования и расшифровки JWT.
 type AdminService struct {
 	adminManager adminManager
 	secret       string
 }
 
+// NewAdminService билдер для сервиса администратров.
 func NewAdminService(storage adminManager, secret string) AdminService {
 	return AdminService{
 		adminManager: storage,

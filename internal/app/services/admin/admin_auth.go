@@ -14,6 +14,9 @@ import (
 	qrcode "github.com/skip2/go-qrcode"
 )
 
+// RegisterAdmin используется для регистрации нового админа, принимает в качестве параметра
+// логин и пароль нового администратора, валидирует их, создает ключ для Google Authentificator,
+// генерирует QR-код для добавления ключа в приложение, и возвращает QR-код в виде массива байт и ошибку.
 func (admin AdminService) RegisterAdmin(ctx context.Context, credentials *entity.AdminCredentials) ([]byte, *courseError.CourseError) {
 	if err := validation.NewAdminCredentialsToValidate(credentials).Validate(ctx); err != nil {
 		return nil, err
@@ -43,6 +46,8 @@ func (admin AdminService) RegisterAdmin(ctx context.Context, credentials *entity
 	return qrCode, nil
 }
 
+// generateQrCode используется для генерации QR-кода, в качестве параметра принимает URL
+// и возвращает массив байт, содержащий QR-код, и ошибку.
 func (admin AdminService) generateQrCode(url string) ([]byte, *courseError.CourseError) {
 	qr, err := qrcode.Encode(url, qrcode.Medium, 256)
 	if err != nil {
@@ -51,6 +56,9 @@ func (admin AdminService) generateQrCode(url string) ([]byte, *courseError.Cours
 	return qr, nil
 }
 
+// ApproveTwoStepAuth используется для подтверждения двойной аутентификации у администратора.
+// Принимает логин, пароль и код, и далее валидирует их.
+// Если все параметры оказались валидными, подтверждает получение ключа админом. Возвращает ошибку.
 func (admin *AdminService) ApproveTwoStepAuth(ctx context.Context, login, password, code string) *courseError.CourseError {
 	signInCredentials := entity.Credentials{
 		Email:    login,
@@ -73,6 +81,8 @@ func (admin *AdminService) ApproveTwoStepAuth(ctx context.Context, login, passwo
 	return nil
 }
 
+// SignIn используется для логина администраторов, принимает логин, пароль, и код из Autherntificator.
+// Метод валидирует параметры, и если они валидны, возвращает подписанный JWT.
 func (admin AdminService) SignIn(ctx context.Context, login, password, code string) (*string, *courseError.CourseError) {
 	signInCredentials := entity.Credentials{
 		Email:    login,
@@ -100,6 +110,7 @@ func (admin AdminService) SignIn(ctx context.Context, login, password, code stri
 	return token, nil
 }
 
+// mintJWT используется для минта JWT, принимает ID администратора и его роль, возвращает токен или ошибку.
 func (admin AdminService) mintJWT(id *uint, role *string) (*string, *courseError.CourseError) {
 	timeNow := time.Now()
 	authToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
@@ -117,6 +128,8 @@ func (admin AdminService) mintJWT(id *uint, role *string) (*string, *courseError
 	return &signedAuthToken, nil
 }
 
+// ValidateAdminAccessToken используется для валидации токена администратора. Используется в middleware.
+// Если токен не найден в БД или имеет статус available = false, возвращает ошибку.
 func (admin AdminService) ValidateAdminAccessToken(ctx context.Context, token *string) *courseError.CourseError {
 	if err := admin.adminManager.CheckAdminAccessToken(ctx, token); err != nil {
 		return err
@@ -125,6 +138,8 @@ func (admin AdminService) ValidateAdminAccessToken(ctx context.Context, token *s
 	return nil
 }
 
+// DecodeToken используется для декодирования токена, принимает в качестве параметра токен и
+// парсит его, и возвращает данные из токена или ошибку.
 func (admin AdminService) DecodeToken(ctx context.Context, tokenString string) (*Claims, *courseError.CourseError) {
 	claims := &Claims{}
 
@@ -147,6 +162,8 @@ func (admin AdminService) DecodeToken(ctx context.Context, tokenString string) (
 	return claims, nil
 }
 
+// ManageAdminPassword используется для изменения пароля администратора. Принимает логин
+// и новый пароль администратора, валидирует их, и изменяет пароль в БД. Возвращает ошибку.
 func (admin AdminService) ManageAdminPassword(ctx context.Context, credentials *entity.AdminCredentials) *courseError.CourseError {
 	if err := validation.NewAdminCredentialsToValidate(credentials).Validate(ctx); err != nil {
 		return err
@@ -159,6 +176,9 @@ func (admin AdminService) ManageAdminPassword(ctx context.Context, credentials *
 	return nil
 }
 
+// ManageAdminAuthKey принимает логин администратора в качестве параметра, валидирует его и
+// генерирует новый ключ, используемый в Authentificator. Возвращает QR-код в виде массива байт
+// или ошибку.
 func (admin AdminService) ManageAdminAuthKey(ctx context.Context, login string) ([]byte, *courseError.CourseError) {
 	if login == "" {
 		return nil, courseError.CreateError(fmt.Errorf("поле login не может быть пустым"), 400)

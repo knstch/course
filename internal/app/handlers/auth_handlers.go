@@ -133,7 +133,9 @@ func (h Handlers) SendNewCode(ctx *gin.Context) {
 		return
 	}
 
-	if err := h.authService.SendNewCofirmationCode(ctx); err != nil {
+	email := ctx.Query("email")
+
+	if err := h.authService.SendNewCofirmationCode(ctx, email); err != nil {
 		h.logger.Error(fmt.Sprintf("не получилось отправить код подтверждения на почту юзера с ID = %d", ctx.Value("userId")), "SendNewCode", err.Message, err.Code)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
 		return

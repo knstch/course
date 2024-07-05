@@ -1,3 +1,4 @@
+// router содержит роутер :))
 package router
 
 import (
@@ -5,6 +6,7 @@ import (
 	"github.com/knstch/course/internal/app/handlers"
 )
 
+// RequestsRouter используется для инициализации роутера, принимает в качестве параметра хендлеры и возвращает готовый роутер.
 func RequestsRouter(h *handlers.Handlers) *gin.Engine {
 	router := gin.Default()
 

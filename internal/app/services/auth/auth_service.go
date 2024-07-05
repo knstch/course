@@ -1,3 +1,4 @@
+// auth содержит методы для аутентификации, подтверждения почты и смены пароля.
 package auth
 
 import (
@@ -15,7 +16,8 @@ import (
 	"github.com/knstch/course/internal/domain/entity"
 )
 
-type Authentificater interface {
+// authentificater содержит методы аутентификации для работы с БД.
+type authentificater interface {
 	RegisterUser(ctx context.Context, email, password string) (*uint, *courseError.CourseError)
 	StoreToken(ctx context.Context, token *string, id *uint) *courseError.CourseError
 	SignIn(ctx context.Context, email, password string) (*uint, *bool, *courseError.CourseError)
@@ -26,13 +28,17 @@ type Authentificater interface {
 	RecoverPassword(ctx context.Context, email, password string) *courseError.CourseError
 }
 
+// AuthService объединяет в себе методы для работы с аутентификацией.
+// Содержит в себе redis клиент, email сервис, ключ для подписи
+// и декодированию токена и интерфей для взаимодействия с БД.
 type AuthService struct {
-	Authentificater Authentificater
+	authentificater authentificater
 	secret          string
 	redis           *redis.Client
 	emailService    *email.EmailService
 }
 
+// Claims содержит в себе поля, которые хранятся в JWT.
 type Claims struct {
 	jwt.RegisteredClaims
 	Iat      int
@@ -47,21 +53,25 @@ var (
 	ErrEmailIsAlreadyVerified = errors.New("почта уже подтвеждена")
 )
 
-func NewAuthService(authentificater Authentificater, config *config.Config, client *redis.Client, emailService *email.EmailService) AuthService {
+// NewAuthService - это билдер для сервиса аутентификации.
+func NewAuthService(authentificater authentificater, config *config.Config, client *redis.Client, emailService *email.EmailService) AuthService {
 	return AuthService{
-		Authentificater: authentificater,
+		authentificater: authentificater,
 		secret:          config.Secret,
 		redis:           client,
 		emailService:    emailService,
 	}
 }
 
+// Register используется для регистрации нового пользователя. Принимает в качестве
+// параметра логин + пароль, валидирует их, регистрирует пользователя, минтит JWT и
+// отправляет код подтверждения на почту пользователя. Возвращает JWT и ошибку.
 func (auth AuthService) Register(ctx context.Context, credentials *entity.Credentials) (*string, *courseError.CourseError) {
 	if err := validation.NewCredentialsToValidate(credentials).Validate(ctx); err != nil {
 		return nil, err
 	}
 
-	userId, err := auth.Authentificater.RegisterUser(ctx, credentials.Email, credentials.Password)
+	userId, err := auth.authentificater.RegisterUser(ctx, credentials.Email, credentials.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +81,7 @@ func (auth AuthService) Register(ctx context.Context, credentials *entity.Creden
 		return nil, err
 	}
 
-	if err := auth.Authentificater.StoreToken(ctx, token, userId); err != nil {
+	if err := auth.authentificater.StoreToken(ctx, token, userId); err != nil {
 		return nil, err
 	}
 
@@ -82,17 +92,10 @@ func (auth AuthService) Register(ctx context.Context, credentials *entity.Creden
 	return token, nil
 }
 
-func (auth AuthService) sendConfirmEmail(code uint) *courseError.CourseError {
-	if code == 1111 {
-		return nil
-	}
-	return nil
-}
-
-func (auth AuthService) generateEmailConfirmCode() uint {
-	return 1111
-}
-
+// VerifyEmail используется для верификации почты. Принимает код и ID пользователя в качестве параметров.
+// Далее валидируется код, проверяется наличия кода по ID в Redis, если код не совпал, то возвращается ошибка.
+// После этого запись удаляется из Redis, пользователь получает статус verified и новый JWT.
+// Метод также используется при смене почты, поэтому все другие токены пользователя будут отключены.
 func (auth AuthService) VerifyEmail(ctx context.Context, code int, userId uint) (*string, *courseError.CourseError) {
 	if err := validation.NewConfirmCodeToValidate(code).Validate(ctx); err != nil {
 		return nil, err
@@ -111,12 +114,12 @@ func (auth AuthService) VerifyEmail(ctx context.Context, code int, userId uint) 
 		return nil, courseError.CreateError(err, 10033)
 	}
 
-	verificationErr := auth.Authentificater.VerifyEmail(ctx, userId, false)
+	verificationErr := auth.authentificater.VerifyEmail(ctx, userId, false)
 	if verificationErr != nil {
 		return nil, verificationErr
 	}
 
-	if err := auth.Authentificater.DisableTokens(ctx, userId); err != nil {
+	if err := auth.authentificater.DisableTokens(ctx, userId); err != nil {
 		return nil, err
 	}
 
@@ -125,40 +128,42 @@ func (auth AuthService) VerifyEmail(ctx context.Context, code int, userId uint) 
 		return nil, courseError.CreateError(mintError.Error, 11010)
 	}
 
-	if err := auth.Authentificater.StoreToken(ctx, token, &userId); err != nil {
+	if err := auth.authentificater.StoreToken(ctx, token, &userId); err != nil {
 		return nil, err
 	}
 
 	return token, nil
 }
 
-func (auth AuthService) SendNewCofirmationCode(ctx context.Context) *courseError.CourseError {
-	confimCode := auth.generateEmailConfirmCode()
+// SendNewCofirmationCode используется для отправки нового кода на почту пользователя.
+// В качестве параметра принимает email пользователя, валидирует его, ищет запись в Redis,
+// если она была найдена, то удаляет ее, и отправляет новый код. Возвращает ошибку.
+func (auth AuthService) SendNewCofirmationCode(ctx context.Context, email string) *courseError.CourseError {
+	if err := validation.NewEmailToValidate(email).Validate(ctx); err != nil {
+		return err
+	}
 
-	code, err := auth.redis.Get(fmt.Sprint(ctx.Value("userId").(uint))).Result()
-	if err != nil {
-		if !errors.Is(err, redis.Nil) {
-			return courseError.CreateError(ErrConfirmCodeNotFound, 11004)
-		}
+	userId := ctx.Value("userId").(uint)
+
+	code, err := auth.redis.Get(fmt.Sprint(userId)).Result()
+	if !errors.Is(err, redis.Nil) {
+		return courseError.CreateError(ErrConfirmCodeNotFound, 11004)
 	}
 
 	if code != "" {
-		if err := auth.redis.Del(fmt.Sprint(ctx.Value("userId").(uint))).Err(); err != nil {
+		if err := auth.redis.Del(fmt.Sprint(userId)).Err(); err != nil {
 			return courseError.CreateError(err, 10033)
 		}
 	}
 
-	if err := auth.redis.Set(fmt.Sprint(ctx.Value("userId").(uint)), confimCode, 15*time.Minute).Err(); err != nil {
-		return courseError.CreateError(err, 10031)
-	}
-
-	if err := auth.sendConfirmEmail(confimCode); err != nil {
+	if err := auth.emailService.SendConfirmCode(&userId, &email); err != nil {
 		return err
 	}
 
 	return nil
 }
 
+// mintJWT используется для минта нового токена доступа для пользователя. Возвращает токен и ошибку.
 func (auth AuthService) mintJWT(id uint, verified bool) (*string, *courseError.CourseError) {
 	timeNow := time.Now()
 	authToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
@@ -176,12 +181,15 @@ func (auth AuthService) mintJWT(id uint, verified bool) (*string, *courseError.C
 	return &signedAuthToken, nil
 }
 
+// LogIn метод логина, принимает в качестве параметра пару логин + пароль, валидирует их,
+// обращается в БД и проверяет валидность. Далее создает новый токен для пользователя и сохраняет его в БД.
+// Возвращает JWT или ошибку.
 func (auth AuthService) LogIn(ctx context.Context, credentials *entity.Credentials) (*string, *courseError.CourseError) {
 	if err := validation.NewSignInCredentials(credentials).Validate(ctx); err != nil {
 		return nil, err
 	}
 
-	userId, verified, err := auth.Authentificater.SignIn(ctx, credentials.Email, credentials.Password)
+	userId, verified, err := auth.authentificater.SignIn(ctx, credentials.Email, credentials.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -191,21 +199,25 @@ func (auth AuthService) LogIn(ctx context.Context, credentials *entity.Credentia
 		return nil, err
 	}
 
-	if err := auth.Authentificater.StoreToken(ctx, token, userId); err != nil {
+	if err := auth.authentificater.StoreToken(ctx, token, userId); err != nil {
 		return nil, err
 	}
 
 	return token, nil
 }
 
+// ValidateAccessToken проверяет валидность токена доступа в БД, возвращает ошибку.
 func (auth AuthService) ValidateAccessToken(ctx context.Context, token *string) *courseError.CourseError {
-	if err := auth.Authentificater.CheckAccessToken(ctx, *token); err != nil {
+	if err := auth.authentificater.CheckAccessToken(ctx, *token); err != nil {
 		return err
 	}
 
 	return nil
 }
 
+// DecodeToken используется для декодирования токена, принимает в качестве параметра токен,
+// и возвращает данные из токена или ошибку. Если время жизни токена истекло, то меняет его
+// статус в БД на available = false.
 func (auth AuthService) DecodeToken(ctx context.Context, tokenString string) (*Claims, *courseError.CourseError) {
 	claims := &Claims{}
 
@@ -217,7 +229,7 @@ func (auth AuthService) DecodeToken(ctx context.Context, tokenString string) (*C
 	})
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) {
-			if err := auth.Authentificater.DisableToken(ctx, tokenString); err != nil {
+			if err := auth.authentificater.DisableToken(ctx, tokenString); err != nil {
 				return nil, err
 			}
 			return nil, courseError.CreateError(err, 11007)
@@ -232,6 +244,8 @@ func (auth AuthService) DecodeToken(ctx context.Context, tokenString string) (*C
 	return claims, nil
 }
 
+// SendPasswordRecoverRequest используется для отправки кода для восстановления пароля на email
+// пользователя. В качестве параметра принимает почту, валидирует ее, и отправляет письмо. Возвращает ошибку.
 func (auth AuthService) SendPasswordRecoverRequest(ctx context.Context, email string) *courseError.CourseError {
 	if err := validation.NewEmailToValidate(email).Validate(ctx); err != nil {
 		return err
@@ -244,6 +258,9 @@ func (auth AuthService) SendPasswordRecoverRequest(ctx context.Context, email st
 	return nil
 }
 
+// RecoverPassword используется для восстановления пароля. В качестве параметра принимает код, почту и пароль.
+// Далее валидирует их, проверяет наличие кода в Redis по ключу email, если запись найдена, удаляет ее,
+// и меняет пароль в БД. Возвращает ошибку.
 func (auth AuthService) RecoverPassword(ctx context.Context, passwordRecover entity.PasswordRecoverCredentials) *courseError.CourseError {
 	if err := validation.NewPasswordRecoverCredentialsToValidate(passwordRecover).Validate(ctx); err != nil {
 		return err
@@ -262,7 +279,7 @@ func (auth AuthService) RecoverPassword(ctx context.Context, passwordRecover ent
 		return courseError.CreateError(err, 10033)
 	}
 
-	if err := auth.Authentificater.RecoverPassword(ctx, passwordRecover.Email, passwordRecover.Password); err != nil {
+	if err := auth.authentificater.RecoverPassword(ctx, passwordRecover.Email, passwordRecover.Password); err != nil {
 		return err
 	}
 

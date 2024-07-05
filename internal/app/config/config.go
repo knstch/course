@@ -1,3 +1,4 @@
+// config используется для сбора конфига.
 package config
 
 import (
@@ -37,6 +38,7 @@ var (
 	once   sync.Once
 )
 
+// GetConfig используется для сборки конфига из .env и возвращает структуру Config.
 func GetConfig() *Config {
 	once.Do(func() {
 		err := envconfig.Process("", &config)
@@ -47,6 +49,7 @@ func GetConfig() *Config {
 	return &config
 }
 
+// InitENV используется для загрузки .env из root директории.
 func InitENV(dir string) error {
 	if err := godotenv.Load(filepath.Join(dir, ".env.local")); err != nil {
 		if strings.Contains(err.Error(), "no such file or directory") {

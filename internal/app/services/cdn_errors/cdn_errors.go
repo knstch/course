@@ -1,3 +1,4 @@
+// cdnerrors содержит ошибки CDN.
 package cdnerrors
 
 import "errors"
