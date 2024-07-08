@@ -85,7 +85,7 @@ func (h Handlers) ManageEmail(ctx *gin.Context) {
 		return
 	}
 
-	if err := h.userService.EditEmail(ctx, *email, userId.(uint)); err != nil {
+	if err := h.userService.EditEmail(ctx, email.NewEmail, userId.(uint)); err != nil {
 		h.logger.Error(fmt.Sprintf("ошибка при изменении почты пользователя с ID: %d, на почту: %v",
 			ctx.Value("userId").(uint), email.NewEmail), "ManageEmail", err.Message, err.Code)
 		if err.Code == 400 || err.Code == 11002 || err.Code == 11001 {
@@ -116,7 +116,7 @@ func (h Handlers) ConfirmEmailChange(ctx *gin.Context) {
 		return
 	}
 
-	if err := h.userService.ConfirmEditEmail(ctx, confirmCode, userId.(uint)); err != nil {
+	if err := h.userService.ConfirmEditEmail(ctx, confirmCode.Code, userId.(uint)); err != nil {
 		h.logger.Error(fmt.Sprintf("ошибка при подтверждения изменения почты пользователя с ID: %d, с кодом: %d",
 			userId, confirmCode.Code), "ConfirmEmailChange", err.Message, err.Code)
 		if err.Code == 400 || err.Code == 11002 {

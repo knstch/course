@@ -11,11 +11,13 @@ import (
 	"github.com/knstch/course/internal/app/storage"
 )
 
+// Container используется для сборки проекта.
 type Container struct {
 	Storage  *storage.Storage
 	Handlers *handlers.Handlers
 }
 
+// InitContainer инициализирует контейнер, в качестве параметра принимает конфиг и возвращает готовый контейнер или ошибку.
 func InitContainer(config *config.Config) (*Container, error) {
 	psqlStorage, err := storage.NewStorage(config.DSN, config.Secret)
 	if err != nil {

@@ -32,6 +32,7 @@ type Profiler interface {
 	SetWatchedStatus(ctx context.Context, lessonId uint) *courseError.CourseError
 }
 
+// UserService используется для менеджмента профиля пользователем.
 type UserService struct {
 	Profiler     Profiler
 	emailService *email.EmailService
@@ -41,6 +42,7 @@ type UserService struct {
 	CdnHost      string
 }
 
+// NewUserService - это билдер для UserService.
 func NewUserService(profiler Profiler, emailService *email.EmailService, redis *redis.Client, client *http.Client, apiKey, cdnHost string) UserService {
 	return UserService{
 		Profiler:     profiler,
@@ -57,6 +59,8 @@ var (
 	ErrBadConfirmCode      = errors.New("код подтверждения не найден")
 )
 
+// FillProfile используется для заполнения профиля пользователя. Принимает имя, фамилия, номер телефона, ID пользователя и
+// источник правок (админ или пользователь). Валидирует параметры и вносит изменения, возвращает ошибку.
 func (user UserService) FillProfile(ctx context.Context, userInfo *entity.UserInfo, userId string, isAdminEdit bool) *courseError.CourseError {
 	if err := validation.NewUserInfoToValidate(userInfo).Validate(ctx); err != nil {
 		return err
@@ -79,6 +83,8 @@ func (user UserService) FillProfile(ctx context.Context, userInfo *entity.UserIn
 	return nil
 }
 
+// EditPassword используется для изменения пароля пользователя, принимает в качестве параметра старый и новый пароль,
+// валидирует их и вносит изменения. Возвращает ошибку.
 func (user UserService) EditPassword(ctx context.Context, passwords *entity.Passwords) *courseError.CourseError {
 	if err := validation.NewPasswordToValidate(passwords.NewPassword).ValidatePassword(ctx); err != nil {
 		return err
@@ -91,24 +97,28 @@ func (user UserService) EditPassword(ctx context.Context, passwords *entity.Pass
 	return nil
 }
 
-func (user UserService) EditEmail(ctx context.Context, email entity.NewEmail, userId uint) *courseError.CourseError {
-	if err := validation.NewEmailToValidate(email.NewEmail).Validate(ctx); err != nil {
+// EditEmail используется для изменения почты пользователя. Принимает в качестве параметров новую почту и ID пользователя.
+// Возвращает ошибку.
+func (user UserService) EditEmail(ctx context.Context, email string, userId uint) *courseError.CourseError {
+	if err := validation.NewEmailToValidate(email).Validate(ctx); err != nil {
 		return err
 	}
 
-	if err := user.Profiler.ChangeEmail(ctx, email.NewEmail, userId); err != nil {
+	if err := user.Profiler.ChangeEmail(ctx, email, userId); err != nil {
 		return err
 	}
 
-	if err := user.emailService.SendConfirmCode(&userId, &email.NewEmail); err != nil {
+	if err := user.emailService.SendConfirmCode(&userId, &email); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (user UserService) ConfirmEditEmail(ctx context.Context, confirmCode *entity.ConfirmCode, userId uint) *courseError.CourseError {
-	if err := validation.NewConfirmCodeToValidate(confirmCode.Code).Validate(ctx); err != nil {
+// ConfirmEditEmail используется для подтверждения изменения почты. Принимает код подтверждения и ID пользователя.
+// Метод валидирует параметры и проверяет наличие кода. Возвращает ошибку.
+func (user UserService) ConfirmEditEmail(ctx context.Context, confirmCode int, userId uint) *courseError.CourseError {
+	if err := validation.NewConfirmCodeToValidate(confirmCode).Validate(ctx); err != nil {
 		return err
 	}
 
@@ -117,7 +127,7 @@ func (user UserService) ConfirmEditEmail(ctx context.Context, confirmCode *entit
 		return courseError.CreateError(ErrConfirmCodeNotFound, 11004)
 	}
 
-	if fmt.Sprint(confirmCode.Code) != codeFromRedis {
+	if fmt.Sprint(confirmCode) != codeFromRedis {
 		return courseError.CreateError(ErrBadConfirmCode, 11003)
 	}
 
@@ -132,6 +142,8 @@ func (user UserService) ConfirmEditEmail(ctx context.Context, confirmCode *entit
 	return nil
 }
 
+// AddPhoto используется для добавления фото. Принимает в качестве параметров фото, валидирует его расширение, загружает
+// на CDN и устанавливает фото профиля. Возвращает ошибку.
 func (user UserService) AddPhoto(ctx context.Context, formFileHeader *multipart.FileHeader, file *multipart.File) *courseError.CourseError {
 	if err := validation.NewImgExtToValidate(formFileHeader.Filename).Validate(ctx); err != nil {
 		return err
@@ -149,6 +161,8 @@ func (user UserService) AddPhoto(ctx context.Context, formFileHeader *multipart.
 	return nil
 }
 
+// sendPhoto отправляет фото на CDN и принимает в качестве параметров фото и название название файла.
+// Возвращает путь к фото и ошибку.
 func (user UserService) sendPhoto(ctx context.Context, file *multipart.File, fileName string) (*string, *courseError.CourseError) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
@@ -212,6 +226,7 @@ func (user UserService) sendPhoto(ctx context.Context, file *multipart.File, fil
 	return &cdnResponse.Path, nil
 }
 
+// GetUserInfo используется для получении информации о пользователе. Возвращает даннные пользователя или ошибку.
 func (user UserService) GetUserInfo(ctx context.Context) (*entity.UserData, *courseError.CourseError) {
 	userData, err := user.Profiler.RetreiveUserData(ctx)
 	if err != nil {
@@ -221,6 +236,7 @@ func (user UserService) GetUserInfo(ctx context.Context) (*entity.UserData, *cou
 	return userData, nil
 }
 
+// DisableProfile используется для деактивации профиля. Возвращает ошибку.
 func (user UserService) DisableProfile(ctx context.Context) *courseError.CourseError {
 	if err := user.Profiler.DeactivateProfile(ctx); err != nil {
 		return err
@@ -229,6 +245,8 @@ func (user UserService) DisableProfile(ctx context.Context) *courseError.CourseE
 	return nil
 }
 
+// MarkLessonAsWatched используется для отметки пройденного материала. В качестве обязательного параметра
+// принимает ID урока, валидирует его и добавляет статус "пройдено" к материалу. Возвращает ошибку.
 func (user UserService) MarkLessonAsWatched(ctx context.Context, lessonId string) *courseError.CourseError {
 	if err := validation.NewStringIdToValidate(lessonId).Validate(ctx); err != nil {
 		return err
