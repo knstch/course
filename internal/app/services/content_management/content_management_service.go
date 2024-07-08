@@ -28,6 +28,7 @@ var (
 	ErrUnautharizedAccess = errors.New("доступ к курсу запрещен")
 )
 
+// ContentManagementServcie содержит данные для работы с CDN и получение контента.
 type ContentManagementServcie struct {
 	contentManager ContentManager
 	adminApiKey    string
@@ -54,6 +55,7 @@ type ContentManager interface {
 	GetCourseByName(ctx context.Context, name string) (*dto.Course, *courseError.CourseError)
 }
 
+// NewContentManagementServcie - это билдер для сервиса контента.
 func NewContentManagementServcie(manager ContentManager, config *config.Config, client *http.Client, grpcClient *grpc.GrpcClient) ContentManagementServcie {
 	return ContentManagementServcie{
 		contentManager: manager,
@@ -64,6 +66,9 @@ func NewContentManagementServcie(manager ContentManager, config *config.Config, 
 	}
 }
 
+// AddCourse используется для добавления курса и принимает как обязательные парамерты
+// название, описание, цену, скидку и превью. Возвращает ошибку или ID курса. Метод
+// валидирует параметры и превью, и отправляет его на CDN.
 func (manager ContentManagementServcie) AddCourse(ctx context.Context,
 	name, description, cost, discount string,
 	formFileHeader *multipart.FileHeader, file *multipart.File) (*uint, *courseError.CourseError) {
@@ -86,10 +91,12 @@ func (manager ContentManagementServcie) AddCourse(ctx context.Context,
 	return id, nil
 }
 
+// prepareFileName используется для подготовки названия файла к отправке, удаляя пробелы и заменяя их на _.
 func (manager ContentManagementServcie) prepareFileName(name string) string {
 	return strings.ReplaceAll(strings.TrimSpace(name), " ", "_")
 }
 
+// sendPhoto отправляет превью на CDN и обрабатывает ошибку в случае неудачи.
 func (manager ContentManagementServcie) sendPhoto(file *multipart.File, fileName string) (*string, *courseError.CourseError) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
@@ -153,6 +160,9 @@ func (manager ContentManagementServcie) sendPhoto(file *multipart.File, fileName
 	return &cdnResponse.Path, nil
 }
 
+// AddModule используется для добавления модуля, в качестве обязательного параметра принимает
+// название, описание, название курса и порядковый номер модуля. Возвращает ID модуля или ошибку.
+// Перед добавлением модуля параметры проходят валидацию.
 func (manager ContentManagementServcie) AddModule(ctx context.Context, module *entity.Module) (*uint, *courseError.CourseError) {
 	if err := validation.NewModuleToValidate(module.Name, module.Description, module.CourseName, *module.Position).
 		Validate(ctx); err != nil {
@@ -167,6 +177,10 @@ func (manager ContentManagementServcie) AddModule(ctx context.Context, module *e
 	return id, nil
 }
 
+// AddLesson используется для добавления урока, в качестве обязательного параметра принимается
+// видео, название, название модуля, описание, позиция, название курса и превью. Далее метод валидирует
+// параметры, проверяет, может ли такой урок быть создан и отправляет контент на CDN в асинхронном режиме.
+// Метод возвращает ID урока или ошибку.
 func (manager ContentManagementServcie) AddLesson(
 	ctx context.Context,
 	video *multipart.FileHeader,
@@ -233,6 +247,7 @@ func (manager ContentManagementServcie) AddLesson(
 	return lessonId, nil
 }
 
+// sendVideo используется для отправки видео по gRPC. Возвращает путь к контенту на CDN или ошибку.
 func (manager ContentManagementServcie) sendVideo(ctx context.Context, file *multipart.FileHeader) (*string, *courseError.CourseError) {
 	readyName := manager.prepareFileName(file.Filename)
 
@@ -275,6 +290,10 @@ func (manager ContentManagementServcie) sendVideo(ctx context.Context, file *mul
 	return &res.Path, nil
 }
 
+// GetCourseInfo используется для получения курса по фильтрам, в качестве параметров принимает название курса, описание
+// стоимость, скидка, они используются для поиска по фильтрам. В качестве обязательного параметра выступают страница и лимит.
+// Если был передан ID, то все остальные параметры игнорируются и происходит проверка на наличие курса у клиента. Если он не приобретен,
+// то возвращается только базовая информация без доступа к расширенному контенту. Метод возвращает массив курсов с пагинацией или ошибку.
 func (manager ContentManagementServcie) GetCourseInfo(ctx context.Context, id, name, descr, cost, discount, page, limit string) (*entity.CourseInfoWithPagination, *courseError.CourseError) {
 	var isCoursePurchased bool
 	if id != "" {
@@ -327,6 +346,10 @@ func (manager ContentManagementServcie) GetCourseInfo(ctx context.Context, id, n
 	}, nil
 }
 
+// GetModulesInfo используется для получения модулей. Принимает в качестве параметров название, описание, название курса, страницу и лимит.
+// Последние 2 параметра являются обязательными, остальные используются для поиска по фильтрам. Метод валидирует параметры и проверяет наличие
+// купленного курса, если было передано название курса. Если этот курс был куплен пользователем, то возвращается расширенный контент. Метод
+// возвращает данные модуля вместе с пагинацией или ошибку.
 func (manager ContentManagementServcie) GetModulesInfo(ctx context.Context,
 	name, description, courseName, page, limit string) (*entity.ModuleInfoWithPagination, *courseError.CourseError) {
 	if err := validation.NewModuleQueryToValidate(name, description, courseName, page, limit).Validate(ctx); err != nil {
@@ -380,6 +403,10 @@ func (manager ContentManagementServcie) GetModulesInfo(ctx context.Context,
 	}, nil
 }
 
+// GetLessonsInfo используется для получения уроков по фильтрам. В качестве параметров принимает название урока, описание
+// название модуля, название курса, страницу и лимит. Последние 2 параметра являются обязательными. Метод валидирует переданные данные
+// и если было передано название курса, то проверяет наличие этого курса у клиента. Если он был приобретен, то метод возвращает расширенный контент.
+// Метод возвращает информацию об уроке или ошибку.
 func (manager ContentManagementServcie) GetLessonsInfo(ctx context.Context,
 	name, description, moduleName, courseName, page, limit string) (
 	*entity.LessonsInfoWithPagination, *courseError.CourseError) {
@@ -434,6 +461,9 @@ func (manager ContentManagementServcie) GetLessonsInfo(ctx context.Context,
 	}, nil
 }
 
+// ManageCourse используется для управления курсами, в качестве параметров принимает ID курса,
+// название, описание, цену, скидку и превью. ID является обязательным. Далее метод валидирует параметры
+// и вносит изменения в БД по ID.
 func (manager ContentManagementServcie) ManageCourse(ctx context.Context,
 	courseId, name, description, cost, discount string,
 	formFileHeader *multipart.FileHeader,
@@ -480,6 +510,8 @@ func (manager ContentManagementServcie) ManageCourse(ctx context.Context,
 	return nil
 }
 
+// ManageModule используется для редактировании информации о модуле. Принимает в качестве параметров ID модуля (обязательн),
+// навзание, описание, порядковый номер и название курса. Метод валидирует параметры и вносит изменения. Возвращает ошибку.
 func (manager ContentManagementServcie) ManageModule(ctx context.Context, module *entity.Module) *courseError.CourseError {
 	if err := validation.NewEditModuleToValidate(module.Name, module.Description, *module.Position, module.ModuleId).
 		Validate(ctx); err != nil {
@@ -493,6 +525,9 @@ func (manager ContentManagementServcie) ManageModule(ctx context.Context, module
 	return nil
 }
 
+// ManageLesson используется для редактирования уроков. В качестве параметров принимает видео, название, описание,
+// порядковый номер, ID урока (обязательный), превью, и 2 булевых параметра, указывающие на наличие переданного видео или превью.
+// Метод валидирует параметры и вносит изменения. Возвращает ошибку.
 func (manager ContentManagementServcie) ManageLesson(ctx context.Context,
 	video *multipart.FileHeader,
 	name string,
@@ -545,6 +580,8 @@ func (manager ContentManagementServcie) ManageLesson(ctx context.Context,
 	return nil
 }
 
+// ManageShowStatus используется для скрытия или открытия урока в общем доступе, в качестве параметров
+// принимает ID курса, который является обязательным, и валидирует его. Не затрагивает уже купленный матерал. Возвращает ошибку.
 func (manager ContentManagementServcie) ManageShowStatus(ctx context.Context, courseId int) *courseError.CourseError {
 	if err := validation.NewIdToValidate(courseId).Validate(ctx); err != nil {
 		return err
@@ -557,6 +594,8 @@ func (manager ContentManagementServcie) ManageShowStatus(ctx context.Context, co
 	return nil
 }
 
+// RemoveModule используется для удаления модуля. В качестве обятательного параметра принимает ID модуля, валидирует его, и удаляет.
+// Возвращает ошибку.
 func (manager ContentManagementServcie) RemoveModule(ctx context.Context, moduleId string) *courseError.CourseError {
 	if err := validation.NewStringIdToValidate(moduleId).Validate(ctx); err != nil {
 		return err
@@ -569,6 +608,8 @@ func (manager ContentManagementServcie) RemoveModule(ctx context.Context, module
 	return nil
 }
 
+// RemoveLesson используется для удаления урока. В качестве обятательного параметра принимает ID урока, валидирует его, и удаляет.
+// Возвращает ошибку.
 func (manager ContentManagementServcie) RemoveLesson(ctx context.Context, lessonId string) *courseError.CourseError {
 	if err := validation.NewStringIdToValidate(lessonId).Validate(ctx); err != nil {
 		return err
