@@ -13,6 +13,10 @@ import (
 	"github.com/knstch/course/internal/app/router"
 )
 
+// @title Приложение course
+// @version 1.0
+// @host http://localhost:70
+// @BasePath /api
 func main() {
 	if err := run(); err != nil {
 		log.Fatal(err)

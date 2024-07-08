@@ -1,3 +1,4 @@
+// usermanagement содержит методы для менеджмента юзеров.
 package usermanagement
 
 import (

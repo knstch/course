@@ -14,6 +14,16 @@ var (
 	errNoRights = errors.New("у вас нет прав")
 )
 
+// @Summary Создать профиль нового администратора
+// @Accept json
+// @Produce png
+// @Success 200 {object} png
+// @Router /v1/admin/management/register [post]
+// @Tags Методы для администрирования
+// @Failure 400 {object} courseError.CourseError "Провалена валидация"
+// @Failure 403 {object} courseError.CourseError "Нет прав"
+// @Failure 409 {object} courseError.CourseError "Невозможно создать админа"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) CreateAdmin(ctx *gin.Context) {
 	var credentials *entity.AdminCredentials
 	if err := ctx.ShouldBindJSON(&credentials); err != nil {
@@ -49,6 +59,17 @@ func (h Handlers) CreateAdmin(ctx *gin.Context) {
 	ctx.Data(http.StatusOK, "image/png", qr)
 }
 
+// @Summary Верифицировать аутентификатор
+// @Accept json
+// @Produce json
+// @Success 200 {object} entity.SuccessResponse
+// @Router /v1/admin/verify [post]
+// @Tags Методы для администрирования
+// @Failure 400 {object} courseError.CourseError "Провалена валидация"
+// @Failure 403 {object} courseError.CourseError "Нет прав"
+// @Failure 404 {object} courseError.CourseError "Код не найден"
+// @Failure 409 {object} courseError.CourseError "Невозможно создать админа"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) VerifyAuthentificator(ctx *gin.Context) {
 	var credentials *entity.AdminCredentials
 	if err := ctx.ShouldBindJSON(&credentials); err != nil {
@@ -80,6 +101,16 @@ func (h Handlers) VerifyAuthentificator(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("аккаунт успешно верифицирован"))
 }
 
+// @Summary Залогиниться администратору
+// @Accept json
+// @Produce json
+// @Success 200 {object} entity.SuccessResponse
+// @Router /v1/admin/login [post]
+// @Tags Методы для администрирования
+// @Failure 400 {object} courseError.CourseError "Провалена валидация"
+// @Failure 403 {object} courseError.CourseError "Неправильный логин, пароль или код"
+// @Failure 404 {object} courseError.CourseError "Администратор не найден"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) LogIn(ctx *gin.Context) {
 	var credentials *entity.AdminCredentials
 	if err := ctx.ShouldBindJSON(&credentials); err != nil {

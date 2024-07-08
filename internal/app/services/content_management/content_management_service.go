@@ -1,3 +1,4 @@
+// contentmanagement содержит методы для менеджмента контента на платформе.
 package contentmanagement
 
 import (

@@ -1,3 +1,4 @@
+// email содержит методы для работы с почтой.
 package email
 
 import (

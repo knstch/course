@@ -9,6 +9,16 @@ import (
 	"github.com/knstch/course/internal/domain/entity"
 )
 
+// @Summary Удалить админа
+// @Produce json
+// @Success 200 {object} entity.SuccessResponse
+// @Router /v1/admin/management/removeAdmin [delete]
+// @Tags Методы для администрирования
+// @Failure 400 {object} courseError.CourseError "Провалена валидация"
+// @Failure 403 {object} courseError.CourseError "Нет прав"
+// @Failure 404 {object} courseError.CourseError "Админ не найден"
+// @Failure 409 {object} courseError.CourseError "Невозможно создать админа"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) DeleteAdmin(ctx *gin.Context) {
 	role := ctx.Value("role").(string)
 	if role != "super_admin" {
@@ -36,6 +46,15 @@ func (h Handlers) DeleteAdmin(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("администратор успешно удален"))
 }
 
+// @Summary Изменить роль администратора
+// @Produce json
+// @Success 200 {object} entity.SuccessResponse
+// @Router /v1/admin/management/changeRole [patch]
+// @Tags Методы для администрирования
+// @Failure 400 {object} courseError.CourseError "Провалена валидация"
+// @Failure 403 {object} courseError.CourseError "Не хватает прав"
+// @Failure 404 {object} courseError.CourseError "Администратор не найден"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) ChangeRole(ctx *gin.Context) {
 	role := ctx.Value("role").(string)
 	if role != "super_admin" {
@@ -63,7 +82,22 @@ func (h Handlers) ChangeRole(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("роль успешно изменена"))
 }
 
+// @Summary Найти администраторов по фильтрам
+// @Produce json
+// @Success 200 {object} entity.AdminsInfoWithPagination
+// @Router /v1/admin/management/getAdmins [get]
+// @Tags Методы для администрирования
+// @Failure 400 {object} courseError.CourseError "Провалена валидация"
+// @Failure 403 {object} courseError.CourseError "Нет прав"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) FindAdmins(ctx *gin.Context) {
+	currentRole := ctx.Value("role").(string)
+	if currentRole != "super_admin" {
+		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("adminId")), "ChangeRole", errNoRights.Error(), 16004)
+		ctx.AbortWithStatusJSON(http.StatusForbidden, courseError.CreateError(errNoRights, 16004))
+		return
+	}
+
 	login := ctx.Query("login")
 	role := ctx.Query("role")
 	twoStepsAuth := ctx.Query("twoStepsAuth")
@@ -85,6 +119,14 @@ func (h Handlers) FindAdmins(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, admins)
 }
 
+// @Summary Получить данные с платежами по дням
+// @Produce json
+// @Success 200 {object} []entity.PaymentStats
+// @Router /v1/admin/management/paymentStats [get]
+// @Tags Методы для администрирования
+// @Failure 400 {object} courseError.CourseError "Провалена валидация"
+// @Failure 403 {object} courseError.CourseError "Нет прав"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) GetPaymentDashboard(ctx *gin.Context) {
 	role := ctx.Value("role").(string)
 	if role != "super_admin" && role != "admin" {
@@ -114,6 +156,14 @@ func (h Handlers) GetPaymentDashboard(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, stats)
 }
 
+// @Summary Получить данные с юзерами по дням
+// @Produce json
+// @Success 200 {object} []entity.UsersStats
+// @Router /v1/admin/management/usersStats [get]
+// @Tags Методы для администрирования
+// @Failure 400 {object} courseError.CourseError "Провалена валидация"
+// @Failure 403 {object} courseError.CourseError "Нет прав"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) GetUsersDashboard(ctx *gin.Context) {
 	role := ctx.Value("role").(string)
 	if role != "super_admin" && role != "admin" {
