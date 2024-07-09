@@ -17,6 +17,12 @@ import (
 // @version 1.0
 // @host http://localhost:70
 // @BasePath /api
+// @securitydefinitions.apikey ApiKeyAuth
+// @in cookie
+// @name auth
+// @securitydefinitions.apikey AdminApiKeyAuth
+// @in cookie
+// @name admin_auth
 func main() {
 	if err := run(); err != nil {
 		log.Fatal(err)

@@ -47,9 +47,6 @@ func (storage Storage) CreateNewOrder(ctx context.Context, courseId, price uint,
 	credentials := dto.CreateNewCredentials()
 	if err := tx.Joins("JOIN users ON users.id = ?", userId).
 		Where("credentials.id = users.credentials_id").First(&credentials).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, courseError.CreateError(errUserNotFound, 11002)
-		}
 		return nil, courseError.CreateError(err, 10002)
 	}
 

@@ -14,6 +14,15 @@ var (
 	errNotVerified = errors.New("для покупки курса нужно верифицировать почту")
 )
 
+// @Summary Купить курс
+// @Accept json
+// @Success 307 "Temporary Redirect"
+// @Router /v1/billing/buyCourse [post]
+// @Tags Методы биллинга
+// @Param orderDetails body entity.BuyDetails true "ID курса и способ платежа"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация или декодирование сообщения"
+// @Failure 409 {object} courseError.CourseError "Курс уже куплен"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) BuyCourse(ctx *gin.Context) {
 	verifiedStatus := ctx.GetBool("verified")
 	if !verifiedStatus {
@@ -35,10 +44,6 @@ func (h Handlers) BuyCourse(ctx *gin.Context) {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
 			return
 		}
-		if err.Code == 11002 {
-			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
-			return
-		}
 		if err.Code == 15004 {
 			ctx.AbortWithStatusJSON(http.StatusConflict, err)
 			return
@@ -52,6 +57,14 @@ func (h Handlers) BuyCourse(ctx *gin.Context) {
 	ctx.Redirect(http.StatusTemporaryRedirect, *linkToPay)
 }
 
+// @Summary Оплата курса подтверждена
+// @Success 307 "Temporary Redirect"
+// @Router /v1/billing/successPayment/{userData} [get]
+// @Tags Методы биллинга
+// @Param userData path string true "захешированные данные пользователя"
+// @Failure 400 {object} courseError.CourseError "Инвойс ID не совпадает с хэшем из path"
+// @Failure 404 {object} courseError.CourseError "Заказ не найден"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) CompletePurchase(ctx *gin.Context) {
 	courseName, err := h.sberBillingService.ConfirmPayment(ctx, ctx.Param("userData"))
 	if err != nil {
@@ -73,6 +86,13 @@ func (h Handlers) CompletePurchase(ctx *gin.Context) {
 	ctx.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%v/%v", h.address, courseName))
 }
 
+// @Summary Оплата курса провалена
+// @Success 307 "Temporary Redirect"
+// @Router /v1/billing/failPayment/{userData} [get]
+// @Tags Методы биллинга
+// @Param userData path string true "захешированные данные пользователя"
+// @Failure 404 {object} courseError.CourseError "Заказ не найден"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) DeclineOrder(ctx *gin.Context) {
 	if err := h.sberBillingService.FailPayment(ctx, ctx.Param("userData")); err != nil {
 		h.logger.Error(fmt.Sprintf("ошибка при отмененной оплатае с заказом: %v", ctx.Param("userData")), "DeclineOrder", err.Message, err.Code)
@@ -86,9 +106,18 @@ func (h Handlers) DeclineOrder(ctx *gin.Context) {
 
 	h.logger.Info("заказ успешно отменен", "DeclineOrder", ctx.Param("userData"))
 
-	ctx.JSON(http.StatusOK, entity.CreateNewFailedPayment)
+	ctx.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%v/orders", h.address))
 }
 
+// @Summary Изменить billing host
+// @Produce json
+// @Accept json
+// @Success 200 {object} entity.SuccessResponse
+// @Router /v1/billing/management/manageBillingHost [patch]
+// @Tags Методы биллинга
+// @Param billingHost body entity.BillingHost true "Новый URL биллинг хоста"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация или декодирование сообщения"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) ManageBillingHost(ctx *gin.Context) {
 	role := ctx.Value("role").(string)
 	if role != "super_admin" {
@@ -119,6 +148,14 @@ func (h Handlers) ManageBillingHost(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("хост успешно изменен"))
 }
 
+// @Summary Изменить токен биллинга
+// @Accept json
+// @Success 200 {object} entity.SuccessResponse
+// @Router /v1/billing/management/manageBillingToken [patch]
+// @Tags Методы биллинга
+// @Param token query string true "токен"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) ManageAccessToken(ctx *gin.Context) {
 	role := ctx.Value("role").(string)
 	if role != "super_admin" {
@@ -127,15 +164,10 @@ func (h Handlers) ManageAccessToken(ctx *gin.Context) {
 		return
 	}
 
-	token := entity.CreateAccessToken()
-	if err := ctx.ShouldBindJSON(&token); err != nil {
-		h.logger.Error("не получилось обработать тело запроса", "ManageAccessToken", err.Error(), 10101)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
-		return
-	}
+	token := ctx.Query("token")
 
-	if err := h.sberBillingService.ChangeAccessToken(ctx, token.Token); err != nil {
-		h.logger.Error(fmt.Sprintf("ошибка при изменении токена доступа для billingHost на токен: %v", token.Token), "ManageAccessToken", err.Message, err.Code)
+	if err := h.sberBillingService.ChangeAccessToken(ctx, token); err != nil {
+		h.logger.Error(fmt.Sprintf("ошибка при изменении токена доступа для billingHost на токен: %v", token), "ManageAccessToken", err.Message, err.Code)
 		if err.Code == 400 {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
 			return
@@ -144,7 +176,7 @@ func (h Handlers) ManageAccessToken(ctx *gin.Context) {
 		return
 	}
 
-	h.logger.Info(fmt.Sprintf("токен billingHost успешно изменен админом с ID: %d", ctx.Value("adminId")), "ManageAccessToken", token.Token)
+	h.logger.Info(fmt.Sprintf("токен billingHost успешно изменен админом с ID: %d", ctx.Value("adminId")), "ManageAccessToken", token)
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("токен успешно изменен"))
 }
