@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	courseError "github.com/knstch/course/internal/app/course_error"
+	courseerror "github.com/knstch/course/internal/app/course_error"
 	"github.com/knstch/course/internal/domain/entity"
 )
 
@@ -24,8 +24,8 @@ import (
 // @Param banned query string false "статус бана"
 // @Param page query string true "страница"
 // @Param limit query string true "лимит"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) FindUsersByFilters(ctx *gin.Context) {
 	firstName := ctx.Query("firstName")
 	surname := ctx.Query("surname")
@@ -66,8 +66,8 @@ func (h Handlers) FindUsersByFilters(ctx *gin.Context) {
 // @Router /v1/admin/management/ban [post]
 // @Tags Методы для администрирования
 // @Param id query string true "ID"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) BanUser(ctx *gin.Context) {
 	id := ctx.Query("id")
 	if err := h.userManagementService.DeactivateUser(ctx, id); err != nil {
@@ -92,8 +92,8 @@ func (h Handlers) BanUser(ctx *gin.Context) {
 // @Router /v1/admin/management/ban [post]
 // @Tags Методы для администрирования
 // @Param id query string true "ID"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) UnbanUser(ctx *gin.Context) {
 	id := ctx.Query("id")
 
@@ -119,9 +119,9 @@ func (h Handlers) UnbanUser(ctx *gin.Context) {
 // @Router /v1/admin/management/user [get]
 // @Tags Методы для администрирования
 // @Param id query string true "ID"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация"
-// @Failure 404 {object} courseError.CourseError "Пользователь не найден"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация"
+// @Failure 404 {object} courseerror.CourseError "Пользователь не найден"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) GetUserById(ctx *gin.Context) {
 	id := ctx.Query("id")
 	user, err := h.userManagementService.RetreiveUserById(ctx, id)
@@ -152,15 +152,15 @@ func (h Handlers) GetUserById(ctx *gin.Context) {
 // @Tags Методы для администрирования
 // @Param userInfo body entity.UserInfo true "Новые данные"
 // @Param id query string true "ID пользователя"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация или не удалось декодировать сообщение"
-// @Failure 404 {object} courseError.CourseError "Пользователь не найден"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация или не удалось декодировать сообщение"
+// @Failure 404 {object} courseerror.CourseError "Пользователь не найден"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) EditUserProfile(ctx *gin.Context) {
 	id := ctx.Query("id")
 	userInfo := entity.NewUserInfo()
 	if err := ctx.ShouldBindJSON(&userInfo); err != nil {
 		h.logger.Error("не получилось обработать тело запроса", "EditUserProfile", err.Error(), 10101)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errBrokenJSON, 10101))
 		return
 	}
 
@@ -189,9 +189,9 @@ func (h Handlers) EditUserProfile(ctx *gin.Context) {
 // @Router /v1/admin/management/deleteProfilePhoto [delete]
 // @Tags Методы для администрирования
 // @Param id query string true "ID"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация"
-// @Failure 404 {object} courseError.CourseError "Пользователь не найден"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация"
+// @Failure 404 {object} courseerror.CourseError "Пользователь не найден"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) RemoveUserProfilePhoto(ctx *gin.Context) {
 	id := ctx.Query("id")
 	if err := h.userManagementService.EraseUserProfilePhoto(ctx, id); err != nil {

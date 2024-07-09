@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	courseError "github.com/knstch/course/internal/app/course_error"
+	courseerror "github.com/knstch/course/internal/app/course_error"
 	"github.com/knstch/course/internal/domain/entity"
 )
 
@@ -15,15 +15,15 @@ import (
 // @Router /v1/admin/management/removeAdmin [delete]
 // @Tags Методы для администрирования
 // @Param login query string true "логин"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация"
-// @Failure 403 {object} courseError.CourseError "Нет прав"
-// @Failure 404 {object} courseError.CourseError "Админ не найден"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация"
+// @Failure 403 {object} courseerror.CourseError "Нет прав"
+// @Failure 404 {object} courseerror.CourseError "Админ не найден"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) DeleteAdmin(ctx *gin.Context) {
 	role := ctx.Value("role").(string)
 	if role != "super_admin" {
 		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("adminId")), "DeleteAdmin", errNoRights.Error(), 16004)
-		ctx.AbortWithStatusJSON(http.StatusForbidden, courseError.CreateError(errNoRights, 16004))
+		ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errNoRights, 16004))
 		return
 	}
 	login := ctx.Query("login")
@@ -53,15 +53,15 @@ func (h Handlers) DeleteAdmin(ctx *gin.Context) {
 // @Tags Методы для администрирования
 // @Param login query string true "логин"
 // @Param role query string true "роль"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация"
-// @Failure 403 {object} courseError.CourseError "Не хватает прав"
-// @Failure 404 {object} courseError.CourseError "Администратор не найден"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация"
+// @Failure 403 {object} courseerror.CourseError "Не хватает прав"
+// @Failure 404 {object} courseerror.CourseError "Администратор не найден"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) ChangeRole(ctx *gin.Context) {
 	role := ctx.Value("role").(string)
 	if role != "super_admin" {
 		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("adminId")), "ChangeRole", errNoRights.Error(), 16004)
-		ctx.AbortWithStatusJSON(http.StatusForbidden, courseError.CreateError(errNoRights, 16004))
+		ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errNoRights, 16004))
 		return
 	}
 	login := ctx.Query("login")
@@ -95,14 +95,14 @@ func (h Handlers) ChangeRole(ctx *gin.Context) {
 // @Param twoStepsAuth query string false "подключенная двойная авторизация"
 // @Param page query string true "страница"
 // @Param limit query string true "лимит"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация"
-// @Failure 403 {object} courseError.CourseError "Нет прав"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация"
+// @Failure 403 {object} courseerror.CourseError "Нет прав"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) FindAdmins(ctx *gin.Context) {
 	currentRole := ctx.Value("role").(string)
 	if currentRole != "super_admin" {
 		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("adminId")), "ChangeRole", errNoRights.Error(), 16004)
-		ctx.AbortWithStatusJSON(http.StatusForbidden, courseError.CreateError(errNoRights, 16004))
+		ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errNoRights, 16004))
 		return
 	}
 
@@ -136,14 +136,14 @@ func (h Handlers) FindAdmins(ctx *gin.Context) {
 // @Param due query string false "период до"
 // @Param courseName query string false "название курса"
 // @Param paymentMethod query string false "способ платежа"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация"
-// @Failure 403 {object} courseError.CourseError "Нет прав"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация"
+// @Failure 403 {object} courseerror.CourseError "Нет прав"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) GetPaymentDashboard(ctx *gin.Context) {
 	role := ctx.Value("role").(string)
 	if role != "super_admin" && role != "admin" {
 		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("adminId")), "GetPaymentDashboard", errNoRights.Error(), 16004)
-		ctx.AbortWithStatusJSON(http.StatusForbidden, courseError.CreateError(errNoRights, 16004))
+		ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errNoRights, 16004))
 		return
 	}
 
@@ -175,14 +175,14 @@ func (h Handlers) GetPaymentDashboard(ctx *gin.Context) {
 // @Tags Методы для администрирования
 // @Param from query string true "приод от"
 // @Param due query string false "период до"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация"
-// @Failure 403 {object} courseError.CourseError "Нет прав"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация"
+// @Failure 403 {object} courseerror.CourseError "Нет прав"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) GetUsersDashboard(ctx *gin.Context) {
 	role := ctx.Value("role").(string)
 	if role != "super_admin" && role != "admin" {
 		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("adminId")), "GetUsersDashboard", errNoRights.Error(), 16004)
-		ctx.AbortWithStatusJSON(http.StatusForbidden, courseError.CreateError(errNoRights, 16004))
+		ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errNoRights, 16004))
 		return
 	}
 

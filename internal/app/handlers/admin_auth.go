@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	courseError "github.com/knstch/course/internal/app/course_error"
+	courseerror "github.com/knstch/course/internal/app/course_error"
 	"github.com/knstch/course/internal/domain/entity"
 )
 
@@ -16,26 +16,25 @@ var (
 
 // @Summary Создать профиль нового администратора
 // @Accept json
-// @Produce png
-// @Success 200 {object} png
+// @Success 200 {object} string "image/png"
 // @Router /v1/admin/management/register [post]
 // @Tags Методы для администрирования
 // @Param adminData body entity.AdminCredentials true "логин, пароль"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация или декодирование сообщения"
-// @Failure 403 {object} courseError.CourseError "Нет прав"
-// @Failure 409 {object} courseError.CourseError "Невозможно создать админа"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация или декодирование сообщения"
+// @Failure 403 {object} courseerror.CourseError "Нет прав"
+// @Failure 409 {object} courseerror.CourseError "Невозможно создать админа"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) CreateAdmin(ctx *gin.Context) {
 	var credentials *entity.AdminCredentials
 	if err := ctx.ShouldBindJSON(&credentials); err != nil {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errBrokenJSON, 10101))
 		h.logger.Error("не получилось обработать тело запроса", "CreateAdmin", err.Error(), 10101)
 		return
 	}
 
 	role := ctx.Value("role").(string)
 	if role != "super_admin" {
-		ctx.AbortWithStatusJSON(http.StatusForbidden, courseError.CreateError(errNoRights, 16004))
+		ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errNoRights, 16004))
 		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("adminId")), "CreateAdmin", errNoRights.Error(), 16004)
 		return
 	}
@@ -67,15 +66,15 @@ func (h Handlers) CreateAdmin(ctx *gin.Context) {
 // @Router /v1/admin/verify [post]
 // @Tags Методы для администрирования
 // @Param adminData body entity.AdminCredentials true "логин, пароль, код подтверждения"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация или декодирование сообщения"
-// @Failure 403 {object} courseError.CourseError "Неверный код или пара логин-пароль"
-// @Failure 404 {object} courseError.CourseError "Код не найден"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация или декодирование сообщения"
+// @Failure 403 {object} courseerror.CourseError "Неверный код или пара логин-пароль"
+// @Failure 404 {object} courseerror.CourseError "Код не найден"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) VerifyAuthentificator(ctx *gin.Context) {
 	var credentials *entity.AdminCredentials
 	if err := ctx.ShouldBindJSON(&credentials); err != nil {
 		h.logger.Error("не получилось обработать тело запроса", "VerifyAuthentificator", err.Error(), 10101)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errBrokenJSON, 10101))
 		return
 	}
 
@@ -109,15 +108,15 @@ func (h Handlers) VerifyAuthentificator(ctx *gin.Context) {
 // @Router /v1/admin/login [post]
 // @Tags Методы для администрирования
 // @Param adminData body entity.AdminCredentials true "логин, пароль, код подтверждения"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация или декодирование сообщения"
-// @Failure 403 {object} courseError.CourseError "Неправильный логин, пароль или код"
-// @Failure 404 {object} courseError.CourseError "Администратор не найден"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация или декодирование сообщения"
+// @Failure 403 {object} courseerror.CourseError "Неправильный логин, пароль или код"
+// @Failure 404 {object} courseerror.CourseError "Администратор не найден"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) LogIn(ctx *gin.Context) {
 	var credentials *entity.AdminCredentials
 	if err := ctx.ShouldBindJSON(&credentials); err != nil {
 		h.logger.Error("не получилось обработать тело запроса", "LogIn", err.Error(), 10101)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errBrokenJSON, 10101))
 		return
 	}
 
@@ -152,7 +151,7 @@ func (h Handlers) WithAdminCookieAuth() gin.HandlerFunc {
 		cookie, err := ctx.Request.Cookie("admin_auth")
 		if err != nil {
 			h.logger.Error(fmt.Sprintf("не получилось получить куки, запрос с IP: %v", ctx.ClientIP()), "WithAdminCookieAuth", errUserNotAuthentificated.Error(), 11009)
-			ctx.AbortWithStatusJSON(http.StatusForbidden, courseError.CreateError(errUserNotAuthentificated, 11009))
+			ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errUserNotAuthentificated, 11009))
 			return
 		}
 
@@ -193,22 +192,22 @@ func (h Handlers) WithAdminCookieAuth() gin.HandlerFunc {
 // @Router /v1/admin/management/resetPassword [patch]
 // @Tags Методы для администрирования
 // @Param adminData body entity.AdminCredentials true "логин, пароль"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация или декодирование сообщения"
-// @Failure 403 {object} courseError.CourseError "Неправильный логин, пароль или код"
-// @Failure 404 {object} courseError.CourseError "Администратор не найден"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация или декодирование сообщения"
+// @Failure 403 {object} courseerror.CourseError "Неправильный логин, пароль или код"
+// @Failure 404 {object} courseerror.CourseError "Администратор не найден"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) ChangeAdminPassword(ctx *gin.Context) {
 	role := ctx.Value("role").(string)
 	if role != "super_admin" {
 		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("adminId")), "ChangeAdminPassword", errNoRights.Error(), 16004)
-		ctx.AbortWithStatusJSON(http.StatusForbidden, courseError.CreateError(errNoRights, 16004))
+		ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errNoRights, 16004))
 		return
 	}
 
 	var credentials *entity.AdminCredentials
 	if err := ctx.ShouldBindJSON(&credentials); err != nil {
 		h.logger.Error("не получилось обработать тело запроса", "ChangeAdminPassword", err.Error(), 10101)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errBrokenJSON, 10101))
 		return
 	}
 
@@ -232,19 +231,18 @@ func (h Handlers) ChangeAdminPassword(ctx *gin.Context) {
 }
 
 // @Summary Изменить ключ администратора
-// @Produce png
-// @Success 200 {object} png
+// @Success 200 {object} string "image/png"
 // @Router /v1/admin/management/resetKey [patch]
 // @Tags Методы для администрирования
 // @Param login query string true "логин"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация или не получилось декодировать сообщение"
-// @Failure 404 {object} courseError.CourseError "Администратор не найден"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация или не получилось декодировать сообщение"
+// @Failure 404 {object} courseerror.CourseError "Администратор не найден"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) ChangeAdminAuthKey(ctx *gin.Context) {
 	role := ctx.Value("role").(string)
 	if role != "super_admin" {
 		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("adminId")), "ChangeAdminAuthKey", errNoRights.Error(), 16004)
-		ctx.AbortWithStatusJSON(http.StatusForbidden, courseError.CreateError(errNoRights, 16004))
+		ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errNoRights, 16004))
 		return
 	}
 	login := ctx.Query("login")

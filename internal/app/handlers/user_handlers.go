@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	courseError "github.com/knstch/course/internal/app/course_error"
+	courseerror "github.com/knstch/course/internal/app/course_error"
 	"github.com/knstch/course/internal/domain/entity"
 )
 
@@ -16,21 +16,21 @@ import (
 // @Router /v1/profile/editProfile [patch]
 // @Tags Методы для администрирования профиля
 // @Param UserInfo body entity.UserInfo true "Данные профиля"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация или не удалось декодировать сообщение"
-// @Failure 404 {object} courseError.CourseError "Пользователь не найден"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация или не удалось декодировать сообщение"
+// @Failure 404 {object} courseerror.CourseError "Пользователь не найден"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) ManageProfile(ctx *gin.Context) {
 	userInfo := entity.NewUserInfo()
 	if err := ctx.ShouldBindJSON(&userInfo); err != nil {
 		h.logger.Error("не получилось обработать тело запроса", "ManageProfile", err.Error(), 10101)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errBrokenJSON, 10101))
 		return
 	}
 
 	userId, ok := ctx.Get("userId")
 	if !ok {
 		h.logger.Error("ошибка при получении userId", "ManageProfile", errUserIdNotFoundInCtx.Error(), 11005)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errUserIdNotFoundInCtx, 11005))
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errUserIdNotFoundInCtx, 11005))
 		return
 	}
 
@@ -60,14 +60,14 @@ func (h Handlers) ManageProfile(ctx *gin.Context) {
 // @Router /v1/profile/editPassword [patch]
 // @Tags Методы для администрирования профиля
 // @Param passwords body entity.Passwords true "Пароли"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация или не удалось декодировать сообщение"
-// @Failure 404 {object} courseError.CourseError "Пользователь не найден"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация или не удалось декодировать сообщение"
+// @Failure 404 {object} courseerror.CourseError "Пользователь не найден"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) ManagePassword(ctx *gin.Context) {
 	passwords := entity.CreateNewPasswords()
 	if err := ctx.ShouldBindJSON(&passwords); err != nil {
 		h.logger.Error("не получилось обработать тело запроса", "ManagePassword", err.Error(), 10101)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errBrokenJSON, 10101))
 		return
 	}
 
@@ -96,15 +96,15 @@ func (h Handlers) ManagePassword(ctx *gin.Context) {
 // @Router /v1/profile/editEmail [patch]
 // @Tags Методы для администрирования профиля
 // @Param email query string true "Почта"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация"
-// @Failure 404 {object} courseError.CourseError "Пользователь не найден"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация"
+// @Failure 404 {object} courseerror.CourseError "Пользователь не найден"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) ManageEmail(ctx *gin.Context) {
 	email := ctx.Query("email")
 	userId, ok := ctx.Get("userId")
 	if !ok {
 		h.logger.Error("ошибка при получении userId", "ManageEmail", errUserIdNotFoundInCtx.Error(), 11005)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errUserIdNotFoundInCtx, 11005))
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errUserIdNotFoundInCtx, 11005))
 		return
 	}
 
@@ -134,16 +134,16 @@ func (h Handlers) ManageEmail(ctx *gin.Context) {
 // @Router /v1/profile/confirmEmailChange [post]
 // @Tags Методы для администрирования профиля
 // @Param confirmCode query string true "Код подтверждения"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация"
-// @Failure 404 {object} courseError.CourseError "Пользователь не найден"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация"
+// @Failure 404 {object} courseerror.CourseError "Пользователь не найден"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) ConfirmEmailChange(ctx *gin.Context) {
 	confirmCode := ctx.Query("confirmCode")
 
 	userId, ok := ctx.Get("userId")
 	if !ok {
 		h.logger.Error("ошибка при получении userId", "ConfirmEmailChange", errUserIdNotFoundInCtx.Error(), 11005)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errUserIdNotFoundInCtx, 11005))
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errUserIdNotFoundInCtx, 11005))
 		return
 	}
 
@@ -171,16 +171,16 @@ func (h Handlers) ConfirmEmailChange(ctx *gin.Context) {
 // @Accept mpfd
 // @Produce json
 // @Success 200 {object} entity.SuccessResponse
-// @Router /v1/profile/confirmEmailChange [patch]
+// @Router /v1/profile/setPhoto [patch]
 // @Tags Методы для администрирования профиля
 // @Param photo formData file true "Фото"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация или не получилось обработать фото"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация или не получилось обработать фото"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) ChangeProfilePhoto(ctx *gin.Context) {
 	file, header, err := ctx.Request.FormFile("photo")
 	if err != nil {
 		h.logger.Error("не получилось обработать фото", "ChangeProfilePhoto", err.Error(), 400)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(err, 400))
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(err, 400))
 		return
 	}
 
@@ -204,8 +204,8 @@ func (h Handlers) ChangeProfilePhoto(ctx *gin.Context) {
 // @Success 200 {object} entity.UserData
 // @Router /v1/profile/getUser [get]
 // @Tags Методы для администрирования профиля
-// @Failure 404 {object} courseError.CourseError "Пользователь не найден"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 404 {object} courseerror.CourseError "Пользователь не найден"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) GetUser(ctx *gin.Context) {
 	user, err := h.userService.GetUserInfo(ctx)
 	if err != nil {
@@ -229,13 +229,13 @@ func (h Handlers) GetUser(ctx *gin.Context) {
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/profile/disable [post]
 // @Tags Методы для администрирования профиля
-// @Failure 400 {object} courseError.CourseError "Ошибка получения userId"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Ошибка получения userId"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) FreezeProfile(ctx *gin.Context) {
 	_, ok := ctx.Get("userId")
 	if !ok {
 		h.logger.Error("ошибка при получении userId", "FreezeProfile", errUserIdNotFoundInCtx.Error(), 11005)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errUserIdNotFoundInCtx, 11005))
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errUserIdNotFoundInCtx, 11005))
 		return
 	}
 
@@ -255,15 +255,15 @@ func (h Handlers) FreezeProfile(ctx *gin.Context) {
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/profile/watchLesson [post]
 // @Tags Методы для администрирования профиля
-// @Failure 400 {object} courseError.CourseError "Ошибка получения userId"
-// @Failure 404 {object} courseError.CourseError "Урок не найден"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Ошибка получения userId"
+// @Failure 404 {object} courseerror.CourseError "Урок не найден"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) WatchVideo(ctx *gin.Context) {
 	lessonId := ctx.Query("id")
 	_, ok := ctx.Get("userId")
 	if !ok {
 		h.logger.Error("ошибка при получении userId", "WatchVideo", errUserIdNotFoundInCtx.Error(), 11005)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errUserIdNotFoundInCtx, 11005))
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errUserIdNotFoundInCtx, 11005))
 		return
 	}
 

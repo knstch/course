@@ -15,7 +15,7 @@ import (
 
 // @title Приложение course
 // @version 1.0
-// @host http://localhost:70
+// @host localhost:70
 // @BasePath /api
 // @securitydefinitions.apikey ApiKeyAuth
 // @in cookie

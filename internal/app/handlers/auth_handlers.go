@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	courseError "github.com/knstch/course/internal/app/course_error"
+	courseerror "github.com/knstch/course/internal/app/course_error"
 	"github.com/knstch/course/internal/domain/entity"
 )
 
@@ -25,13 +25,13 @@ var (
 // @Router /v1/auth/register [post]
 // @Tags Методы для авторизации пользователей
 // @Param credentials body entity.Credentials true "учетные данные"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация, или не удалось декодировать сообщение, или почта уже занята"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация, или не удалось декодировать сообщение, или почта уже занята"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) SignUp(ctx *gin.Context) {
 	credentials := entity.NewCredentials()
 	if err := ctx.ShouldBindJSON(&credentials); err != nil {
 		h.logger.Error("не получилось обработать тело запроса", "SignUp", err.Error(), 10101)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errBrokenJSON, 10101))
 		return
 	}
 
@@ -60,15 +60,15 @@ func (h Handlers) SignUp(ctx *gin.Context) {
 // @Router /v1/auth/login [post]
 // @Tags Методы для авторизации пользователей
 // @Param credentials body entity.Credentials true "учетные данные"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация, или декодирование сообщения, или почта уже занята"
-// @Failure 404 {object} courseError.CourseError "Пользователь не найден"
-// @Failure 405 {object} courseError.CourseError "Пользователь неактивен"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация, или декодирование сообщения, или почта уже занята"
+// @Failure 404 {object} courseerror.CourseError "Пользователь не найден"
+// @Failure 405 {object} courseerror.CourseError "Пользователь неактивен"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) SignIn(ctx *gin.Context) {
 	credentials := entity.NewCredentials()
 	if err := ctx.ShouldBindJSON(&credentials); err != nil {
 		h.logger.Error("не получилось обработать тело запроса", "SignIn", err.Error(), 10101)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errBrokenJSON, 10101))
 		return
 	}
 
@@ -100,27 +100,27 @@ func (h Handlers) SignIn(ctx *gin.Context) {
 // @Router /v1/auth/email/verification [post]
 // @Tags Методы для авторизации пользователей
 // @Param confirmCode query string true "Код подтверждения"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация, или декодирование сообщения, или почта пользователя уже подтверждена"
-// @Failure 403 {object} courseError.CourseError "Код подтверждения не совпал"
-// @Failure 404 {object} courseError.CourseError "Код подтверждения не найден"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация, или декодирование сообщения, или почта пользователя уже подтверждена"
+// @Failure 403 {object} courseerror.CourseError "Код подтверждения не совпал"
+// @Failure 404 {object} courseerror.CourseError "Код подтверждения не найден"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) Verification(ctx *gin.Context) {
 	confirmCode := ctx.Query("confirmCode")
 
 	userId, ok := ctx.Get("userId")
 	if !ok {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errUserIdNotFoundInCtx, 11005))
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errUserIdNotFoundInCtx, 11005))
 		return
 	}
 
 	verified, ok := ctx.Get("verified")
 	if !ok {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errVerificationStatusNotFoundInCtx, 11005))
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errVerificationStatusNotFoundInCtx, 11005))
 		return
 	}
 
 	if verified.(bool) {
-		ctx.JSON(http.StatusBadRequest, courseError.CreateError(errUserEmailIsAlreadyVerified, 11008))
+		ctx.JSON(http.StatusBadRequest, courseerror.CreateError(errUserEmailIsAlreadyVerified, 11008))
 		return
 	}
 
@@ -133,6 +133,10 @@ func (h Handlers) Verification(ctx *gin.Context) {
 		}
 		if err.Code == 11004 {
 			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
+			return
+		}
+		if err.Code == 400 {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
 			return
 		}
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
@@ -152,17 +156,17 @@ func (h Handlers) Verification(ctx *gin.Context) {
 // @Router /v1/auth/email/newConfirmKey [get]
 // @Tags Методы для авторизации пользователей
 // @Param email query string true "почта для отправки кода подтверждения"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация или почта пользователя уже подтверждена"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация или почта пользователя уже подтверждена"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) SendNewCode(ctx *gin.Context) {
 	verified, ok := ctx.Get("verified")
 	if !ok {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errVerificationStatusNotFoundInCtx, 11005))
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errVerificationStatusNotFoundInCtx, 11005))
 		return
 	}
 
 	if verified.(bool) {
-		ctx.JSON(http.StatusBadRequest, courseError.CreateError(errUserEmailIsAlreadyVerified, 11008))
+		ctx.JSON(http.StatusBadRequest, courseerror.CreateError(errUserEmailIsAlreadyVerified, 11008))
 		return
 	}
 
@@ -189,8 +193,8 @@ func (h Handlers) SendNewCode(ctx *gin.Context) {
 // @Router /v1/auth/sendRecoveryCode [get]
 // @Tags Методы для авторизации пользователей
 // @Param email query string true "почта для восстановления пароля"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) SendRecoverPasswordCode(ctx *gin.Context) {
 	email := ctx.Query("email")
 	if err := h.authService.SendPasswordRecoverRequest(ctx, email); err != nil {
@@ -215,14 +219,14 @@ func (h Handlers) SendRecoverPasswordCode(ctx *gin.Context) {
 // @Router /v1/auth/recoverPassword [post]
 // @Tags Методы для авторизации пользователей
 // @Param recoverCredentials body entity.PasswordRecoverCredentials true "почта, новый пароль и код"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация или код подтверждения неверный"
-// @Failure 404 {object} courseError.CourseError "Код не найден"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация или код подтверждения неверный"
+// @Failure 404 {object} courseerror.CourseError "Код не найден"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) SetNewPassword(ctx *gin.Context) {
 	recoverCredentials := entity.NewPasswordRecoverCredentials()
 	if err := ctx.ShouldBindJSON(&recoverCredentials); err != nil {
 		h.logger.Error("не получилось обработать тело запроса", "SendRecoverPasswordCode", err.Error(), 10101)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errBrokenJSON, 10101))
 		return
 	}
 
@@ -250,7 +254,7 @@ func (h Handlers) WithCookieAuth() gin.HandlerFunc {
 		cookie, err := ctx.Request.Cookie("auth")
 		if err != nil {
 			h.logger.Error(fmt.Sprintf("отсутствуют куки, вызов с IP: %v", ctx.ClientIP()), "WithCookieAuth", err.Error(), 11009)
-			ctx.AbortWithStatusJSON(http.StatusForbidden, courseError.CreateError(errUserNotAuthentificated, 11009))
+			ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errUserNotAuthentificated, 11009))
 			return
 		}
 

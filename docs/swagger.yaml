@@ -1,0 +1,2274 @@
+basePath: /api
+definitions:
+  courseerror.CourseError:
+    properties:
+      code:
+        type: integer
+      error:
+        type: string
+    type: object
+  entity.Admin:
+    properties:
+      2 steps auth enabled:
+        type: boolean
+      id:
+        type: integer
+      key:
+        type: string
+      login:
+        type: string
+      role:
+        type: string
+    type: object
+  entity.AdminCredentials:
+    properties:
+      code:
+        type: string
+      login:
+        type: string
+      password:
+        type: string
+      role:
+        type: string
+    type: object
+  entity.AdminsInfoWithPagination:
+    properties:
+      adminInfo:
+        items:
+          $ref: '#/definitions/entity.Admin'
+        type: array
+      pagination:
+        $ref: '#/definitions/entity.Pagination'
+    type: object
+  entity.BillingHost:
+    properties:
+      url:
+        type: string
+    type: object
+  entity.BuyDetails:
+    properties:
+      courseId:
+        type: integer
+      isRusCard:
+        type: boolean
+    type: object
+  entity.CourseInfo:
+    properties:
+      cost:
+        type: integer
+      description:
+        type: string
+      discount:
+        type: integer
+      id:
+        type: integer
+      modules:
+        items:
+          $ref: '#/definitions/entity.ModuleInfo'
+        type: array
+      name:
+        type: string
+      preview:
+        type: string
+    type: object
+  entity.CourseInfoWithPagination:
+    properties:
+      courses:
+        items:
+          $ref: '#/definitions/entity.CourseInfo'
+        type: array
+      pagination:
+        $ref: '#/definitions/entity.Pagination'
+    type: object
+  entity.Credentials:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  entity.Id:
+    properties:
+      id:
+        type: integer
+    type: object
+  entity.LessonInfo:
+    properties:
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      position:
+        type: integer
+      preview:
+        type: string
+      video:
+        type: string
+      watched:
+        type: boolean
+    type: object
+  entity.Module:
+    properties:
+      courseName:
+        type: string
+      description:
+        type: string
+      moduleId:
+        type: integer
+      name:
+        type: string
+      position:
+        type: integer
+    type: object
+  entity.ModuleInfo:
+    properties:
+      description:
+        type: string
+      id:
+        type: integer
+      lessons:
+        items:
+          $ref: '#/definitions/entity.LessonInfo'
+        type: array
+      name:
+        type: string
+      position:
+        type: integer
+    type: object
+  entity.ModuleInfoWithPagination:
+    properties:
+      modulesInfo:
+        items:
+          $ref: '#/definitions/entity.ModuleInfo'
+        type: array
+      pagination:
+        $ref: '#/definitions/entity.Pagination'
+    type: object
+  entity.Pagination:
+    properties:
+      limit:
+        type: integer
+      page:
+        type: integer
+      pagesCount:
+        type: integer
+      totalCount:
+        type: integer
+    type: object
+  entity.PasswordRecoverCredentials:
+    properties:
+      code:
+        type: integer
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  entity.Passwords:
+    properties:
+      newPassword:
+        type: string
+      oldPassword:
+        type: string
+    type: object
+  entity.PaymentStats:
+    properties:
+      date:
+        type: string
+      totalPaid:
+        type: integer
+      totalPurchased:
+        type: integer
+    type: object
+  entity.SuccessResponse:
+    properties:
+      message:
+        type: string
+      success:
+        type: boolean
+    type: object
+  entity.UserBilling:
+    properties:
+      id:
+        type: integer
+      invoice:
+        type: integer
+      order:
+        type: string
+      paid:
+        type: number
+      paidStatus:
+        type: boolean
+      paymentMethod:
+        type: string
+      timestamp:
+        type: string
+    type: object
+  entity.UserCourses:
+    properties:
+      billingInfo:
+        items:
+          $ref: '#/definitions/entity.UserBilling'
+        type: array
+      id:
+        type: integer
+      name:
+        type: string
+      previewUrl:
+        type: string
+    type: object
+  entity.UserData:
+    properties:
+      courses:
+        items:
+          $ref: '#/definitions/entity.UserCourses'
+        type: array
+      email:
+        type: string
+      firstName:
+        type: string
+      isEmailVerified:
+        type: boolean
+      phoneNumber:
+        type: integer
+      photo:
+        type: string
+      surname:
+        type: string
+    type: object
+  entity.UserDataAdmin:
+    properties:
+      active:
+        type: boolean
+      banned:
+        type: boolean
+      courses:
+        items:
+          $ref: '#/definitions/entity.UserCourses'
+        type: array
+      email:
+        type: string
+      firstName:
+        type: string
+      id:
+        type: integer
+      isVerified:
+        type: boolean
+      phoneNumber:
+        type: integer
+      photoPath:
+        type: string
+      surname:
+        type: string
+    type: object
+  entity.UserDataWithPagination:
+    properties:
+      pagination:
+        $ref: '#/definitions/entity.Pagination'
+      users:
+        items:
+          $ref: '#/definitions/entity.UserDataAdmin'
+        type: array
+    type: object
+  entity.UserInfo:
+    properties:
+      firstName:
+        type: string
+      phoneNumber:
+        type: string
+      surname:
+        type: string
+    type: object
+  entity.UsersStats:
+    properties:
+      date:
+        type: string
+      registredUsers:
+        type: integer
+    type: object
+host: localhost:70
+info:
+  contact: {}
+  title: Приложение course
+  version: "1.0"
+paths:
+  /v1/admin/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: логин, пароль, код подтверждения
+        in: body
+        name: adminData
+        required: true
+        schema:
+          $ref: '#/definitions/entity.AdminCredentials'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.SuccessResponse'
+        "400":
+          description: Провалена валидация или декодирование сообщения
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "403":
+          description: Неправильный логин, пароль или код
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "404":
+          description: Администратор не найден
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Залогиниться администратору
+      tags:
+      - Методы для администрирования
+  /v1/admin/management/ban:
+    post:
+      parameters:
+      - description: ID
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.SuccessResponse'
+        "400":
+          description: Провалена валидация
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Разблокировать пользователя
+      tags:
+      - Методы для администрирования
+  /v1/admin/management/changeRole:
+    patch:
+      parameters:
+      - description: логин
+        in: query
+        name: login
+        required: true
+        type: string
+      - description: роль
+        in: query
+        name: role
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.SuccessResponse'
+        "400":
+          description: Провалена валидация
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "403":
+          description: Не хватает прав
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "404":
+          description: Администратор не найден
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Изменить роль администратора
+      tags:
+      - Методы для администрирования
+  /v1/admin/management/courses:
+    get:
+      parameters:
+      - description: Используется для полного доступа к контенту, при передаче ID
+          все остальные параметры игнорируются и происходит проверка на наличие доступа
+          к контену
+        in: query
+        name: id
+        type: string
+      - description: Название курса
+        in: query
+        name: name
+        type: string
+      - description: Описание курса
+        in: query
+        name: description
+        type: string
+      - description: Стоимость курса
+        in: query
+        name: cost
+        type: integer
+      - description: Размер скидки
+        in: query
+        name: discount
+        type: integer
+      - description: Страница
+        in: query
+        name: page
+        required: true
+        type: string
+      - description: Лимит
+        in: query
+        name: limit
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.CourseInfoWithPagination'
+        "400":
+          description: Провалена валидация
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "403":
+          description: Нет доступа к расширенному контенту
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Найти курсы по фильтрам
+      tags:
+      - Методы взаимодействия с контентом
+  /v1/admin/management/deleteProfilePhoto:
+    delete:
+      parameters:
+      - description: ID
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.SuccessResponse'
+        "400":
+          description: Провалена валидация
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Удалить фото пользователя
+      tags:
+      - Методы для администрирования
+  /v1/admin/management/editUserProfile:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Новые данные
+        in: body
+        name: userInfo
+        required: true
+        schema:
+          $ref: '#/definitions/entity.UserInfo'
+      - description: ID пользователя
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.SuccessResponse'
+        "400":
+          description: Провалена валидация или не удалось декодировать сообщение
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Изменить профиль пользовтаеля
+      tags:
+      - Методы для администрирования
+  /v1/admin/management/getAdmins:
+    get:
+      parameters:
+      - description: логин
+        in: query
+        name: login
+        type: string
+      - description: роль
+        in: query
+        name: role
+        type: string
+      - description: подключенная двойная авторизация
+        in: query
+        name: twoStepsAuth
+        type: string
+      - description: страница
+        in: query
+        name: page
+        required: true
+        type: string
+      - description: лимит
+        in: query
+        name: limit
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.AdminsInfoWithPagination'
+        "400":
+          description: Провалена валидация
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "403":
+          description: Нет прав
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Найти администраторов по фильтрам
+      tags:
+      - Методы для администрирования
+  /v1/admin/management/lessons:
+    get:
+      parameters:
+      - description: название урока
+        in: query
+        name: name
+        type: string
+      - description: описание урока
+        in: query
+        name: description
+        type: string
+      - description: название курса
+        in: query
+        name: courseName
+        type: string
+      - description: название модуля
+        in: query
+        name: moduleName
+        type: string
+      - description: страница
+        in: query
+        name: page
+        required: true
+        type: string
+      - description: лимит
+        in: query
+        name: limit
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.ModuleInfoWithPagination'
+        "400":
+          description: Провалена валидация
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Найти уроки по фильтрам
+      tags:
+      - Методы взаимодействия с контентом
+  /v1/admin/management/modules:
+    get:
+      parameters:
+      - description: название модуля
+        in: query
+        name: name
+        type: string
+      - description: описание модуля
+        in: query
+        name: description
+        type: string
+      - description: название курса
+        in: query
+        name: courseName
+        type: string
+      - description: страница
+        in: query
+        name: page
+        required: true
+        type: string
+      - description: лимит
+        in: query
+        name: limit
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.ModuleInfoWithPagination'
+        "400":
+          description: Провалена валидация
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Найти модули по фильтрам
+      tags:
+      - Методы взаимодействия с контентом
+  /v1/admin/management/paymentStats:
+    get:
+      parameters:
+      - description: приод от
+        in: query
+        name: from
+        required: true
+        type: string
+      - description: период до
+        in: query
+        name: due
+        type: string
+      - description: название курса
+        in: query
+        name: courseName
+        type: string
+      - description: способ платежа
+        in: query
+        name: paymentMethod
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entity.PaymentStats'
+            type: array
+        "400":
+          description: Провалена валидация
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "403":
+          description: Нет прав
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Получить данные с платежами по дням
+      tags:
+      - Методы для администрирования
+  /v1/admin/management/register:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: логин, пароль
+        in: body
+        name: adminData
+        required: true
+        schema:
+          $ref: '#/definitions/entity.AdminCredentials'
+      responses:
+        "200":
+          description: image/png
+          schema:
+            type: string
+        "400":
+          description: Провалена валидация или декодирование сообщения
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "403":
+          description: Нет прав
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "409":
+          description: Невозможно создать админа
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Создать профиль нового администратора
+      tags:
+      - Методы для администрирования
+  /v1/admin/management/removeAdmin:
+    delete:
+      parameters:
+      - description: логин
+        in: query
+        name: login
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.SuccessResponse'
+        "400":
+          description: Провалена валидация
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "403":
+          description: Нет прав
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "404":
+          description: Админ не найден
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Удалить админа
+      tags:
+      - Методы для администрирования
+  /v1/admin/management/resetKey:
+    patch:
+      parameters:
+      - description: логин
+        in: query
+        name: login
+        required: true
+        type: string
+      responses:
+        "200":
+          description: image/png
+          schema:
+            type: string
+        "400":
+          description: Провалена валидация или не получилось декодировать сообщение
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "404":
+          description: Администратор не найден
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Изменить ключ администратора
+      tags:
+      - Методы для администрирования
+  /v1/admin/management/resetPassword:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: логин, пароль
+        in: body
+        name: adminData
+        required: true
+        schema:
+          $ref: '#/definitions/entity.AdminCredentials'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.SuccessResponse'
+        "400":
+          description: Провалена валидация или декодирование сообщения
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "403":
+          description: Неправильный логин, пароль или код
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "404":
+          description: Администратор не найден
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Изменить пароль администратора
+      tags:
+      - Методы для администрирования
+  /v1/admin/management/user:
+    get:
+      parameters:
+      - description: ID
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.UserDataAdmin'
+        "400":
+          description: Провалена валидация
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Получить пользователя по ID
+      tags:
+      - Методы для администрирования
+  /v1/admin/management/users:
+    get:
+      parameters:
+      - description: имя
+        in: query
+        name: firstName
+        type: string
+      - description: фамилия
+        in: query
+        name: surname
+        type: string
+      - description: номер телефона
+        in: query
+        name: phoneNumber
+        type: string
+      - description: почта
+        in: query
+        name: email
+        type: string
+      - description: активный аккаунт
+        in: query
+        name: active
+        type: string
+      - description: верифицированный аккаунт
+        in: query
+        name: verified
+        type: string
+      - description: название курса
+        in: query
+        name: courseName
+        type: string
+      - description: статус бана
+        in: query
+        name: banned
+        type: string
+      - description: страница
+        in: query
+        name: page
+        required: true
+        type: string
+      - description: лимит
+        in: query
+        name: limit
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.UserDataWithPagination'
+        "400":
+          description: Провалена валидация
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Найти пользователей по фильтрам
+      tags:
+      - Методы для администрирования
+  /v1/admin/management/usersStats:
+    get:
+      parameters:
+      - description: приод от
+        in: query
+        name: from
+        required: true
+        type: string
+      - description: период до
+        in: query
+        name: due
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entity.UsersStats'
+            type: array
+        "400":
+          description: Провалена валидация
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "403":
+          description: Нет прав
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Получить данные с юзерами по дням
+      tags:
+      - Методы для администрирования
+  /v1/admin/verify:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: логин, пароль, код подтверждения
+        in: body
+        name: adminData
+        required: true
+        schema:
+          $ref: '#/definitions/entity.AdminCredentials'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.SuccessResponse'
+        "400":
+          description: Провалена валидация или декодирование сообщения
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "403":
+          description: Неверный код или пара логин-пароль
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "404":
+          description: Код не найден
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Верифицировать аутентификатор
+      tags:
+      - Методы для администрирования
+  /v1/auth/email/newConfirmKey:
+    get:
+      parameters:
+      - description: почта для отправки кода подтверждения
+        in: query
+        name: email
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.SuccessResponse'
+        "400":
+          description: Провалена валидация или почта пользователя уже подтверждена
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Отправить новый код подтверждения
+      tags:
+      - Методы для авторизации пользователей
+  /v1/auth/email/verification:
+    post:
+      parameters:
+      - description: Код подтверждения
+        in: query
+        name: confirmCode
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.SuccessResponse'
+        "400":
+          description: Провалена валидация, или декодирование сообщения, или почта
+            пользователя уже подтверждена
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "403":
+          description: Код подтверждения не совпал
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "404":
+          description: Код подтверждения не найден
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Подтвердить почту пользователя
+      tags:
+      - Методы для авторизации пользователей
+  /v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: учетные данные
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/entity.Credentials'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.SuccessResponse'
+        "400":
+          description: Провалена валидация, или декодирование сообщения, или почта
+            уже занята
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "405":
+          description: Пользователь неактивен
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Залогиниться пользователю
+      tags:
+      - Методы для авторизации пользователей
+  /v1/auth/recoverPassword:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: почта, новый пароль и код
+        in: body
+        name: recoverCredentials
+        required: true
+        schema:
+          $ref: '#/definitions/entity.PasswordRecoverCredentials'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.SuccessResponse'
+        "400":
+          description: Провалена валидация или код подтверждения неверный
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "404":
+          description: Код не найден
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Установить новый пароль
+      tags:
+      - Методы для авторизации пользователей
+  /v1/auth/register:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: учетные данные
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/entity.Credentials'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.SuccessResponse'
+        "400":
+          description: Провалена валидация, или не удалось декодировать сообщение,
+            или почта уже занята
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Зарегестрироваться пользователю
+      tags:
+      - Методы для авторизации пользователей
+  /v1/auth/sendRecoveryCode:
+    get:
+      parameters:
+      - description: почта для восстановления пароля
+        in: query
+        name: email
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.SuccessResponse'
+        "400":
+          description: Провалена валидация
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Отправить код для восстановления пароля
+      tags:
+      - Методы для авторизации пользователей
+  /v1/billing/buyCourse:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID курса и способ платежа
+        in: body
+        name: orderDetails
+        required: true
+        schema:
+          $ref: '#/definitions/entity.BuyDetails'
+      responses:
+        "307":
+          description: Temporary Redirect
+        "400":
+          description: Провалена валидация или декодирование сообщения
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "409":
+          description: Курс уже куплен
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Купить курс
+      tags:
+      - Методы биллинга
+  /v1/billing/failPayment/{userData}:
+    get:
+      parameters:
+      - description: захешированные данные пользователя
+        in: path
+        name: userData
+        required: true
+        type: string
+      responses:
+        "307":
+          description: Temporary Redirect
+        "404":
+          description: Заказ не найден
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Оплата курса провалена
+      tags:
+      - Методы биллинга
+  /v1/billing/management/createCourse:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Название курса
+        in: formData
+        name: name
+        required: true
+        type: string
+      - description: Описание курса
+        in: formData
+        name: description
+        required: true
+        type: string
+      - description: Стоимость курса
+        in: formData
+        name: cost
+        required: true
+        type: integer
+      - description: Скидка
+        in: formData
+        name: discount
+        type: integer
+      - description: Превью
+        in: formData
+        name: preview
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Id'
+        "400":
+          description: Провалена валидация или неверно передано превью фото
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "403":
+          description: Ошибка авторизации в CDN
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "409":
+          description: Курс с таким названием уже существует
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "503":
+          description: CDN недоступен
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Создать курс
+      tags:
+      - Методы взаимодействия с контентом
+  /v1/billing/management/createModule:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: данные модуля
+        in: body
+        name: module
+        required: true
+        schema:
+          $ref: '#/definitions/entity.Module'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Id'
+        "400":
+          description: Провалена валидация или декодирование сообщения
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "409":
+          description: Модуль с таким названием или позицией уже существует
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Создать модуль
+      tags:
+      - Методы взаимодействия с контентом
+  /v1/billing/management/deleteLesson{id}:
+    delete:
+      parameters:
+      - description: ID урока
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.SuccessResponse'
+        "400":
+          description: Провалена валидация
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "404":
+          description: Модуль не найден
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Удалить урок
+      tags:
+      - Методы взаимодействия с контентом
+  /v1/billing/management/deleteModule/{id}:
+    delete:
+      parameters:
+      - description: ID модуля
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.SuccessResponse'
+        "400":
+          description: Провалена валидация
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "404":
+          description: Модуль не найден
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Удалить модуль
+      tags:
+      - Методы взаимодействия с контентом
+  /v1/billing/management/editCourse:
+    patch:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Название курса
+        in: formData
+        name: name
+        required: true
+        type: string
+      - description: Описание курса
+        in: formData
+        name: description
+        required: true
+        type: string
+      - description: Стоимость курса
+        in: formData
+        name: cost
+        required: true
+        type: integer
+      - description: Скидка
+        in: formData
+        name: discount
+        type: integer
+      - description: Превью
+        in: formData
+        name: preview
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.SuccessResponse'
+        "400":
+          description: Провалена валидация или неверно передано превью фото
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "403":
+          description: Ошибка авторизации в CDN
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "404":
+          description: Курс не найден
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "409":
+          description: Курс с таким названием уже существует
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "503":
+          description: CDN недоступен
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Обновить курс
+      tags:
+      - Методы взаимодействия с контентом
+  /v1/billing/management/editLesson:
+    patch:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Название урока
+        in: formData
+        name: name
+        required: true
+        type: string
+      - description: Название урока
+        in: formData
+        name: moduleName
+        required: true
+        type: string
+      - description: Описание урока
+        in: formData
+        name: description
+        required: true
+        type: string
+      - description: Позиция урока
+        in: formData
+        name: position
+        required: true
+        type: integer
+      - description: Название курса
+        in: formData
+        name: courseName
+        required: true
+        type: string
+      - description: Превью
+        in: formData
+        name: preview
+        required: true
+        type: file
+      - description: Урок
+        in: formData
+        name: lesson
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.SuccessResponse'
+        "400":
+          description: Провалена валидация или неверно передано превью фото или урок
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "403":
+          description: Ошибка авторизации в CDN
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "404":
+          description: Урок не найден
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "409":
+          description: Урок с таким названием или позицией уже существует
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "503":
+          description: CDN недоступен
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Обновить урок
+      tags:
+      - Методы взаимодействия с контентом
+  /v1/billing/management/editModule:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: данные модуля
+        in: body
+        name: module
+        required: true
+        schema:
+          $ref: '#/definitions/entity.Module'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.SuccessResponse'
+        "400":
+          description: Провалена валидация или декодирование сообщения
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "404":
+          description: Модуль не найден
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "409":
+          description: Модуль с таким названием или позицией уже существует
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Обновить модуль
+      tags:
+      - Методы взаимодействия с контентом
+  /v1/billing/management/editVisibility:
+    patch:
+      parameters:
+      - description: Изменить видимость
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.SuccessResponse'
+        "400":
+          description: Провалена валидация
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "404":
+          description: Курс не найден
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Изменить видимость курса
+      tags:
+      - Методы взаимодействия с контентом
+  /v1/billing/management/manageBillingHost:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Новый URL биллинг хоста
+        in: body
+        name: billingHost
+        required: true
+        schema:
+          $ref: '#/definitions/entity.BillingHost'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.SuccessResponse'
+        "400":
+          description: Провалена валидация или декодирование сообщения
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Изменить billing host
+      tags:
+      - Методы биллинга
+  /v1/billing/management/manageBillingToken:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: токен
+        in: query
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.SuccessResponse'
+        "400":
+          description: Провалена валидация
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Изменить токен биллинга
+      tags:
+      - Методы биллинга
+  /v1/billing/management/uploadLesson:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Название урока
+        in: formData
+        name: name
+        required: true
+        type: string
+      - description: Название урока
+        in: formData
+        name: moduleName
+        required: true
+        type: string
+      - description: Описание урока
+        in: formData
+        name: description
+        required: true
+        type: string
+      - description: Позиция урока
+        in: formData
+        name: position
+        required: true
+        type: integer
+      - description: Название курса
+        in: formData
+        name: courseName
+        required: true
+        type: string
+      - description: Превью
+        in: formData
+        name: preview
+        required: true
+        type: file
+      - description: Урок
+        in: formData
+        name: lesson
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Id'
+        "400":
+          description: Провалена валидация или неверно передано превью фото или урок
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "403":
+          description: Ошибка авторизации в CDN
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "409":
+          description: Урок с таким названием или позицией уже существует
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "503":
+          description: CDN недоступен
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Создать урок
+      tags:
+      - Методы взаимодействия с контентом
+  /v1/billing/successPayment/{userData}:
+    get:
+      parameters:
+      - description: захешированные данные пользователя
+        in: path
+        name: userData
+        required: true
+        type: string
+      responses:
+        "307":
+          description: Temporary Redirect
+        "400":
+          description: Инвойс ID не совпадает с хэшем из path
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "404":
+          description: Заказ не найден
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Оплата курса подтверждена
+      tags:
+      - Методы биллинга
+  /v1/content/courses:
+    get:
+      parameters:
+      - description: Используется для полного доступа к контенту, при передаче ID
+          все остальные параметры игнорируются и происходит проверка на наличие доступа
+          к контену
+        in: query
+        name: id
+        type: string
+      - description: Название курса
+        in: query
+        name: name
+        type: string
+      - description: Описание курса
+        in: query
+        name: description
+        type: string
+      - description: Стоимость курса
+        in: query
+        name: cost
+        type: integer
+      - description: Размер скидки
+        in: query
+        name: discount
+        type: integer
+      - description: Страница
+        in: query
+        name: page
+        required: true
+        type: string
+      - description: Лимит
+        in: query
+        name: limit
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.CourseInfoWithPagination'
+        "400":
+          description: Провалена валидация
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "403":
+          description: Нет доступа к расширенному контенту
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Найти курсы по фильтрам
+      tags:
+      - Методы взаимодействия с контентом
+  /v1/content/lessons:
+    get:
+      parameters:
+      - description: название урока
+        in: query
+        name: name
+        type: string
+      - description: описание урока
+        in: query
+        name: description
+        type: string
+      - description: название курса
+        in: query
+        name: courseName
+        type: string
+      - description: название модуля
+        in: query
+        name: moduleName
+        type: string
+      - description: страница
+        in: query
+        name: page
+        required: true
+        type: string
+      - description: лимит
+        in: query
+        name: limit
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.ModuleInfoWithPagination'
+        "400":
+          description: Провалена валидация
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Найти уроки по фильтрам
+      tags:
+      - Методы взаимодействия с контентом
+  /v1/content/modules:
+    get:
+      parameters:
+      - description: название модуля
+        in: query
+        name: name
+        type: string
+      - description: описание модуля
+        in: query
+        name: description
+        type: string
+      - description: название курса
+        in: query
+        name: courseName
+        type: string
+      - description: страница
+        in: query
+        name: page
+        required: true
+        type: string
+      - description: лимит
+        in: query
+        name: limit
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.ModuleInfoWithPagination'
+        "400":
+          description: Провалена валидация
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Найти модули по фильтрам
+      tags:
+      - Методы взаимодействия с контентом
+  /v1/profile/confirmEmailChange:
+    post:
+      parameters:
+      - description: Код подтверждения
+        in: query
+        name: confirmCode
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.SuccessResponse'
+        "400":
+          description: Провалена валидация
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Подтвердить изменении почты пользователя
+      tags:
+      - Методы для администрирования профиля
+  /v1/profile/disable:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.SuccessResponse'
+        "400":
+          description: Ошибка получения userId
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Заморозить профиль
+      tags:
+      - Методы для администрирования профиля
+  /v1/profile/editEmail:
+    patch:
+      parameters:
+      - description: Почта
+        in: query
+        name: email
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.SuccessResponse'
+        "400":
+          description: Провалена валидация
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Изменить почту пользователя
+      tags:
+      - Методы для администрирования профиля
+  /v1/profile/editPassword:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Пароли
+        in: body
+        name: passwords
+        required: true
+        schema:
+          $ref: '#/definitions/entity.Passwords'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.SuccessResponse'
+        "400":
+          description: Провалена валидация или не удалось декодировать сообщение
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Изменить пароль пользователя
+      tags:
+      - Методы для администрирования профиля
+  /v1/profile/editProfile:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Данные профиля
+        in: body
+        name: UserInfo
+        required: true
+        schema:
+          $ref: '#/definitions/entity.UserInfo'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.SuccessResponse'
+        "400":
+          description: Провалена валидация или не удалось декодировать сообщение
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Изменить профиль пользователя
+      tags:
+      - Методы для администрирования профиля
+  /v1/profile/getCourses:
+    get:
+      parameters:
+      - description: Используется для полного доступа к контенту, при передаче ID
+          все остальные параметры игнорируются и происходит проверка на наличие доступа
+          к контену
+        in: query
+        name: id
+        type: string
+      - description: Название курса
+        in: query
+        name: name
+        type: string
+      - description: Описание курса
+        in: query
+        name: description
+        type: string
+      - description: Стоимость курса
+        in: query
+        name: cost
+        type: integer
+      - description: Размер скидки
+        in: query
+        name: discount
+        type: integer
+      - description: Страница
+        in: query
+        name: page
+        required: true
+        type: string
+      - description: Лимит
+        in: query
+        name: limit
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.CourseInfoWithPagination'
+        "400":
+          description: Провалена валидация
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "403":
+          description: Нет доступа к расширенному контенту
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Найти курсы по фильтрам
+      tags:
+      - Методы взаимодействия с контентом
+  /v1/profile/getUser:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.UserData'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Получить данные профиля
+      tags:
+      - Методы для администрирования профиля
+  /v1/profile/lessons:
+    get:
+      parameters:
+      - description: название урока
+        in: query
+        name: name
+        type: string
+      - description: описание урока
+        in: query
+        name: description
+        type: string
+      - description: название курса
+        in: query
+        name: courseName
+        type: string
+      - description: название модуля
+        in: query
+        name: moduleName
+        type: string
+      - description: страница
+        in: query
+        name: page
+        required: true
+        type: string
+      - description: лимит
+        in: query
+        name: limit
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.ModuleInfoWithPagination'
+        "400":
+          description: Провалена валидация
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Найти уроки по фильтрам
+      tags:
+      - Методы взаимодействия с контентом
+  /v1/profile/modules:
+    get:
+      parameters:
+      - description: название модуля
+        in: query
+        name: name
+        type: string
+      - description: описание модуля
+        in: query
+        name: description
+        type: string
+      - description: название курса
+        in: query
+        name: courseName
+        type: string
+      - description: страница
+        in: query
+        name: page
+        required: true
+        type: string
+      - description: лимит
+        in: query
+        name: limit
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.ModuleInfoWithPagination'
+        "400":
+          description: Провалена валидация
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Найти модули по фильтрам
+      tags:
+      - Методы взаимодействия с контентом
+  /v1/profile/setPhoto:
+    patch:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Фото
+        in: formData
+        name: photo
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.SuccessResponse'
+        "400":
+          description: Провалена валидация или не получилось обработать фото
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Изменить фото профиля
+      tags:
+      - Методы для администрирования профиля
+  /v1/profile/watchLesson:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.SuccessResponse'
+        "400":
+          description: Ошибка получения userId
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "404":
+          description: Урок не найден
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+        "500":
+          description: Возникла внутренняя ошибка
+          schema:
+            $ref: '#/definitions/courseerror.CourseError'
+      summary: Пометить урок как пройденный
+      tags:
+      - Методы для администрирования профиля
+securityDefinitions:
+  AdminApiKeyAuth:
+    in: cookie
+    name: admin_auth
+    type: apiKey
+  ApiKeyAuth:
+    in: cookie
+    name: auth
+    type: apiKey
+swagger: "2.0"

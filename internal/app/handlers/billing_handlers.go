@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	courseError "github.com/knstch/course/internal/app/course_error"
+	courseerror "github.com/knstch/course/internal/app/course_error"
 	"github.com/knstch/course/internal/domain/entity"
 )
 
@@ -20,20 +20,20 @@ var (
 // @Router /v1/billing/buyCourse [post]
 // @Tags Методы биллинга
 // @Param orderDetails body entity.BuyDetails true "ID курса и способ платежа"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация или декодирование сообщения"
-// @Failure 409 {object} courseError.CourseError "Курс уже куплен"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация или декодирование сообщения"
+// @Failure 409 {object} courseerror.CourseError "Курс уже куплен"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) BuyCourse(ctx *gin.Context) {
 	verifiedStatus := ctx.GetBool("verified")
 	if !verifiedStatus {
 		h.logger.Error(fmt.Sprintf("пользователь не верифицирован, ID: %d", ctx.Value("userId").(uint)), "BuyCourse", errNotVerified.Error(), 11008)
-		ctx.AbortWithStatusJSON(http.StatusForbidden, courseError.CreateError(errNotVerified, 11008))
+		ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errNotVerified, 11008))
 	}
 
 	buyDetails := entity.CreateNewBuyDetails()
 	if err := ctx.ShouldBindJSON(&buyDetails); err != nil {
 		h.logger.Error("не получилось обработать тело запроса", "BuyCourse", err.Error(), 10101)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errBrokenJSON, 10101))
 		return
 	}
 
@@ -62,9 +62,9 @@ func (h Handlers) BuyCourse(ctx *gin.Context) {
 // @Router /v1/billing/successPayment/{userData} [get]
 // @Tags Методы биллинга
 // @Param userData path string true "захешированные данные пользователя"
-// @Failure 400 {object} courseError.CourseError "Инвойс ID не совпадает с хэшем из path"
-// @Failure 404 {object} courseError.CourseError "Заказ не найден"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Инвойс ID не совпадает с хэшем из path"
+// @Failure 404 {object} courseerror.CourseError "Заказ не найден"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) CompletePurchase(ctx *gin.Context) {
 	userData := ctx.Param("userData")
 	courseName, err := h.sberBillingService.ConfirmPayment(ctx, userData)
@@ -92,8 +92,8 @@ func (h Handlers) CompletePurchase(ctx *gin.Context) {
 // @Router /v1/billing/failPayment/{userData} [get]
 // @Tags Методы биллинга
 // @Param userData path string true "захешированные данные пользователя"
-// @Failure 404 {object} courseError.CourseError "Заказ не найден"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 404 {object} courseerror.CourseError "Заказ не найден"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) DeclineOrder(ctx *gin.Context) {
 	userData := ctx.Param("userData")
 	if err := h.sberBillingService.FailPayment(ctx, userData); err != nil {
@@ -118,20 +118,20 @@ func (h Handlers) DeclineOrder(ctx *gin.Context) {
 // @Router /v1/billing/management/manageBillingHost [patch]
 // @Tags Методы биллинга
 // @Param billingHost body entity.BillingHost true "Новый URL биллинг хоста"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация или декодирование сообщения"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация или декодирование сообщения"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) ManageBillingHost(ctx *gin.Context) {
 	role := ctx.Value("role").(string)
 	if role != "super_admin" {
 		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("adminId")), "ManageBillingHost", errNoRights.Error(), 16004)
-		ctx.AbortWithStatusJSON(http.StatusForbidden, courseError.CreateError(errNoRights, 16004))
+		ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errNoRights, 16004))
 		return
 	}
 
 	host := entity.CreateBillingHost()
 	if err := ctx.ShouldBindJSON(&host); err != nil {
 		h.logger.Error("не получилось обработать тело запроса", "ManageBillingHost", err.Error(), 10101)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errBrokenJSON, 10101))
 		return
 	}
 
@@ -157,13 +157,13 @@ func (h Handlers) ManageBillingHost(ctx *gin.Context) {
 // @Router /v1/billing/management/manageBillingToken [patch]
 // @Tags Методы биллинга
 // @Param token query string true "токен"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) ManageAccessToken(ctx *gin.Context) {
 	role := ctx.Value("role").(string)
 	if role != "super_admin" {
 		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("adminId")), "ManageAccessToken", errNoRights.Error(), 16004)
-		ctx.AbortWithStatusJSON(http.StatusForbidden, courseError.CreateError(errNoRights, 16004))
+		ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errNoRights, 16004))
 		return
 	}
 

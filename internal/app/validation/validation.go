@@ -305,7 +305,7 @@ func (code *ConfirmCodeToValidate) Validate(ctx context.Context) *courseerror.Co
 	code.Code = convertedCode
 
 	if err := validation.ValidateStructWithContext(ctx, code,
-		validation.Field(&code.code,
+		validation.Field(&code.Code,
 			validation.Min(1000).Error(errBadConfirmCode),
 			validation.Max(9999).Error(errBadConfirmCode),
 		),

@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/knstch/course/internal/app/course_error"
 )
 
 // @Summary Найти курсы по фильтрам
@@ -21,9 +22,9 @@ import (
 // @Param discount query int false "Размер скидки"
 // @Param page query string true "Страница"
 // @Param limit query string true "Лимит"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация"
-// @Failure 403 {object} courseError.CourseError "Нет доступа к расширенному контенту"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация"
+// @Failure 403 {object} courseerror.CourseError "Нет доступа к расширенному контенту"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) RetreiveCourses(ctx *gin.Context) {
 	id := ctx.Query("id")
 	name := ctx.Query("name")
@@ -87,8 +88,8 @@ func (h Handlers) RetreiveCourses(ctx *gin.Context) {
 // @Param courseName query string false "название курса"
 // @Param page query string true "страница"
 // @Param limit query string true "лимит"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) RetreiveModules(ctx *gin.Context) {
 	name := ctx.Query("name")
 	description := ctx.Query("description")
@@ -133,8 +134,8 @@ func (h Handlers) RetreiveModules(ctx *gin.Context) {
 // @Param moduleName query string false "название модуля"
 // @Param page query string true "страница"
 // @Param limit query string true "лимит"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация"
-// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 400 {object} courseerror.CourseError "Провалена валидация"
+// @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) RetreiveLessons(ctx *gin.Context) {
 	name := ctx.Query("name")
 	description := ctx.Query("description")

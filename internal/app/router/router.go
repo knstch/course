@@ -3,7 +3,10 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/knstch/course/docs"
 	"github.com/knstch/course/internal/app/handlers"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 // RequestsRouter используется для инициализации роутера, принимает в качестве параметра хендлеры и возвращает готовый роутер.
@@ -11,6 +14,8 @@ func RequestsRouter(h *handlers.Handlers) *gin.Engine {
 	router := gin.Default()
 
 	api := router.Group("/api")
+	docs.SwaggerInfo.BasePath = "/api"
+	api.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	v1 := api.Group("/v1")
 
 	auth := v1.Group("auth")
