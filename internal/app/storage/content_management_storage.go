@@ -267,9 +267,6 @@ func (storage Storage) GetCourse(
 
 	if err := query.Limit(limit).Offset(offset).Find(&courses).Error; err != nil {
 		tx.Rollback()
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, courseError.CreateError(errCourseNotExists, 13003)
-		}
 		return nil, courseError.CreateError(err, 10002)
 	}
 

@@ -19,7 +19,7 @@ var (
 // @Produce json
 // @Success 200 {object} entity.Id
 // @Router /v1/billing/management/createCourse [post]
-// @Tags Методы менеджмента контента
+// @Tags Методы взаимодействия с контентом
 // @Param name formData string true "Название курса"
 // @Param description formData string true "Описание курса"
 // @Param cost formData int true "Стоимость курса"
@@ -76,7 +76,7 @@ func (h Handlers) CreateNewCourse(ctx *gin.Context) {
 // @Produce json
 // @Success 200 {object} entity.Id
 // @Router /v1/billing/management/createModule [post]
-// @Tags Методы менеджмента контента
+// @Tags Методы взаимодействия с контентом
 // @Param module body entity.Module true "данные модуля"
 // @Failure 400 {object} courseError.CourseError "Провалена валидация или декодирование сообщения"
 // @Failure 409 {object} courseError.CourseError "Модуль с таким названием или позицией уже существует"
@@ -114,7 +114,7 @@ func (h Handlers) CreateNewModule(ctx *gin.Context) {
 // @Produce json
 // @Success 200 {object} entity.Id
 // @Router /v1/billing/management/uploadLesson [post]
-// @Tags Методы менеджмента контента
+// @Tags Методы взаимодействия с контентом
 // @Param name formData string true "Название урока"
 // @Param moduleName formData string true "Название урока"
 // @Param description formData string true "Описание урока"
@@ -181,7 +181,7 @@ func (h Handlers) UploadNewLesson(ctx *gin.Context) {
 // @Produce json
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/billing/management/editCourse [patch]
-// @Tags Методы менеджмента контента
+// @Tags Методы взаимодействия с контентом
 // @Param name formData string true "Название курса"
 // @Param description formData string true "Описание курса"
 // @Param cost formData int true "Стоимость курса"
@@ -239,7 +239,7 @@ func (h Handlers) UpdateCourse(ctx *gin.Context) {
 // @Produce json
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/billing/management/editModule [post]
-// @Tags Методы менеджмента контента
+// @Tags Методы взаимодействия с контентом
 // @Param module body entity.Module true "данные модуля"
 // @Failure 400 {object} courseError.CourseError "Провалена валидация или декодирование сообщения"
 // @Failure 404 {object} courseError.CourseError "Модуль не найден"
@@ -281,7 +281,7 @@ func (h Handlers) UpdateModule(ctx *gin.Context) {
 // @Produce json
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/billing/management/editLesson [patch]
-// @Tags Методы менеджмента контента
+// @Tags Методы взаимодействия с контентом
 // @Param name formData string true "Название урока"
 // @Param moduleName formData string true "Название урока"
 // @Param description formData string true "Описание урока"
@@ -364,7 +364,7 @@ func (h Handlers) UpdateLesson(ctx *gin.Context) {
 // @Produce json
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/billing/management/editVisibility [patch]
-// @Tags Методы биллинга
+// @Tags Методы взаимодействия с контентом
 // @Param id query string true "Изменить видимость"
 // @Failure 400 {object} courseError.CourseError "Провалена валидация"
 // @Failure 404 {object} courseError.CourseError "Курс не найден"
@@ -394,7 +394,7 @@ func (h Handlers) ManageVisibility(ctx *gin.Context) {
 // @Produce json
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/billing/management/deleteModule [delete]
-// @Tags Методы биллинга
+// @Tags Методы взаимодействия с контентом
 // @Param id path string true "ID модуля"
 // @Failure 400 {object} courseError.CourseError "Провалена валидация"
 // @Failure 404 {object} courseError.CourseError "Модуль не найден"
@@ -422,7 +422,7 @@ func (h Handlers) EraseModule(ctx *gin.Context) {
 // @Produce json
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/billing/management/deleteLesson [delete]
-// @Tags Методы биллинга
+// @Tags Методы взаимодействия с контентом
 // @Param id path string true "ID модуля"
 // @Failure 400 {object} courseError.CourseError "Провалена валидация"
 // @Failure 404 {object} courseError.CourseError "Модуль не найден"
