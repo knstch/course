@@ -20,7 +20,8 @@ var (
 // @Success 200 {object} png
 // @Router /v1/admin/management/register [post]
 // @Tags Методы для администрирования
-// @Failure 400 {object} courseError.CourseError "Провалена валидация"
+// @Param adminData body entity.AdminCredentials true "логин, пароль"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация или декодирование сообщения"
 // @Failure 403 {object} courseError.CourseError "Нет прав"
 // @Failure 409 {object} courseError.CourseError "Невозможно создать админа"
 // @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
@@ -65,7 +66,8 @@ func (h Handlers) CreateAdmin(ctx *gin.Context) {
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/admin/verify [post]
 // @Tags Методы для администрирования
-// @Failure 400 {object} courseError.CourseError "Провалена валидация"
+// @Param adminData body entity.AdminCredentials true "логин, пароль, код подтверждения"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация или декодирование сообщения"
 // @Failure 403 {object} courseError.CourseError "Нет прав"
 // @Failure 404 {object} courseError.CourseError "Код не найден"
 // @Failure 409 {object} courseError.CourseError "Невозможно создать админа"
@@ -107,7 +109,8 @@ func (h Handlers) VerifyAuthentificator(ctx *gin.Context) {
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/admin/login [post]
 // @Tags Методы для администрирования
-// @Failure 400 {object} courseError.CourseError "Провалена валидация"
+// @Param adminData body entity.AdminCredentials true "логин, пароль, код подтверждения"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация или декодирование сообщения"
 // @Failure 403 {object} courseError.CourseError "Неправильный логин, пароль или код"
 // @Failure 404 {object} courseError.CourseError "Администратор не найден"
 // @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
@@ -184,6 +187,17 @@ func (h Handlers) WithAdminCookieAuth() gin.HandlerFunc {
 	}
 }
 
+// @Summary Изменить пароль администратора
+// @Accept json
+// @Produce json
+// @Success 200 {object} entity.SuccessResponse
+// @Router /v1/admin/management/resetPassword [patch]
+// @Tags Методы для администрирования
+// @Param adminData body entity.AdminCredentials true "логин, пароль"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация или декодирование сообщения"
+// @Failure 403 {object} courseError.CourseError "Неправильный логин, пароль или код"
+// @Failure 404 {object} courseError.CourseError "Администратор не найден"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) ChangeAdminPassword(ctx *gin.Context) {
 	role := ctx.Value("role").(string)
 	if role != "super_admin" {
@@ -218,6 +232,16 @@ func (h Handlers) ChangeAdminPassword(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("пароль успешно изменен"))
 }
 
+// @Summary Изменить ключ администратора
+// @Produce png
+// @Success 200 {object} png
+// @Router /v1/admin/management/resetKey [patch]
+// @Tags Методы для администрирования
+// @Param login query string true "логин"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация или декодирование сообщения"
+// @Failure 403 {object} courseError.CourseError "Неправильный логин, пароль или код"
+// @Failure 404 {object} courseError.CourseError "Администратор не найден"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) ChangeAdminAuthKey(ctx *gin.Context) {
 	role := ctx.Value("role").(string)
 	if role != "super_admin" {

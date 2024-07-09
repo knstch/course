@@ -16,7 +16,7 @@ func RequestsRouter(h *handlers.Handlers) *gin.Engine {
 	auth := v1.Group("auth")
 	auth.POST("/register", h.SignUp)
 	auth.POST("/login", h.SignIn)
-	auth.POST("/sendRecoveryCode", h.SendRecoverPasswordCode)
+	auth.GET("/sendRecoveryCode", h.SendRecoverPasswordCode)
 	auth.POST("/recoverPassword", h.SetNewPassword)
 
 	email := auth.Group("email")

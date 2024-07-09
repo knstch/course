@@ -18,6 +18,15 @@ var (
 	errUserNotAuthentificated          = errors.New("пользователь не авторизован")
 )
 
+// @Summary Зарегестрироваться пользователю
+// @Produce json
+// @Accept json
+// @Success 200 {object} entity.SuccessResponse
+// @Router /v1/auth/login [post]
+// @Tags Методы для авторизации пользователей
+// @Param credentials body entity.Credentials true "учетные данные"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация, или декодирование сообщения, или почта уже занята"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) SignUp(ctx *gin.Context) {
 	credentials := entity.NewCredentials()
 	if err := ctx.ShouldBindJSON(&credentials); err != nil {
@@ -44,6 +53,15 @@ func (h Handlers) SignUp(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("пользователь зарегистрирован"))
 }
 
+// @Summary Залогиниться пользователю
+// @Produce json
+// @Accept json
+// @Success 200 {object} entity.SuccessResponse
+// @Router /v1/auth/login [post]
+// @Tags Методы для авторизации пользователей
+// @Param credentials body entity.Credentials true "учетные данные"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация, или декодирование сообщения, или почта уже занята"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) SignIn(ctx *gin.Context) {
 	credentials := entity.NewCredentials()
 	if err := ctx.ShouldBindJSON(&credentials); err != nil {
@@ -74,6 +92,17 @@ func (h Handlers) SignIn(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("доступ разрешен"))
 }
 
+// @Summary Подтвердить почту пользователя
+// @Produce json
+// @Accept json
+// @Success 200 {object} entity.SuccessResponse
+// @Router /v1/auth/email/verification [post]
+// @Tags Методы для авторизации пользователей
+// @Param credentials body entity.Credentials true "учетные данные"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация, или декодирование сообщения, или почта пользователя уже подтверждена"
+// @Failure 403 {object} courseError.CourseError "Код подтверждения не совпал"
+// @Failure 404 {object} courseError.CourseError "Код подтверждения не найден"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) Verification(ctx *gin.Context) {
 	confirmCode := entity.NewConfirmCodeEntity()
 	if err := ctx.ShouldBindJSON(&confirmCode); err != nil {
@@ -121,10 +150,18 @@ func (h Handlers) Verification(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("email верифицирован"))
 }
 
+// @Summary Отправить новый код подтверждения
+// @Produce json
+// @Success 200 {object} entity.SuccessResponse
+// @Router /v1/auth/email/newConfirmKey [get]
+// @Tags Методы для авторизации пользователей
+// @Param email query string true "почта для отправки кода подтверждения"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация или почта пользователя уже подтверждена"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) SendNewCode(ctx *gin.Context) {
 	verified, ok := ctx.Get("verified")
 	if !ok {
-		ctx.AbortWithStatusJSON(http.StatusMethodNotAllowed, courseError.CreateError(errVerificationStatusNotFoundInCtx, 11005))
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errVerificationStatusNotFoundInCtx, 11005))
 		return
 	}
 
@@ -146,16 +183,18 @@ func (h Handlers) SendNewCode(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("код успешно отправлен"))
 }
 
+// @Summary Отправить код для восстановления пароля
+// @Produce json
+// @Success 200 {object} entity.SuccessResponse
+// @Router /v1/auth/sendRecoveryCode [get]
+// @Tags Методы для авторизации пользователей
+// @Param email query string true "почта для восстановления пароля"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) SendRecoverPasswordCode(ctx *gin.Context) {
-	email := entity.CreateEmail()
-	if err := ctx.ShouldBindJSON(&email); err != nil {
-		h.logger.Error("не получилось обработать тело запроса", "SendRecoverPasswordCode", err.Error(), 10101)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
-		return
-	}
-
-	if err := h.authService.SendPasswordRecoverRequest(ctx, email.Email); err != nil {
-		h.logger.Error(fmt.Sprintf("не получилось отправить код для восстановления пароля на почту %v", email.Email), "SendRecoverPasswordCode", err.Message, err.Code)
+	email := ctx.Query("email")
+	if err := h.authService.SendPasswordRecoverRequest(ctx, email); err != nil {
+		h.logger.Error(fmt.Sprintf("не получилось отправить код для восстановления пароля на почту %v", email), "SendRecoverPasswordCode", err.Message, err.Code)
 		if err.Code == 400 {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
 			return
@@ -164,11 +203,21 @@ func (h Handlers) SendRecoverPasswordCode(ctx *gin.Context) {
 		return
 	}
 
-	h.logger.Info(fmt.Sprintf("код для восстановления пароля успешно отправлен c IP: %v", ctx.ClientIP()), "SendRecoverPasswordCode", email.Email)
+	h.logger.Info(fmt.Sprintf("код для восстановления пароля успешно отправлен c IP: %v", ctx.ClientIP()), "SendRecoverPasswordCode", email)
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("код для восстановления успешно отправлен"))
 }
 
+// @Summary Установить новый пароль
+// @Accept json
+// @Produce json
+// @Success 200 {object} entity.SuccessResponse
+// @Router /v1/auth/recoverPassword [post]
+// @Tags Методы для авторизации пользователей
+// @Param credentials body entity.PasswordRecoverCredentials true "почта, новый пароль и код"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация или код подтверждения неверный"
+// @Failure 404 {object} courseError.CourseError "Код не найден"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) SetNewPassword(ctx *gin.Context) {
 	recoverCredentials := entity.NewPasswordRecoverCredentials()
 	if err := ctx.ShouldBindJSON(&recoverCredentials); err != nil {
@@ -179,11 +228,7 @@ func (h Handlers) SetNewPassword(ctx *gin.Context) {
 
 	if err := h.authService.RecoverPassword(ctx, *recoverCredentials); err != nil {
 		h.logger.Error(fmt.Sprintf("не получилось изменить пароль пользователя с email = %v", recoverCredentials.Email), "SetNewPassword", err.Message, err.Code)
-		if err.Code == 400 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
-			return
-		}
-		if err.Code == 11003 {
+		if err.Code == 400 || err.Code == 11003 {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
 			return
 		}

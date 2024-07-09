@@ -14,6 +14,7 @@ import (
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/admin/management/removeAdmin [delete]
 // @Tags Методы для администрирования
+// @Param login query string true "логин"
 // @Failure 400 {object} courseError.CourseError "Провалена валидация"
 // @Failure 403 {object} courseError.CourseError "Нет прав"
 // @Failure 404 {object} courseError.CourseError "Админ не найден"
@@ -51,6 +52,8 @@ func (h Handlers) DeleteAdmin(ctx *gin.Context) {
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/admin/management/changeRole [patch]
 // @Tags Методы для администрирования
+// @Param login query string true "логин"
+// @Param role query string true "роль"
 // @Failure 400 {object} courseError.CourseError "Провалена валидация"
 // @Failure 403 {object} courseError.CourseError "Не хватает прав"
 // @Failure 404 {object} courseError.CourseError "Администратор не найден"
@@ -87,6 +90,11 @@ func (h Handlers) ChangeRole(ctx *gin.Context) {
 // @Success 200 {object} entity.AdminsInfoWithPagination
 // @Router /v1/admin/management/getAdmins [get]
 // @Tags Методы для администрирования
+// @Param login query string false "логин"
+// @Param role query string false "роль"
+// @Param twoStepsAuth query string false "подключенная двойная авторизация"
+// @Param page query string true "страница"
+// @Param limit query string true "лимит"
 // @Failure 400 {object} courseError.CourseError "Провалена валидация"
 // @Failure 403 {object} courseError.CourseError "Нет прав"
 // @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
@@ -124,6 +132,10 @@ func (h Handlers) FindAdmins(ctx *gin.Context) {
 // @Success 200 {object} []entity.PaymentStats
 // @Router /v1/admin/management/paymentStats [get]
 // @Tags Методы для администрирования
+// @Param from query string true "приод от"
+// @Param due query string false "период до"
+// @Param courseName query string false "название курса"
+// @Param paymentMethod query string false "способ платежа"
 // @Failure 400 {object} courseError.CourseError "Провалена валидация"
 // @Failure 403 {object} courseError.CourseError "Нет прав"
 // @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
@@ -161,6 +173,8 @@ func (h Handlers) GetPaymentDashboard(ctx *gin.Context) {
 // @Success 200 {object} []entity.UsersStats
 // @Router /v1/admin/management/usersStats [get]
 // @Tags Методы для администрирования
+// @Param from query string true "приод от"
+// @Param due query string false "период до"
 // @Failure 400 {object} courseError.CourseError "Провалена валидация"
 // @Failure 403 {object} courseError.CourseError "Нет прав"
 // @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
