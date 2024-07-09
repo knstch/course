@@ -143,7 +143,7 @@ func (auth AuthService) SendNewCofirmationCode(ctx context.Context, email string
 		return err
 	}
 
-	userId := ctx.Value("userId").(uint)
+	userId := ctx.Value("UserId").(uint)
 
 	code, err := auth.redis.Get(fmt.Sprint(userId)).Result()
 	if !errors.Is(err, redis.Nil) {
@@ -169,7 +169,7 @@ func (auth AuthService) mintJWT(id uint, verified bool) (*string, *courseError.C
 	authToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"iat":      timeNow.Unix(),
 		"exp":      timeNow.Add(30 * 24 * time.Hour).Unix(),
-		"userId":   id,
+		"UserId":   id,
 		"verified": verified,
 	})
 

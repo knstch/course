@@ -107,7 +107,7 @@ func (h Handlers) SignIn(ctx *gin.Context) {
 func (h Handlers) Verification(ctx *gin.Context) {
 	confirmCode := ctx.Query("confirmCode")
 
-	userId, ok := ctx.Get("userId")
+	userId, ok := ctx.Get("UserId")
 	if !ok {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errUserIdNotFoundInCtx, 11005))
 		return
@@ -173,7 +173,7 @@ func (h Handlers) SendNewCode(ctx *gin.Context) {
 	email := ctx.Query("email")
 
 	if err := h.authService.SendNewCofirmationCode(ctx, email); err != nil {
-		h.logger.Error(fmt.Sprintf("не получилось отправить код подтверждения на почту юзера с ID = %d", ctx.Value("userId")), "SendNewCode", err.Message, err.Code)
+		h.logger.Error(fmt.Sprintf("не получилось отправить код подтверждения на почту юзера с ID = %d", ctx.Value("UserId")), "SendNewCode", err.Message, err.Code)
 		if err.Code == 400 {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
 			return
@@ -182,7 +182,7 @@ func (h Handlers) SendNewCode(ctx *gin.Context) {
 		return
 	}
 
-	h.logger.Info("код подтверждения успешно отправлен юзеру", "SendNewCode", fmt.Sprint(ctx.Value("userId")))
+	h.logger.Info("код подтверждения успешно отправлен юзеру", "SendNewCode", fmt.Sprint(ctx.Value("UserId")))
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("код успешно отправлен"))
 }
@@ -279,7 +279,7 @@ func (h Handlers) WithCookieAuth() gin.HandlerFunc {
 			return
 		}
 
-		ctx.Set("userId", payload.UserID)
+		ctx.Set("UserId", payload.UserID)
 		ctx.Set("verified", payload.Verified)
 
 		h.logger.Info(fmt.Sprintf("пользователь успешно перел по URL: %v c IP: %v", ctx.Request.URL.String(), ctx.ClientIP()), "WithCookieAuth", fmt.Sprint(payload.UserID))

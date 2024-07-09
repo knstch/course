@@ -45,7 +45,7 @@ func (email EmailService) generateEmailConfirmCode() uint {
 // UNIMPLEMENTED
 // sendConfirmEmail отправляет код подтверждения на почту, принимает в качестве параметров код и почту для отправки.
 // Возвращает ошибку.
-func (email EmailService) sendConfirmEmail(code uint, emailToSend *string) *courseError.CourseError {
+func (email EmailService) sendConfirmEmail(_ uint, _ *string) *courseError.CourseError {
 	return nil
 }
 

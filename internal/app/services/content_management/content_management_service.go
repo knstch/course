@@ -298,7 +298,7 @@ func (manager ContentManagementServcie) sendVideo(ctx context.Context, file *mul
 func (manager ContentManagementServcie) GetCourseInfo(ctx context.Context, id, name, descr, cost, discount, page, limit string) (*entity.CourseInfoWithPagination, *courseError.CourseError) {
 	var isCoursePurchased bool
 	if id != "" {
-		if ctx.Value("userId") == nil && ctx.Value("adminId") == nil {
+		if ctx.Value("UserId") == nil && ctx.Value("adminId") == nil {
 			return nil, courseError.CreateError(ErrUnautharizedAccess, 13004)
 		}
 
@@ -363,7 +363,7 @@ func (manager ContentManagementServcie) GetModulesInfo(ctx context.Context,
 	offset := pageInt * limitInt
 
 	var isPurchased bool
-	if ctx.Value("userId") != nil && courseName != "" {
+	if ctx.Value("UserId") != nil && courseName != "" {
 		userCourses, err := manager.contentManager.GetUserCourses(ctx)
 		if err != nil {
 			return nil, err
@@ -421,7 +421,7 @@ func (manager ContentManagementServcie) GetLessonsInfo(ctx context.Context,
 	offset := pageInt * limitInt
 
 	var isPurchased bool
-	if ctx.Value("userId") != nil && courseName != "" {
+	if ctx.Value("UserId") != nil && courseName != "" {
 		userCourses, err := manager.contentManager.GetUserCourses(ctx)
 		if err != nil {
 			return nil, err

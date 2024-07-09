@@ -86,7 +86,7 @@ func (billing SberBillingService) PlaceOrder(ctx context.Context, buyDetails *en
 		return nil, err
 	}
 
-	userId := ctx.Value("userId").(uint)
+	userId := ctx.Value("UserId").(uint)
 
 	invoice := entity.CreateOrder(*order, int(buyDetails.CourseId), fmt.Sprint(userId), 0)
 

@@ -16,7 +16,7 @@ import (
 func (storage Storage) CreateNewOrder(ctx context.Context, courseId, price uint, ruCard bool) (*dto.OrderEssentials, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
 
-	userId := ctx.Value("userId").(uint)
+	userId := ctx.Value("UserId").(uint)
 
 	orderHash := md5.New()
 

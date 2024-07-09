@@ -91,7 +91,7 @@ func (user UserService) EditPassword(ctx context.Context, passwords *entity.Pass
 		return err
 	}
 
-	if err := user.Profiler.ChangePasssword(ctx, passwords.OldPassword, passwords.NewPassword, ctx.Value("userId").(uint)); err != nil {
+	if err := user.Profiler.ChangePasssword(ctx, passwords.OldPassword, passwords.NewPassword, ctx.Value("UserId").(uint)); err != nil {
 		return err
 	}
 
