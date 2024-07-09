@@ -150,7 +150,7 @@ func (storage Storage) GetAllUsersData(ctx context.Context,
 	}, nil
 }
 
-func (storage Storage) DisableUser(ctx context.Context, userId int) *courseError.CourseError {
+func (storage Storage) DisableUser(ctx context.Context, userId string) *courseError.CourseError {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	if err := tx.Model(&dto.User{}).Where("id = ?", userId).Update("banned", true).Error; err != nil {
@@ -171,7 +171,7 @@ func (storage Storage) DisableUser(ctx context.Context, userId int) *courseError
 	return nil
 }
 
-func (storage Storage) EnableUser(ctx context.Context, userId int) *courseError.CourseError {
+func (storage Storage) EnableUser(ctx context.Context, userId string) *courseError.CourseError {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	if err := tx.Model(&dto.User{}).Where("id = ?", userId).Update("banned", false).Error; err != nil {
@@ -253,6 +253,14 @@ func (storage Storage) GetAllUserDataById(ctx context.Context, id string) (*enti
 
 func (storage Storage) DeleteUserProfilePhoto(ctx context.Context, id string) *courseError.CourseError {
 	tx := storage.db.WithContext(ctx).Begin()
+
+	var user *dto.User
+	if err := tx.Where("id = ?", id).First(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return courseError.CreateError(errUserNotFound, 11101)
+		}
+		return courseError.CreateError(err, 10002)
+	}
 
 	if err := tx.Model(&dto.User{}).Where("id = ?", id).Update("photo_id", nil).Error; err != nil {
 		return courseError.CreateError(err, 10003)

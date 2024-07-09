@@ -94,22 +94,16 @@ func (h Handlers) SignIn(ctx *gin.Context) {
 
 // @Summary Подтвердить почту пользователя
 // @Produce json
-// @Accept json
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/auth/email/verification [post]
 // @Tags Методы для авторизации пользователей
-// @Param credentials body entity.Credentials true "учетные данные"
+// @Param confirmCode query string true "Код подтверждения"
 // @Failure 400 {object} courseError.CourseError "Провалена валидация, или декодирование сообщения, или почта пользователя уже подтверждена"
 // @Failure 403 {object} courseError.CourseError "Код подтверждения не совпал"
 // @Failure 404 {object} courseError.CourseError "Код подтверждения не найден"
 // @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) Verification(ctx *gin.Context) {
-	confirmCode := entity.NewConfirmCodeEntity()
-	if err := ctx.ShouldBindJSON(&confirmCode); err != nil {
-		h.logger.Error("не получилось обработать тело запроса", "Verification", err.Error(), 10101)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
-		return
-	}
+	confirmCode := ctx.Query("confirmCode")
 
 	userId, ok := ctx.Get("userId")
 	if !ok {
@@ -128,7 +122,7 @@ func (h Handlers) Verification(ctx *gin.Context) {
 		return
 	}
 
-	token, err := h.authService.VerifyEmail(ctx, confirmCode.Code, userId.(uint))
+	token, err := h.authService.VerifyEmail(ctx, confirmCode, userId.(uint))
 	if err != nil {
 		h.logger.Error(fmt.Sprintf("не получилось верифицировать почту пользователя c ID = %d", userId), "Verification", err.Message, err.Code)
 		if err.Code == 11003 {

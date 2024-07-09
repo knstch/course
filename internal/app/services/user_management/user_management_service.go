@@ -18,9 +18,9 @@ type UserManager interface {
 	GetAllUsersData(ctx context.Context,
 		firstName, surname, phoneNumber, email, active, isVerified, courseName, banned, page, limit string) (
 		*entity.UserDataWithPagination, *courseError.CourseError)
-	DisableUser(ctx context.Context, userId int) *courseError.CourseError
+	DisableUser(ctx context.Context, userId string) *courseError.CourseError
 	GetAllUserDataById(ctx context.Context, id string) (*entity.UserDataAdmin, *courseError.CourseError)
-	EnableUser(ctx context.Context, userId int) *courseError.CourseError
+	EnableUser(ctx context.Context, userId string) *courseError.CourseError
 	DeleteUserProfilePhoto(ctx context.Context, id string) *courseError.CourseError
 }
 
@@ -51,12 +51,12 @@ func (user UserManagementService) RetreiveUsersByFilters(ctx context.Context,
 }
 
 // DeactivateUser используется для бана пользователя. В качестве обязательного параметра принимает ID пользовтеля и возвращает ошибку.
-func (user UserManagementService) DeactivateUser(ctx context.Context, userId uint) *courseError.CourseError {
-	if err := validation.NewIdToValidate(int(userId)).Validate(ctx); err != nil {
+func (user UserManagementService) DeactivateUser(ctx context.Context, userId string) *courseError.CourseError {
+	if err := validation.NewStringIdToValidate(userId).Validate(ctx); err != nil {
 		return err
 	}
 
-	if err := user.manager.DisableUser(ctx, int(userId)); err != nil {
+	if err := user.manager.DisableUser(ctx, userId); err != nil {
 		return err
 	}
 
@@ -64,12 +64,12 @@ func (user UserManagementService) DeactivateUser(ctx context.Context, userId uin
 }
 
 // ActivateUser используется для разбана пользователя. В качестве обязательного параметра принимает ID пользователя и возвращает ошибку.
-func (user UserManagementService) ActivateUser(ctx context.Context, userId uint) *courseError.CourseError {
-	if err := validation.NewIdToValidate(int(userId)).Validate(ctx); err != nil {
+func (user UserManagementService) ActivateUser(ctx context.Context, userId string) *courseError.CourseError {
+	if err := validation.NewStringIdToValidate(userId).Validate(ctx); err != nil {
 		return err
 	}
 
-	if err := user.manager.EnableUser(ctx, int(userId)); err != nil {
+	if err := user.manager.EnableUser(ctx, userId); err != nil {
 		return err
 	}
 

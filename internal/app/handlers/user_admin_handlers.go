@@ -9,6 +9,23 @@ import (
 	"github.com/knstch/course/internal/domain/entity"
 )
 
+// @Summary Найти пользователей по фильтрам
+// @Produce json
+// @Success 200 {object} entity.UserDataWithPagination
+// @Router /v1/admin/management/users [get]
+// @Tags Методы для администрирования
+// @Param firstName query string false "имя"
+// @Param surname query string false "фамилия"
+// @Param phoneNumber query string false "номер телефона"
+// @Param email query string false "почта"
+// @Param active query string false "активный аккаунт"
+// @Param verified query string false "верифицированный аккаунт"
+// @Param courseName query string false "название курса"
+// @Param banned query string false "статус бана"
+// @Param page query string true "страница"
+// @Param limit query string true "лимит"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) FindUsersByFilters(ctx *gin.Context) {
 	firstName := ctx.Query("firstName")
 	surname := ctx.Query("surname")
@@ -43,15 +60,17 @@ func (h Handlers) FindUsersByFilters(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, users)
 }
 
+// @Summary Заблокировать пользователя
+// @Produce json
+// @Success 200 {object} entity.SuccessResponse
+// @Router /v1/admin/management/ban [post]
+// @Tags Методы для администрирования
+// @Param id query string true "ID"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) BanUser(ctx *gin.Context) {
-	Id := entity.NewId(nil)
-	if err := ctx.ShouldBindJSON(&Id); err != nil {
-		h.logger.Error("не получилось обработать тело запроса", "BanUser", err.Error(), 10101)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
-		return
-	}
-
-	if err := h.userManagementService.DeactivateUser(ctx, Id.Id); err != nil {
+	id := ctx.Query("id")
+	if err := h.userManagementService.DeactivateUser(ctx, id); err != nil {
 		h.logger.Error("ошибка при блокировке пользователя", "BanUser", err.Message, err.Code)
 		if err.Code == 400 {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
@@ -62,20 +81,23 @@ func (h Handlers) BanUser(ctx *gin.Context) {
 	}
 
 	h.logger.Info(fmt.Sprintf("пользователь успешно забанен админом с ID: %v",
-		ctx.Value("adminId").(uint)), "BanUser", fmt.Sprintf("userId: %d", Id.Id))
+		ctx.Value("adminId").(uint)), "BanUser", fmt.Sprintf("userId: %v", id))
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("пользователь успешно заблокирован"))
 }
 
+// @Summary Разблокировать пользователя
+// @Produce json
+// @Success 200 {object} entity.SuccessResponse
+// @Router /v1/admin/management/ban [post]
+// @Tags Методы для администрирования
+// @Param id query string true "ID"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) UnbanUser(ctx *gin.Context) {
-	Id := entity.NewId(nil)
-	if err := ctx.ShouldBindJSON(&Id); err != nil {
-		h.logger.Error("не получилось обработать тело запроса", "UnbanUser", err.Error(), 10101)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
-		return
-	}
+	id := ctx.Query("id")
 
-	if err := h.userManagementService.ActivateUser(ctx, Id.Id); err != nil {
+	if err := h.userManagementService.ActivateUser(ctx, id); err != nil {
 		h.logger.Error("ошибка при разблокировке пользователя", "UnbanUser", err.Message, err.Code)
 		if err.Code == 400 {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
@@ -86,11 +108,20 @@ func (h Handlers) UnbanUser(ctx *gin.Context) {
 	}
 
 	h.logger.Info(fmt.Sprintf("пользователь успешно разблокирован админом с ID: %v",
-		ctx.Value("adminId").(uint)), "UnbanUser", fmt.Sprintf("userId: %d", Id.Id))
+		ctx.Value("adminId").(uint)), "UnbanUser", fmt.Sprintf("userId: %v", id))
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("пользователь успешно разблокирован"))
 }
 
+// @Summary Получить пользователя по ID
+// @Produce json
+// @Success 200 {object} entity.UserDataAdmin
+// @Router /v1/admin/management/user [get]
+// @Tags Методы для администрирования
+// @Param id query string true "ID"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация"
+// @Failure 404 {object} courseError.CourseError "Пользователь не найден"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) GetUserById(ctx *gin.Context) {
 	id := ctx.Query("id")
 	user, err := h.userManagementService.RetreiveUserById(ctx, id)
@@ -113,6 +144,16 @@ func (h Handlers) GetUserById(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, user)
 }
 
+// @Summary Изменить профиль пользовтаеля
+// @Accept json
+// @Produce json
+// @Success 200 {object} entity.SuccessResponse
+// @Router /v1/admin/management/editUserProfile [patch]
+// @Tags Методы для администрирования
+// @Param userInfo body entity.UserInfo true "Новые данные"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация или не удалось дешифровать сообщение"
+// @Failure 404 {object} courseError.CourseError "Пользователь не найден"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) EditUserProfile(ctx *gin.Context) {
 	userInfo := entity.NewUserInfo()
 	if err := ctx.ShouldBindJSON(&userInfo); err != nil {
@@ -140,18 +181,31 @@ func (h Handlers) EditUserProfile(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("данные успешно изменены"))
 }
 
+// @Summary Удалить фото пользователя
+// @Produce json
+// @Success 200 {object} entity.SuccessResponse
+// @Router /v1/admin/management/deleteProfilePhoto [delete]
+// @Tags Методы для администрирования
+// @Param id query string true "ID"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация"
+// @Failure 404 {object} courseError.CourseError "Пользователь не найден"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) RemoveUserProfilePhoto(ctx *gin.Context) {
-	if err := h.userManagementService.EraseUserProfilePhoto(ctx, ctx.Query("id")); err != nil {
-		h.logger.Error(fmt.Sprintf("ошибка при удаления фото профиля пользователя с ID: %v", ctx.Query("id")), "RemoveUserProfilePhoto", err.Message, err.Code)
+	id := ctx.Query("id")
+	if err := h.userManagementService.EraseUserProfilePhoto(ctx, id); err != nil {
+		h.logger.Error(fmt.Sprintf("ошибка при удаления фото профиля пользователя с ID: %v", id), "RemoveUserProfilePhoto", err.Message, err.Code)
 		if err.Code == 400 {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
 			return
+		}
+		if err.Code == 11101 {
+			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
 		}
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
 		return
 	}
 
-	h.logger.Info(fmt.Sprintf("фото профиля пользователя с ID: %v админом с ID: %d успешно удалено", ctx.Query("id"), ctx.Value("adminId").(uint)), "RemoveUserProfilePhoto", "")
+	h.logger.Info(fmt.Sprintf("фото профиля пользователя с ID: %v админом с ID: %d успешно удалено", id, ctx.Value("adminId").(uint)), "RemoveUserProfilePhoto", "")
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("фото успешно удалено"))
 }

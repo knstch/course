@@ -118,7 +118,7 @@ func (user UserService) EditEmail(ctx context.Context, email string, userId uint
 
 // ConfirmEditEmail используется для подтверждения изменения почты. Принимает код подтверждения и ID пользователя.
 // Метод валидирует параметры и проверяет наличие кода. Возвращает ошибку.
-func (user UserService) ConfirmEditEmail(ctx context.Context, confirmCode int, userId uint) *courseError.CourseError {
+func (user UserService) ConfirmEditEmail(ctx context.Context, confirmCode string, userId uint) *courseError.CourseError {
 	if err := validation.NewConfirmCodeToValidate(confirmCode).Validate(ctx); err != nil {
 		return err
 	}
@@ -128,7 +128,7 @@ func (user UserService) ConfirmEditEmail(ctx context.Context, confirmCode int, u
 		return courseError.CreateError(ErrConfirmCodeNotFound, 11004)
 	}
 
-	if fmt.Sprint(confirmCode) != codeFromRedis {
+	if confirmCode != codeFromRedis {
 		return courseError.CreateError(ErrBadConfirmCode, 11003)
 	}
 

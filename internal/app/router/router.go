@@ -30,7 +30,7 @@ func RequestsRouter(h *handlers.Handlers) *gin.Engine {
 	profile.PATCH("/editPassword", h.ManagePassword)
 	profile.POST("/editEmail", h.ManageEmail)
 	profile.POST("/confirmEmailChange", h.ConfirmEmailChange)
-	profile.POST("/setPhoto", h.ChangeProfilePhoto)
+	profile.PATCH("/setPhoto", h.ChangeProfilePhoto)
 	profile.GET("/getUser", h.GetUser)
 	profile.GET("/getCourses", h.RetreiveCourses)
 	profile.GET("/modules", h.RetreiveModules)

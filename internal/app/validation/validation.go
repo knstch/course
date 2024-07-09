@@ -282,16 +282,28 @@ func (email *EmailToValidate) Validate(ctx context.Context) *courseerror.CourseE
 }
 
 type ConfirmCodeToValidate struct {
-	code int
+	Code int
+	code string
 }
 
-func NewConfirmCodeToValidate(code int) *ConfirmCodeToValidate {
+func NewConfirmCodeToValidate(code string) *ConfirmCodeToValidate {
 	return &ConfirmCodeToValidate{
 		code: code,
 	}
 }
 
 func (code *ConfirmCodeToValidate) Validate(ctx context.Context) *courseerror.CourseError {
+	if err := validation.ValidateStructWithContext(ctx, code,
+		validation.Field(&code.code,
+			is.Int.Error(errBadConfirmCode),
+		),
+	); err != nil {
+		return courseerror.CreateError(err, 400)
+	}
+
+	convertedCode, _ := strconv.Atoi(code.code)
+	code.Code = convertedCode
+
 	if err := validation.ValidateStructWithContext(ctx, code,
 		validation.Field(&code.code,
 			validation.Min(1000).Error(errBadConfirmCode),

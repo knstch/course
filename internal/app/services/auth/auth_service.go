@@ -96,7 +96,7 @@ func (auth AuthService) Register(ctx context.Context, credentials *entity.Creden
 // Далее валидируется код, проверяется наличия кода по ID в Redis, если код не совпал, то возвращается ошибка.
 // После этого запись удаляется из Redis, пользователь получает статус verified и новый JWT.
 // Метод также используется при смене почты, поэтому все другие токены пользователя будут отключены.
-func (auth AuthService) VerifyEmail(ctx context.Context, code int, userId uint) (*string, *courseError.CourseError) {
+func (auth AuthService) VerifyEmail(ctx context.Context, code string, userId uint) (*string, *courseError.CourseError) {
 	if err := validation.NewConfirmCodeToValidate(code).Validate(ctx); err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (auth AuthService) VerifyEmail(ctx context.Context, code int, userId uint) 
 		return nil, courseError.CreateError(ErrConfirmCodeNotFound, 11004)
 	}
 
-	if fmt.Sprint(code) != codeFromRedis {
+	if code != codeFromRedis {
 		return nil, courseError.CreateError(ErrBadConfirmCode, 11003)
 	}
 
