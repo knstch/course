@@ -14,6 +14,22 @@ var (
 	errBadFormData = errors.New("одно или несколько полей не заполнены")
 )
 
+// @Summary Создать курс
+// @Accept mpfd
+// @Produce json
+// @Success 200 {object} entity.Id
+// @Router /v1/billing/management/createCourse [post]
+// @Tags Методы менеджмента контента
+// @Param name formData string true "Название курса"
+// @Param description formData string true "Описание курса"
+// @Param cost formData int true "Стоимость курса"
+// @Param discount formData int false "Скидка"
+// @Param preview formData file true "Превью"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация или неверно передано превью фото"
+// @Failure 403 {object} courseError.CourseError "Ошибка авторизации в CDN"
+// @Failure 409 {object} courseError.CourseError "Курс с таким названием уже существует"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 503 {object} courseError.CourseError "CDN недоступен"
 func (h Handlers) CreateNewCourse(ctx *gin.Context) {
 	name := ctx.PostForm("name")
 	description := ctx.PostForm("description")
@@ -55,6 +71,16 @@ func (h Handlers) CreateNewCourse(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.NewId(id))
 }
 
+// @Summary Создать модуль
+// @Accept json
+// @Produce json
+// @Success 200 {object} entity.Id
+// @Router /v1/billing/management/createModule [post]
+// @Tags Методы менеджмента контента
+// @Param module body entity.Module true "данные модуля"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация или декодирование сообщения"
+// @Failure 409 {object} courseError.CourseError "Модуль с таким названием или позицией уже существует"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) CreateNewModule(ctx *gin.Context) {
 	module := entity.NewModule()
 	if err := ctx.ShouldBindJSON(&module); err != nil {
@@ -83,6 +109,24 @@ func (h Handlers) CreateNewModule(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.NewId(id))
 }
 
+// @Summary Создать урок
+// @Accept mpfd
+// @Produce json
+// @Success 200 {object} entity.Id
+// @Router /v1/billing/management/uploadLesson [post]
+// @Tags Методы менеджмента контента
+// @Param name formData string true "Название урока"
+// @Param moduleName formData string true "Название урока"
+// @Param description formData string true "Описание урока"
+// @Param position formData int true "Позиция урока"
+// @Param courseName formData string true "Название курса"
+// @Param preview formData file true "Превью"
+// @Param lesson formData file true "Урок"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация или неверно передано превью фото или урок"
+// @Failure 403 {object} courseError.CourseError "Ошибка авторизации в CDN"
+// @Failure 409 {object} courseError.CourseError "Урок с таким названием или позицией уже существует"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 503 {object} courseError.CourseError "CDN недоступен"
 func (h Handlers) UploadNewLesson(ctx *gin.Context) {
 	lesson, err := ctx.FormFile("lesson")
 	if err != nil {
@@ -111,6 +155,10 @@ func (h Handlers) UploadNewLesson(ctx *gin.Context) {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, courseErr)
 			return
 		}
+		if courseErr.Code == 11050 {
+			ctx.AbortWithStatusJSON(http.StatusForbidden, courseErr)
+			return
+		}
 		if courseErr.Code == 13001 || courseErr.Code == 13002 {
 			ctx.AbortWithStatusJSON(http.StatusConflict, courseErr)
 			return
@@ -128,6 +176,23 @@ func (h Handlers) UploadNewLesson(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.NewId(lessonId))
 }
 
+// @Summary Обновить курс
+// @Accept mpfd
+// @Produce json
+// @Success 200 {object} entity.SuccessResponse
+// @Router /v1/billing/management/editCourse [patch]
+// @Tags Методы менеджмента контента
+// @Param name formData string true "Название курса"
+// @Param description formData string true "Описание курса"
+// @Param cost formData int true "Стоимость курса"
+// @Param discount formData int false "Скидка"
+// @Param preview formData file true "Превью"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация или неверно передано превью фото"
+// @Failure 403 {object} courseError.CourseError "Ошибка авторизации в CDN"
+// @Failure 404 {object} courseError.CourseError "Курс не найден"
+// @Failure 409 {object} courseError.CourseError "Курс с таким названием уже существует"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 503 {object} courseError.CourseError "CDN недоступен"
 func (h Handlers) UpdateCourse(ctx *gin.Context) {
 	var fileNotExists bool
 	name := ctx.PostForm("name")
@@ -169,6 +234,17 @@ func (h Handlers) UpdateCourse(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("данные о курсе успешно отредактированы"))
 }
 
+// @Summary Обновить модуль
+// @Accept json
+// @Produce json
+// @Success 200 {object} entity.SuccessResponse
+// @Router /v1/billing/management/editModule [post]
+// @Tags Методы менеджмента контента
+// @Param module body entity.Module true "данные модуля"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация или декодирование сообщения"
+// @Failure 404 {object} courseError.CourseError "Модуль не найден"
+// @Failure 409 {object} courseError.CourseError "Модуль с таким названием или позицией уже существует"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) UpdateModule(ctx *gin.Context) {
 	module := entity.NewModule()
 	if err := ctx.ShouldBindJSON(&module); err != nil {
@@ -200,6 +276,25 @@ func (h Handlers) UpdateModule(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("данные о модуле успешно отредактированы"))
 }
 
+// @Summary Обновить урок
+// @Accept mpfd
+// @Produce json
+// @Success 200 {object} entity.SuccessResponse
+// @Router /v1/billing/management/editLesson [patch]
+// @Tags Методы менеджмента контента
+// @Param name formData string true "Название урока"
+// @Param moduleName formData string true "Название урока"
+// @Param description formData string true "Описание урока"
+// @Param position formData int true "Позиция урока"
+// @Param courseName formData string true "Название курса"
+// @Param preview formData file true "Превью"
+// @Param lesson formData file true "Урок"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация или неверно передано превью фото или урок"
+// @Failure 403 {object} courseError.CourseError "Ошибка авторизации в CDN"
+// @Failure 404 {object} courseError.CourseError "Урок не найден"
+// @Failure 409 {object} courseError.CourseError "Урок с таким названием или позицией уже существует"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
+// @Failure 503 {object} courseError.CourseError "CDN недоступен"
 func (h Handlers) UpdateLesson(ctx *gin.Context) {
 	var (
 		videoNotExists   bool
@@ -241,6 +336,10 @@ func (h Handlers) UpdateLesson(ctx *gin.Context) {
 			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
 			return
 		}
+		if err.Code == 11050 {
+			ctx.AbortWithStatusJSON(http.StatusForbidden, err)
+			return
+		}
 		if err.Code == 13001 {
 			ctx.AbortWithStatusJSON(http.StatusConflict, err)
 			return
@@ -261,15 +360,18 @@ func (h Handlers) UpdateLesson(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("урок успешно отредактирован"))
 }
 
+// @Summary Изменить видимость курса
+// @Produce json
+// @Success 200 {object} entity.SuccessResponse
+// @Router /v1/billing/management/editVisibility [patch]
+// @Tags Методы биллинга
+// @Param id query string true "Изменить видимость"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация"
+// @Failure 404 {object} courseError.CourseError "Курс не найден"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) ManageVisibility(ctx *gin.Context) {
-	id := entity.NewId(nil)
-	if err := ctx.ShouldBindJSON(&id); err != nil {
-		h.logger.Error("не получилось обработать тело запроса", "ManageVisibility", err.Error(), 10101)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseError.CreateError(errBrokenJSON, 10101))
-		return
-	}
-
-	if err := h.contentManagementService.ManageShowStatus(ctx, int(id.Id)); err != nil {
+	id := ctx.Query("id")
+	if err := h.contentManagementService.ManageShowStatus(ctx, id); err != nil {
 		h.logger.Error("не получилось обновить видимость курса", "ManageVisibility", err.Message, err.Code)
 		if err.Code == 400 {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
@@ -283,11 +385,20 @@ func (h Handlers) ManageVisibility(ctx *gin.Context) {
 		return
 	}
 
-	h.logger.Info(fmt.Sprintf("видимость курса была успешно обновлена админом с ID: %d", ctx.Value("adminId").(uint)), "ManageVisibility", fmt.Sprintf("ID курса: %d", id.Id))
+	h.logger.Info(fmt.Sprintf("видимость курса была успешно обновлена админом с ID: %d", ctx.Value("adminId").(uint)), "ManageVisibility", fmt.Sprintf("ID курса: %v", id))
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("видимость модуля успешно изменена"))
 }
 
+// @Summary Удалить модуль
+// @Produce json
+// @Success 200 {object} entity.SuccessResponse
+// @Router /v1/billing/management/deleteModule [delete]
+// @Tags Методы биллинга
+// @Param id path string true "ID модуля"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация"
+// @Failure 404 {object} courseError.CourseError "Модуль не найден"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) EraseModule(ctx *gin.Context) {
 	if err := h.contentManagementService.RemoveModule(ctx, ctx.Param("id")); err != nil {
 		h.logger.Error("ошибка при удалении модуля", "EraseModule", err.Message, err.Code)
@@ -307,6 +418,15 @@ func (h Handlers) EraseModule(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("модуль и вложенные уроки удалены"))
 }
 
+// @Summary Удалить урок
+// @Produce json
+// @Success 200 {object} entity.SuccessResponse
+// @Router /v1/billing/management/deleteLesson [delete]
+// @Tags Методы биллинга
+// @Param id path string true "ID модуля"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация"
+// @Failure 404 {object} courseError.CourseError "Модуль не найден"
+// @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) EraseLesson(ctx *gin.Context) {
 	if err := h.contentManagementService.RemoveLesson(ctx, ctx.Param("id")); err != nil {
 		h.logger.Error("ошибка при удалении уроки", "EraseLesson", err.Message, err.Code)

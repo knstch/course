@@ -626,7 +626,7 @@ func (storage Storage) EditLesson(ctx context.Context,
 	return nil
 }
 
-func (storage Storage) ToggleHiddenStatus(ctx context.Context, courseId int) *courseError.CourseError {
+func (storage Storage) ToggleHiddenStatus(ctx context.Context, courseId string) *courseError.CourseError {
 	tx := storage.db.WithContext(ctx).Begin()
 
 	course := dto.CreateNewCourse()

@@ -150,6 +150,7 @@ func (h Handlers) ManageBillingHost(ctx *gin.Context) {
 
 // @Summary Изменить токен биллинга
 // @Accept json
+// @Produce json
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/billing/management/manageBillingToken [patch]
 // @Tags Методы биллинга

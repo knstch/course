@@ -50,7 +50,7 @@ type ContentManager interface {
 	EditCourse(ctx context.Context, courseId, name, description string, previewUrl *string, cost, discount *uint) *courseError.CourseError
 	EditModule(ctx context.Context, name, description string, position *uint, moduleId uint) *courseError.CourseError
 	EditLesson(ctx context.Context, name, description, position, lessonId string, videoPath, previewPath *string) *courseError.CourseError
-	ToggleHiddenStatus(ctx context.Context, courseId int) *courseError.CourseError
+	ToggleHiddenStatus(ctx context.Context, courseId string) *courseError.CourseError
 	DeleteModule(ctx context.Context, moduleId string) *courseError.CourseError
 	DeleteLesson(ctx context.Context, lessonId string) *courseError.CourseError
 	GetCourseByName(ctx context.Context, name string) (*dto.Course, *courseError.CourseError)
@@ -583,11 +583,10 @@ func (manager ContentManagementServcie) ManageLesson(ctx context.Context,
 
 // ManageShowStatus используется для скрытия или открытия урока в общем доступе, в качестве параметров
 // принимает ID курса, который является обязательным, и валидирует его. Не затрагивает уже купленный матерал. Возвращает ошибку.
-func (manager ContentManagementServcie) ManageShowStatus(ctx context.Context, courseId int) *courseError.CourseError {
-	if err := validation.NewIdToValidate(courseId).Validate(ctx); err != nil {
+func (manager ContentManagementServcie) ManageShowStatus(ctx context.Context, courseId string) *courseError.CourseError {
+	if err := validation.NewStringIdToValidate(courseId).Validate(ctx); err != nil {
 		return err
 	}
-
 	if err := manager.contentManager.ToggleHiddenStatus(ctx, courseId); err != nil {
 		return err
 	}
