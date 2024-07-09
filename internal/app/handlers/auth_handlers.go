@@ -22,10 +22,10 @@ var (
 // @Produce json
 // @Accept json
 // @Success 200 {object} entity.SuccessResponse
-// @Router /v1/auth/login [post]
+// @Router /v1/auth/register [post]
 // @Tags Методы для авторизации пользователей
 // @Param credentials body entity.Credentials true "учетные данные"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация, или декодирование сообщения, или почта уже занята"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация, или не удалось декодировать сообщение, или почта уже занята"
 // @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) SignUp(ctx *gin.Context) {
 	credentials := entity.NewCredentials()
@@ -61,6 +61,8 @@ func (h Handlers) SignUp(ctx *gin.Context) {
 // @Tags Методы для авторизации пользователей
 // @Param credentials body entity.Credentials true "учетные данные"
 // @Failure 400 {object} courseError.CourseError "Провалена валидация, или декодирование сообщения, или почта уже занята"
+// @Failure 404 {object} courseError.CourseError "Пользователь не найден"
+// @Failure 405 {object} courseError.CourseError "Пользователь неактивен"
 // @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) SignIn(ctx *gin.Context) {
 	credentials := entity.NewCredentials()
@@ -168,6 +170,10 @@ func (h Handlers) SendNewCode(ctx *gin.Context) {
 
 	if err := h.authService.SendNewCofirmationCode(ctx, email); err != nil {
 		h.logger.Error(fmt.Sprintf("не получилось отправить код подтверждения на почту юзера с ID = %d", ctx.Value("userId")), "SendNewCode", err.Message, err.Code)
+		if err.Code == 400 {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			return
+		}
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
 		return
 	}
@@ -208,7 +214,7 @@ func (h Handlers) SendRecoverPasswordCode(ctx *gin.Context) {
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/auth/recoverPassword [post]
 // @Tags Методы для авторизации пользователей
-// @Param credentials body entity.PasswordRecoverCredentials true "почта, новый пароль и код"
+// @Param recoverCredentials body entity.PasswordRecoverCredentials true "почта, новый пароль и код"
 // @Failure 400 {object} courseError.CourseError "Провалена валидация или код подтверждения неверный"
 // @Failure 404 {object} courseError.CourseError "Код не найден"
 // @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"

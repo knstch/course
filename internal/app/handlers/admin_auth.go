@@ -68,9 +68,8 @@ func (h Handlers) CreateAdmin(ctx *gin.Context) {
 // @Tags Методы для администрирования
 // @Param adminData body entity.AdminCredentials true "логин, пароль, код подтверждения"
 // @Failure 400 {object} courseError.CourseError "Провалена валидация или декодирование сообщения"
-// @Failure 403 {object} courseError.CourseError "Нет прав"
+// @Failure 403 {object} courseError.CourseError "Неверный код или пара логин-пароль"
 // @Failure 404 {object} courseError.CourseError "Код не найден"
-// @Failure 409 {object} courseError.CourseError "Невозможно создать админа"
 // @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) VerifyAuthentificator(ctx *gin.Context) {
 	var credentials *entity.AdminCredentials
@@ -238,8 +237,7 @@ func (h Handlers) ChangeAdminPassword(ctx *gin.Context) {
 // @Router /v1/admin/management/resetKey [patch]
 // @Tags Методы для администрирования
 // @Param login query string true "логин"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация или декодирование сообщения"
-// @Failure 403 {object} courseError.CourseError "Неправильный логин, пароль или код"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация или не получилось декодировать сообщение"
 // @Failure 404 {object} courseError.CourseError "Администратор не найден"
 // @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) ChangeAdminAuthKey(ctx *gin.Context) {
@@ -249,10 +247,10 @@ func (h Handlers) ChangeAdminAuthKey(ctx *gin.Context) {
 		ctx.AbortWithStatusJSON(http.StatusForbidden, courseError.CreateError(errNoRights, 16004))
 		return
 	}
-
-	qr, err := h.adminService.ManageAdminAuthKey(ctx, ctx.Query("login"))
+	login := ctx.Query("login")
+	qr, err := h.adminService.ManageAdminAuthKey(ctx, login)
 	if err != nil {
-		h.logger.Error(fmt.Sprintf("не получилось изменить ключ для двойной аутентификации у админом с логином %v", ctx.Query("login")), "ChangeAdminAuthKey", err.Message, err.Code)
+		h.logger.Error(fmt.Sprintf("не получилось изменить ключ для двойной аутентификации у админом с логином %v", login), "ChangeAdminAuthKey", err.Message, err.Code)
 		if err.Code == 400 {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
 			return
@@ -265,7 +263,7 @@ func (h Handlers) ChangeAdminAuthKey(ctx *gin.Context) {
 		return
 	}
 
-	h.logger.Info("ключ для двойной аутентификации успешно изменен", "ChangeAdminAuthKey", ctx.Query("login"))
+	h.logger.Info("ключ для двойной аутентификации успешно изменен", "ChangeAdminAuthKey", login)
 
 	ctx.Data(http.StatusOK, "image/png", qr)
 }

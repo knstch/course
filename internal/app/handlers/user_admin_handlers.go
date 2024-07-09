@@ -151,10 +151,12 @@ func (h Handlers) GetUserById(ctx *gin.Context) {
 // @Router /v1/admin/management/editUserProfile [patch]
 // @Tags Методы для администрирования
 // @Param userInfo body entity.UserInfo true "Новые данные"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация или не удалось дешифровать сообщение"
+// @Param id query string true "ID пользователя"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация или не удалось декодировать сообщение"
 // @Failure 404 {object} courseError.CourseError "Пользователь не найден"
 // @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) EditUserProfile(ctx *gin.Context) {
+	id := ctx.Query("id")
 	userInfo := entity.NewUserInfo()
 	if err := ctx.ShouldBindJSON(&userInfo); err != nil {
 		h.logger.Error("не получилось обработать тело запроса", "EditUserProfile", err.Error(), 10101)
@@ -162,7 +164,7 @@ func (h Handlers) EditUserProfile(ctx *gin.Context) {
 		return
 	}
 
-	if err := h.userService.FillProfile(ctx, userInfo, ctx.Query("id"), true); err != nil {
+	if err := h.userService.FillProfile(ctx, userInfo, id, true); err != nil {
 		h.logger.Error("ошибка при заполнении профиля", "EditUserProfile", err.Message, err.Code)
 		if err.Code == 400 {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
@@ -176,7 +178,7 @@ func (h Handlers) EditUserProfile(ctx *gin.Context) {
 		return
 	}
 
-	h.logger.Info(fmt.Sprintf("информация профиля пользователя с ID: %v админом с ID: %d успешно изменена", ctx.Query("id"), ctx.Value("adminId").(uint)), "EditUserProfile", "")
+	h.logger.Info(fmt.Sprintf("информация профиля пользователя с ID: %v админом с ID: %d успешно изменена", id, ctx.Value("adminId").(uint)), "EditUserProfile", "")
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("данные успешно изменены"))
 }

@@ -393,14 +393,15 @@ func (h Handlers) ManageVisibility(ctx *gin.Context) {
 // @Summary Удалить модуль
 // @Produce json
 // @Success 200 {object} entity.SuccessResponse
-// @Router /v1/billing/management/deleteModule [delete]
+// @Router /v1/billing/management/deleteModule/{id} [delete]
 // @Tags Методы взаимодействия с контентом
 // @Param id path string true "ID модуля"
 // @Failure 400 {object} courseError.CourseError "Провалена валидация"
 // @Failure 404 {object} courseError.CourseError "Модуль не найден"
 // @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) EraseModule(ctx *gin.Context) {
-	if err := h.contentManagementService.RemoveModule(ctx, ctx.Param("id")); err != nil {
+	id := ctx.Param("id")
+	if err := h.contentManagementService.RemoveModule(ctx, id); err != nil {
 		h.logger.Error("ошибка при удалении модуля", "EraseModule", err.Message, err.Code)
 		if err.Code == 400 {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
@@ -413,7 +414,7 @@ func (h Handlers) EraseModule(ctx *gin.Context) {
 		return
 	}
 
-	h.logger.Info(fmt.Sprintf("модуль был успешно удален админом с ID: %d", ctx.Value("adminId").(uint)), "EraseModule", fmt.Sprintf("ID модуля: %v", ctx.Param("id")))
+	h.logger.Info(fmt.Sprintf("модуль был успешно удален админом с ID: %d", ctx.Value("adminId").(uint)), "EraseModule", fmt.Sprintf("ID модуля: %v", id))
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("модуль и вложенные уроки удалены"))
 }
@@ -421,14 +422,15 @@ func (h Handlers) EraseModule(ctx *gin.Context) {
 // @Summary Удалить урок
 // @Produce json
 // @Success 200 {object} entity.SuccessResponse
-// @Router /v1/billing/management/deleteLesson [delete]
+// @Router /v1/billing/management/deleteLesson{id} [delete]
 // @Tags Методы взаимодействия с контентом
-// @Param id path string true "ID модуля"
+// @Param id path string true "ID урока"
 // @Failure 400 {object} courseError.CourseError "Провалена валидация"
 // @Failure 404 {object} courseError.CourseError "Модуль не найден"
 // @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) EraseLesson(ctx *gin.Context) {
-	if err := h.contentManagementService.RemoveLesson(ctx, ctx.Param("id")); err != nil {
+	id := ctx.Param("id")
+	if err := h.contentManagementService.RemoveLesson(ctx, id); err != nil {
 		h.logger.Error("ошибка при удалении уроки", "EraseLesson", err.Message, err.Code)
 		if err.Code == 400 {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
@@ -442,7 +444,7 @@ func (h Handlers) EraseLesson(ctx *gin.Context) {
 		return
 	}
 
-	h.logger.Info(fmt.Sprintf("урок был успешно удален админом с ID: %d", ctx.Value("adminId").(uint)), "EraseLesson", fmt.Sprintf("ID урока: %v", ctx.Param("id")))
+	h.logger.Info(fmt.Sprintf("урок был успешно удален админом с ID: %d", ctx.Value("adminId").(uint)), "EraseLesson", fmt.Sprintf("ID урока: %v", id))
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("урок успешно удален"))
 }

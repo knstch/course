@@ -15,8 +15,8 @@ import (
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/profile/editProfile [patch]
 // @Tags Методы для администрирования профиля
-// @Param userData body entity.UserInfo true "Данные профиля"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация или не удалось дешифровать сообщение"
+// @Param UserInfo body entity.UserInfo true "Данные профиля"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация или не удалось декодировать сообщение"
 // @Failure 404 {object} courseError.CourseError "Пользователь не найден"
 // @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) ManageProfile(ctx *gin.Context) {
@@ -60,7 +60,7 @@ func (h Handlers) ManageProfile(ctx *gin.Context) {
 // @Router /v1/profile/editPassword [patch]
 // @Tags Методы для администрирования профиля
 // @Param passwords body entity.Passwords true "Пароли"
-// @Failure 400 {object} courseError.CourseError "Провалена валидация или не удалось дешифровать сообщение"
+// @Failure 400 {object} courseError.CourseError "Провалена валидация или не удалось декодировать сообщение"
 // @Failure 404 {object} courseError.CourseError "Пользователь не найден"
 // @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) ManagePassword(ctx *gin.Context) {
@@ -91,7 +91,6 @@ func (h Handlers) ManagePassword(ctx *gin.Context) {
 }
 
 // @Summary Изменить почту пользователя
-// @Accept json
 // @Produce json
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/profile/editEmail [patch]
@@ -130,12 +129,11 @@ func (h Handlers) ManageEmail(ctx *gin.Context) {
 }
 
 // @Summary Подтвердить изменении почты пользователя
-// @Accept json
 // @Produce json
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/profile/confirmEmailChange [post]
 // @Tags Методы для администрирования профиля
-// @Param confirmCode body entity.ConfirmCode true "Код подтверждения"
+// @Param confirmCode query string true "Код подтверждения"
 // @Failure 400 {object} courseError.CourseError "Провалена валидация"
 // @Failure 404 {object} courseError.CourseError "Пользователь не найден"
 // @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"

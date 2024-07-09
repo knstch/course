@@ -14,13 +14,13 @@ import (
 // @Router /v1/profile/getCourses [get]
 // @Router /v1/admin/management/courses [get]
 // @Tags Методы взаимодействия с контентом
-// @Param id query string false "ID"
-// @Param name query string false "название курса"
-// @Param description query string false "описание курса"
-// @Param cost query int false "стоимость курса"
-// @Param discount query int false "размер скидки"
-// @Param page query string true "страница"
-// @Param limit query string true "лимит"
+// @Param id query string false "Используется для полного доступа к контенту, при передаче ID все остальные параметры игнорируются и происходит проверка на наличие доступа к контену"
+// @Param name query string false "Название курса"
+// @Param description query string false "Описание курса"
+// @Param cost query int false "Стоимость курса"
+// @Param discount query int false "Размер скидки"
+// @Param page query string true "Страница"
+// @Param limit query string true "Лимит"
 // @Failure 400 {object} courseError.CourseError "Провалена валидация"
 // @Failure 403 {object} courseError.CourseError "Нет доступа к расширенному контенту"
 // @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
@@ -128,7 +128,7 @@ func (h Handlers) RetreiveModules(ctx *gin.Context) {
 // @Router /v1/admin/management/lessons [get]
 // @Tags Методы взаимодействия с контентом
 // @Param name query string false "название урока"
-// @Param description query string false "описание урлка"
+// @Param description query string false "описание урока"
 // @Param courseName query string false "название курса"
 // @Param moduleName query string false "название модуля"
 // @Param page query string true "страница"

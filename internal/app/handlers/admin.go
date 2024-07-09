@@ -18,7 +18,6 @@ import (
 // @Failure 400 {object} courseError.CourseError "Провалена валидация"
 // @Failure 403 {object} courseError.CourseError "Нет прав"
 // @Failure 404 {object} courseError.CourseError "Админ не найден"
-// @Failure 409 {object} courseError.CourseError "Невозможно создать админа"
 // @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) DeleteAdmin(ctx *gin.Context) {
 	role := ctx.Value("role").(string)
@@ -27,8 +26,8 @@ func (h Handlers) DeleteAdmin(ctx *gin.Context) {
 		ctx.AbortWithStatusJSON(http.StatusForbidden, courseError.CreateError(errNoRights, 16004))
 		return
 	}
-
-	if err := h.adminService.EraseAdmin(ctx, ctx.Query("login")); err != nil {
+	login := ctx.Query("login")
+	if err := h.adminService.EraseAdmin(ctx, login); err != nil {
 		h.logger.Error("не получилось удалить админа", "DeleteAdmin", err.Message, err.Code)
 		if err.Code == 400 {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
@@ -42,7 +41,7 @@ func (h Handlers) DeleteAdmin(ctx *gin.Context) {
 		return
 	}
 
-	h.logger.Info("админ упешно удален", "DeleteAdmin", ctx.Query("login"))
+	h.logger.Info("админ упешно удален", "DeleteAdmin", login)
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("администратор успешно удален"))
 }
@@ -65,9 +64,10 @@ func (h Handlers) ChangeRole(ctx *gin.Context) {
 		ctx.AbortWithStatusJSON(http.StatusForbidden, courseError.CreateError(errNoRights, 16004))
 		return
 	}
-
-	if err := h.adminService.ManageRole(ctx, ctx.Query("login"), ctx.Query("role")); err != nil {
-		h.logger.Error(fmt.Sprintf("ошибка при изменении роли на %v у админа с логином %v", ctx.Query("role"), ctx.Query("login")), "ChangeRole", err.Message, err.Code)
+	login := ctx.Query("login")
+	adminRole := ctx.Query("role")
+	if err := h.adminService.ManageRole(ctx, login, adminRole); err != nil {
+		h.logger.Error(fmt.Sprintf("ошибка при изменении роли на %v у админа с логином %v", adminRole, login), "ChangeRole", err.Message, err.Code)
 		if err.Code == 400 {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
 			return
@@ -80,7 +80,7 @@ func (h Handlers) ChangeRole(ctx *gin.Context) {
 		return
 	}
 
-	h.logger.Info(fmt.Sprintf("роль админа с логином %v успешно изменена", ctx.Query("login")), "ChangeRole", ctx.Query("role"))
+	h.logger.Info(fmt.Sprintf("роль админа с логином %v успешно изменена", login), "ChangeRole", adminRole)
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("роль успешно изменена"))
 }

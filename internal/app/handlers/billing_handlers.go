@@ -66,9 +66,10 @@ func (h Handlers) BuyCourse(ctx *gin.Context) {
 // @Failure 404 {object} courseError.CourseError "Заказ не найден"
 // @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) CompletePurchase(ctx *gin.Context) {
-	courseName, err := h.sberBillingService.ConfirmPayment(ctx, ctx.Param("userData"))
+	userData := ctx.Param("userData")
+	courseName, err := h.sberBillingService.ConfirmPayment(ctx, userData)
 	if err != nil {
-		h.logger.Error(fmt.Sprintf("ошибка при завершении покупки заказа %v", ctx.Param("userData")), "CompletePurchase", err.Message, err.Code)
+		h.logger.Error(fmt.Sprintf("ошибка при завершении покупки заказа %v", userData), "CompletePurchase", err.Message, err.Code)
 		if err.Code == 11004 || err.Code == 15001 || err.Code == 15002 {
 			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
 			return
@@ -81,7 +82,7 @@ func (h Handlers) CompletePurchase(ctx *gin.Context) {
 		return
 	}
 
-	h.logger.Info("курс успешно приобретен", "CompletePurchase", ctx.Param("userData"))
+	h.logger.Info("курс успешно приобретен", "CompletePurchase", userData)
 
 	ctx.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%v/%v", h.address, courseName))
 }
@@ -94,8 +95,9 @@ func (h Handlers) CompletePurchase(ctx *gin.Context) {
 // @Failure 404 {object} courseError.CourseError "Заказ не найден"
 // @Failure 500 {object} courseError.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) DeclineOrder(ctx *gin.Context) {
-	if err := h.sberBillingService.FailPayment(ctx, ctx.Param("userData")); err != nil {
-		h.logger.Error(fmt.Sprintf("ошибка при отмененной оплатае с заказом: %v", ctx.Param("userData")), "DeclineOrder", err.Message, err.Code)
+	userData := ctx.Param("userData")
+	if err := h.sberBillingService.FailPayment(ctx, userData); err != nil {
+		h.logger.Error(fmt.Sprintf("ошибка при отмененной оплатае с заказом: %v", userData), "DeclineOrder", err.Message, err.Code)
 		if err.Code == 11004 || err.Code == 15001 {
 			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
 			return
@@ -104,7 +106,7 @@ func (h Handlers) DeclineOrder(ctx *gin.Context) {
 		return
 	}
 
-	h.logger.Info("заказ успешно отменен", "DeclineOrder", ctx.Param("userData"))
+	h.logger.Info("заказ успешно отменен", "DeclineOrder", userData)
 
 	ctx.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%v/orders", h.address))
 }
