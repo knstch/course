@@ -146,8 +146,10 @@ func (auth AuthService) SendNewCofirmationCode(ctx context.Context, userEmail st
 	userId := ctx.Value("UserId").(uint)
 
 	code, err := auth.redis.Get(fmt.Sprint(userId)).Result()
-	if !errors.Is(err, redis.Nil) {
-		return courseError.CreateError(ErrConfirmCodeNotFound, 11004)
+	if err != nil {
+		if !errors.Is(err, redis.Nil) {
+			return courseError.CreateError(err, 11004)
+		}
 	}
 
 	if code != "" {
