@@ -55,7 +55,7 @@ func NewEmailService(redis *redis.Client, config *config.Config) *EmailService {
 // SendConfirmCode используется для отправки кода подтверждения. В качестве параметров принимает
 // ID пользователя и почту для отправки. Возвращает ошибку.
 func (email EmailService) SendConfirmCode(userId *uint, emailToSend *string, source string) *courseError.CourseError {
-	antispamKey := fmt.Sprintf("%v%v", confirm, *emailToSend)
+	antispamKey := fmt.Sprintf("%v:%v", confirm, *emailToSend)
 	antispamValue, err := email.redis.Get(antispamKey).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
@@ -107,7 +107,7 @@ func (email EmailService) sendConfirmEmail(code int, userEmail *string, sourse s
 // SendPasswordRecoverConfirmCode используется для отправки кода подтверждения на почту для изменения пароля.
 // Принимает в качестве параметра почту для отправки, возвращает ошибку.
 func (email EmailService) SendPasswordRecoverConfirmCode(emailToSend string) *courseError.CourseError {
-	antispamKey := fmt.Sprintf("%v%v", recover, emailToSend)
+	antispamKey := fmt.Sprintf("%v:%v", recover, emailToSend)
 	antispamValue, err := email.redis.Get(antispamKey).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
