@@ -49,7 +49,7 @@ type Claims struct {
 
 var (
 	ErrConfirmCodeNotFound    = errors.New("код не найден")
-	ErrBadConfirmCode         = errors.New("код подтверждения не найден")
+	ErrBadConfirmCode         = errors.New("код подтверждения не правильный")
 	ErrEmailIsAlreadyVerified = errors.New("почта уже подтвеждена")
 )
 

@@ -31,7 +31,10 @@ type Config struct {
 	SuperAdminPassword    string `envconfig:"SUPER_ADMIN_PASSWORD"`
 	AdminSecret           string `envconfig:"ADMIN_SECRET"`
 	LogFileName           string `envconfig:"LOG_FILE_NAME"`
-	CredentialsKeyPath    string `envconfig:"CREDENTIALS_KEY_PATH"`
+	ServiceEmail          string `envconfig:"SERVICE_EMAIL"`
+	ServiceEmailPassword  string `envconfig:"SERVICE_EMAIL_PASSWORD"`
+	SmtpHost              string `envconfig:"SMPT_HOST"`
+	SmtpPort              string `envconfig:"SMPT_PORT"`
 }
 
 var (

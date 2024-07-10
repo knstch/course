@@ -1,10 +1,7 @@
 package app
 
 import (
-	"context"
-	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/go-redis/redis"
 	"github.com/knstch/course/internal/app/config"
@@ -12,9 +9,6 @@ import (
 	"github.com/knstch/course/internal/app/handlers"
 	"github.com/knstch/course/internal/app/logger"
 	"github.com/knstch/course/internal/app/storage"
-	"golang.org/x/oauth2/google"
-	"google.golang.org/api/gmail/v1"
-	"google.golang.org/api/option"
 )
 
 // Container используется для сборки проекта.
@@ -52,25 +46,8 @@ func InitContainer(dir string, config *config.Config) (*Container, error) {
 	if err != nil {
 		return nil, err
 	}
-	file, err := os.ReadFile(fmt.Sprintf("%v%v", dir, config.CredentialsKeyPath))
-	if err != nil {
-		fmt.Println("EEEEEEE")
-	}
-	fmt.Println("FILE: ", file)
 
-	creds, err := google.CredentialsFromJSON(context.TODO(), []byte(config.CredentialsKeyPath), gmail.MailGoogleComScope)
-	if err != nil {
-		fmt.Println("AAAAAAAAAAAA")
-		return nil, err
-	}
-
-	gmailService, err := gmail.NewService(context.TODO(), option.WithCredentials(creds))
-	if err != nil {
-		fmt.Println("SSSSSSSSSSSSS")
-		return nil, err
-	}
-
-	handlers := handlers.NewHandlers(psqlStorage, config, redisClient, httpClient, grpcClient, defaultLogger, gmailService)
+	handlers := handlers.NewHandlers(psqlStorage, config, redisClient, httpClient, grpcClient, defaultLogger)
 
 	return &Container{
 		Storage:  psqlStorage,

@@ -2,14 +2,14 @@
 package email
 
 import (
-	"encoding/base64"
 	"fmt"
 	"math/rand"
+	"net/smtp"
 	"time"
 
 	"github.com/go-redis/redis"
+	"github.com/knstch/course/internal/app/config"
 	courseError "github.com/knstch/course/internal/app/course_error"
-	"google.golang.org/api/gmail/v1"
 )
 
 const (
@@ -17,20 +17,27 @@ const (
 )
 
 var (
-	emailMessage = "From: kostyacherepanov1@gmail.com\r\nTo: %v\r\nSubject: %v\r\n\r\n%d"
+	emailMessage = "From: %v\r\nTo: %v\r\nSubject: %v\r\n\r\n%d"
 )
 
 // EmailService используется для отправки email.
 type EmailService struct {
-	redis *redis.Client
-	gmail *gmail.Service
+	redis       *redis.Client
+	smtpHost    string
+	smptPort    string
+	auth        smtp.Auth
+	senderEmail string
 }
 
 // NewEmailService - это билдер для EmailService.
-func NewEmailService(redis *redis.Client, gmail *gmail.Service) *EmailService {
+func NewEmailService(redis *redis.Client, config *config.Config) *EmailService {
+	auth := smtp.PlainAuth(me, config.ServiceEmail, config.ServiceEmailPassword, config.SmtpHost)
 	return &EmailService{
 		redis,
-		gmail,
+		config.SmtpHost,
+		config.SmtpPort,
+		auth,
+		config.ServiceEmail,
 	}
 }
 
@@ -58,20 +65,11 @@ func (email EmailService) generateEmailConfirmCode() int {
 // sendConfirmEmail отправляет код подтверждения на почту, принимает в качестве параметров код и почту для отправки.
 // Возвращает ошибку.
 func (email EmailService) sendConfirmEmail(code int, userEmail *string) *courseError.CourseError {
-	readyEmail := fmt.Sprintf(emailMessage, *userEmail, "код подтверждения", code)
+	readyEmail := fmt.Sprintf(emailMessage, email.senderEmail, *userEmail, "код подтверждения", code)
 
-	message := []byte(readyEmail)
-
-	messageToSend := base64.URLEncoding.EncodeToString(message)
-
-	resp, err := email.gmail.Users.Messages.Send(me, &gmail.Message{
-		Raw: messageToSend,
-	}).Do()
-
-	if err != nil {
+	if err := smtp.SendMail(fmt.Sprintf("%v:%v", email.smtpHost, email.smptPort), email.auth, email.senderEmail, []string{*userEmail}, []byte(readyEmail)); err != nil {
 		return courseError.CreateError(err, 17001)
 	}
-	fmt.Println(resp.Raw)
 	return nil
 }
 
