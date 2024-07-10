@@ -85,7 +85,7 @@ func (auth AuthService) Register(ctx context.Context, credentials *entity.Creden
 		return nil, err
 	}
 
-	if err := auth.emailService.SendConfirmCode(userId, &credentials.Email); err != nil {
+	if err := auth.emailService.SendConfirmCode(userId, &credentials.Email, email.ConfirmEmail); err != nil {
 		return nil, err
 	}
 
@@ -138,8 +138,8 @@ func (auth AuthService) VerifyEmail(ctx context.Context, code string, userId uin
 // SendNewCofirmationCode используется для отправки нового кода на почту пользователя.
 // В качестве параметра принимает email пользователя, валидирует его, ищет запись в Redis,
 // если она была найдена, то удаляет ее, и отправляет новый код. Возвращает ошибку.
-func (auth AuthService) SendNewCofirmationCode(ctx context.Context, email string) *courseError.CourseError {
-	if err := validation.NewEmailToValidate(email).Validate(ctx); err != nil {
+func (auth AuthService) SendNewCofirmationCode(ctx context.Context, userEmail string) *courseError.CourseError {
+	if err := validation.NewEmailToValidate(userEmail).Validate(ctx); err != nil {
 		return err
 	}
 
@@ -156,7 +156,7 @@ func (auth AuthService) SendNewCofirmationCode(ctx context.Context, email string
 		}
 	}
 
-	if err := auth.emailService.SendConfirmCode(&userId, &email); err != nil {
+	if err := auth.emailService.SendConfirmCode(&userId, &userEmail, email.ConfirmEmail); err != nil {
 		return err
 	}
 

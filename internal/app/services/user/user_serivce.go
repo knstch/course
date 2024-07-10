@@ -100,16 +100,16 @@ func (user UserService) EditPassword(ctx context.Context, passwords *entity.Pass
 
 // EditEmail используется для изменения почты пользователя. Принимает в качестве параметров новую почту и ID пользователя.
 // Возвращает ошибку.
-func (user UserService) EditEmail(ctx context.Context, email string, userId uint) *courseError.CourseError {
-	if err := validation.NewEmailToValidate(email).Validate(ctx); err != nil {
+func (user UserService) EditEmail(ctx context.Context, userEmail string, userId uint) *courseError.CourseError {
+	if err := validation.NewEmailToValidate(userEmail).Validate(ctx); err != nil {
 		return err
 	}
 
-	if err := user.Profiler.ChangeEmail(ctx, email, userId); err != nil {
+	if err := user.Profiler.ChangeEmail(ctx, userEmail, userId); err != nil {
 		return err
 	}
 
-	if err := user.emailService.SendConfirmCode(&userId, &email); err != nil {
+	if err := user.emailService.SendConfirmCode(&userId, &userEmail, email.ConfirmEmail); err != nil {
 		return err
 	}
 

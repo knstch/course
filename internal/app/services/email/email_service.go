@@ -13,7 +13,12 @@ import (
 )
 
 const (
-	me = "me"
+	me           = "me"
+	recover      = "recover"
+	ConfirmEmail = "confirmEmail"
+
+	recoverPasswordTitle = "Код для восстановления пароля"
+	confirmEmailTitle    = "Код для подтверждения почты"
 )
 
 var (
@@ -43,10 +48,10 @@ func NewEmailService(redis *redis.Client, config *config.Config) *EmailService {
 
 // SendConfirmCode используется для отправки кода подтверждения. В качестве параметров принимает
 // ID пользователя и почту для отправки. Возвращает ошибку.
-func (email EmailService) SendConfirmCode(userId *uint, emailToSend *string) *courseError.CourseError {
+func (email EmailService) SendConfirmCode(userId *uint, emailToSend *string, source string) *courseError.CourseError {
 	confirmCode := email.generateEmailConfirmCode()
 
-	if err := email.sendConfirmEmail(confirmCode, emailToSend); err != nil {
+	if err := email.sendConfirmEmail(confirmCode, emailToSend, source); err != nil {
 		return err
 	}
 
@@ -64,8 +69,11 @@ func (email EmailService) generateEmailConfirmCode() int {
 
 // sendConfirmEmail отправляет код подтверждения на почту, принимает в качестве параметров код и почту для отправки.
 // Возвращает ошибку.
-func (email EmailService) sendConfirmEmail(code int, userEmail *string) *courseError.CourseError {
-	readyEmail := fmt.Sprintf(emailMessage, email.senderEmail, *userEmail, "код подтверждения", code)
+func (email EmailService) sendConfirmEmail(code int, userEmail *string, sourse string) *courseError.CourseError {
+	readyEmail := fmt.Sprintf(emailMessage, email.senderEmail, *userEmail, confirmEmailTitle, code)
+	if sourse == recover {
+		readyEmail = fmt.Sprintf(emailMessage, email.senderEmail, *userEmail, recoverPasswordTitle, code)
+	}
 
 	if err := smtp.SendMail(fmt.Sprintf("%v:%v", email.smtpHost, email.smptPort), email.auth, email.senderEmail, []string{*userEmail}, []byte(readyEmail)); err != nil {
 		return courseError.CreateError(err, 17001)
@@ -78,7 +86,7 @@ func (email EmailService) sendConfirmEmail(code int, userEmail *string) *courseE
 func (email EmailService) SendPasswordRecoverConfirmCode(emailToSend string) *courseError.CourseError {
 	confirmCode := email.generateEmailConfirmCode()
 
-	if err := email.sendConfirmEmail(confirmCode, &emailToSend); err != nil {
+	if err := email.sendConfirmEmail(confirmCode, &emailToSend, recover); err != nil {
 		return err
 	}
 
