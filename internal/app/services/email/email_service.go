@@ -78,6 +78,7 @@ func (email EmailService) sendConfirmEmail(code int, userEmail *string, sourse s
 	if err := smtp.SendMail(fmt.Sprintf("%v:%v", email.smtpHost, email.smptPort), email.auth, email.senderEmail, []string{*userEmail}, []byte(readyEmail)); err != nil {
 		return courseError.CreateError(err, 17001)
 	}
+
 	return nil
 }
 
