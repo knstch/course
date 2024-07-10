@@ -12,6 +12,7 @@ import (
 // @Summary Изменить профиль пользователя
 // @Accept json
 // @Produce json
+// @Description Используется для редактирования профиля пользователем.
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/profile/editProfile [patch]
 // @Tags Методы для администрирования профиля
@@ -51,6 +52,7 @@ func (h Handlers) ManageProfile(ctx *gin.Context) {
 // @Summary Изменить пароль пользователя
 // @Accept json
 // @Produce json
+// @Description Используется для изменения пароля пользователя.
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/profile/editPassword [patch]
 // @Tags Методы для администрирования профиля
@@ -89,6 +91,7 @@ func (h Handlers) ManagePassword(ctx *gin.Context) {
 
 // @Summary Изменить почту пользователя
 // @Produce json
+// @Description Используется для изменения почты пользователя.
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/profile/editEmail [patch]
 // @Tags Методы для администрирования профиля
@@ -122,6 +125,7 @@ func (h Handlers) ManageEmail(ctx *gin.Context) {
 
 // @Summary Подтвердить изменении почты пользователя
 // @Produce json
+// @Description Используется для подтверждения изменения почты пользователя.
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/profile/confirmEmailChange [post]
 // @Tags Методы для администрирования профиля
@@ -157,6 +161,7 @@ func (h Handlers) ConfirmEmailChange(ctx *gin.Context) {
 // @Summary Изменить фото профиля
 // @Accept mpfd
 // @Produce json
+// @Description Используется для изменения фото профиля пользователя.
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/profile/setPhoto [patch]
 // @Tags Методы для администрирования профиля
@@ -188,6 +193,7 @@ func (h Handlers) ChangeProfilePhoto(ctx *gin.Context) {
 
 // @Summary Получить данные профиля
 // @Produce json
+// @Description Используется для получения данных профиля пользователя.
 // @Success 200 {object} entity.UserData
 // @Router /v1/profile/getUser [get]
 // @Tags Методы для администрирования профиля
@@ -214,6 +220,7 @@ func (h Handlers) GetUser(ctx *gin.Context) {
 
 // @Summary Заморозить профиль
 // @Produce json
+// @Description Используется для заморозки профиля пользователем.
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/profile/disable [post]
 // @Tags Методы для администрирования профиля
@@ -235,6 +242,7 @@ func (h Handlers) FreezeProfile(ctx *gin.Context) {
 
 // @Summary Пометить урок как пройденный
 // @Produce json
+// @Description Используется для добавления урока в просмотренный.
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/profile/watchLesson [post]
 // @Tags Методы для администрирования профиля

@@ -17,6 +17,7 @@ var (
 // @Summary Создать курс
 // @Accept mpfd
 // @Produce json
+// @Description Используется для создания нового курса. Требуется токен администратора.
 // @Success 200 {object} entity.Id
 // @Router /v1/billing/management/createCourse [post]
 // @Tags Методы взаимодействия с контентом
@@ -74,10 +75,11 @@ func (h Handlers) CreateNewCourse(ctx *gin.Context) {
 // @Summary Создать модуль
 // @Accept json
 // @Produce json
+// @Description Используется для создания нового модуля в курсе. Требуется токен администратора.
 // @Success 200 {object} entity.Id
 // @Router /v1/billing/management/createModule [post]
 // @Tags Методы взаимодействия с контентом
-// @Param module body entity.Module true "данные модуля"
+// @Param module body entity.Module true "Данные модуля"
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация или декодирование сообщения"
 // @Failure 409 {object} courseerror.CourseError "Модуль с таким названием или позицией уже существует"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
@@ -112,6 +114,7 @@ func (h Handlers) CreateNewModule(ctx *gin.Context) {
 // @Summary Создать урок
 // @Accept mpfd
 // @Produce json
+// @Description Используется для загрузки нового урока в модуль. Требуется токен администратора.
 // @Success 200 {object} entity.Id
 // @Router /v1/billing/management/uploadLesson [post]
 // @Tags Методы взаимодействия с контентом
@@ -179,6 +182,7 @@ func (h Handlers) UploadNewLesson(ctx *gin.Context) {
 // @Summary Обновить курс
 // @Accept mpfd
 // @Produce json
+// @Description Используется для редактирования курса. Требуется токен администратора.
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/billing/management/editCourse [patch]
 // @Tags Методы взаимодействия с контентом
@@ -237,10 +241,11 @@ func (h Handlers) UpdateCourse(ctx *gin.Context) {
 // @Summary Обновить модуль
 // @Accept json
 // @Produce json
+// @Description Используется для редактирования модуля. Требуется токен администратора.
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/billing/management/editModule [post]
 // @Tags Методы взаимодействия с контентом
-// @Param module body entity.Module true "данные модуля"
+// @Param module body entity.Module true "Данные модуля"
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация или декодирование сообщения"
 // @Failure 404 {object} courseerror.CourseError "Модуль не найден"
 // @Failure 409 {object} courseerror.CourseError "Модуль с таким названием или позицией уже существует"
@@ -279,6 +284,7 @@ func (h Handlers) UpdateModule(ctx *gin.Context) {
 // @Summary Обновить урок
 // @Accept mpfd
 // @Produce json
+// @Description Используется для редактирования урока. Требуется токен администратора.
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/billing/management/editLesson [patch]
 // @Tags Методы взаимодействия с контентом
@@ -362,6 +368,7 @@ func (h Handlers) UpdateLesson(ctx *gin.Context) {
 
 // @Summary Изменить видимость курса
 // @Produce json
+// @Description Используется для изменения видимости курса для пользователей. Не влияет на уже купленные курсы, они будут видимы в профиле. Требуется токен администратора.
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/billing/management/editVisibility [patch]
 // @Tags Методы взаимодействия с контентом
@@ -392,6 +399,7 @@ func (h Handlers) ManageVisibility(ctx *gin.Context) {
 
 // @Summary Удалить модуль
 // @Produce json
+// @Description Используется для удаления модуля. Требуется токен администратора.
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/billing/management/deleteModule/{id} [delete]
 // @Tags Методы взаимодействия с контентом
@@ -421,6 +429,7 @@ func (h Handlers) EraseModule(ctx *gin.Context) {
 
 // @Summary Удалить урок
 // @Produce json
+// @Description Используется для удаления урока. Требуется токен администратора.
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/billing/management/deleteLesson{id} [delete]
 // @Tags Методы взаимодействия с контентом

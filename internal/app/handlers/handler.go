@@ -15,6 +15,7 @@ import (
 	"github.com/knstch/course/internal/app/services/user"
 	usermanagement "github.com/knstch/course/internal/app/services/user_management"
 	"github.com/knstch/course/internal/app/storage"
+	"google.golang.org/api/gmail/v1"
 )
 
 type Handlers struct {
@@ -34,8 +35,8 @@ type logger interface {
 	Info(message, method, request string)
 }
 
-func NewHandlers(storage *storage.Storage, config *config.Config, redisClient *redis.Client, client *http.Client, grpcClient *grpc.GrpcClient, logger logger) *Handlers {
-	emailService := email.NewEmailService(redisClient)
+func NewHandlers(storage *storage.Storage, config *config.Config, redisClient *redis.Client, client *http.Client, grpcClient *grpc.GrpcClient, logger logger, gmail *gmail.Service) *Handlers {
+	emailService := email.NewEmailService(redisClient, gmail)
 	return &Handlers{
 		authService:              auth.NewAuthService(storage, config, redisClient, emailService),
 		userService:              user.NewUserService(storage, emailService, redisClient, client, config.CdnApiKey, config.CdnHost),

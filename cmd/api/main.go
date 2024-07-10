@@ -41,7 +41,7 @@ func run() error {
 
 	config := config.GetConfig()
 
-	container, err := app.InitContainer(config)
+	container, err := app.InitContainer(dir, config)
 	if err != nil {
 		return err
 	}

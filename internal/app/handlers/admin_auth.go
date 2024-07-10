@@ -17,9 +17,10 @@ var (
 // @Summary Создать профиль нового администратора
 // @Accept json
 // @Success 200 {object} string "image/png"
+// @Description Используется для создания нового администратора. Метод доступен только супер админу.
 // @Router /v1/admin/management/register [post]
 // @Tags Методы для администрирования
-// @Param adminData body entity.AdminCredentials true "логин, пароль"
+// @Param adminData body entity.AdminCredentials true "Логин, пароль"
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация или декодирование сообщения"
 // @Failure 403 {object} courseerror.CourseError "Нет прав"
 // @Failure 409 {object} courseerror.CourseError "Невозможно создать админа"
@@ -62,10 +63,11 @@ func (h Handlers) CreateAdmin(ctx *gin.Context) {
 // @Summary Верифицировать аутентификатор
 // @Accept json
 // @Produce json
+// @Description Используется для проверки подключенного аутентификатора у админа.
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/admin/verify [post]
 // @Tags Методы для администрирования
-// @Param adminData body entity.AdminCredentials true "логин, пароль, код подтверждения"
+// @Param adminData body entity.AdminCredentials true "Логин, пароль, код подтверждения"
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация или декодирование сообщения"
 // @Failure 403 {object} courseerror.CourseError "Неверный код или пара логин-пароль"
 // @Failure 404 {object} courseerror.CourseError "Код не найден"
@@ -104,10 +106,11 @@ func (h Handlers) VerifyAuthentificator(ctx *gin.Context) {
 // @Summary Залогиниться администратору
 // @Accept json
 // @Produce json
+// @Description Используется для логина администратора.
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/admin/login [post]
 // @Tags Методы для администрирования
-// @Param adminData body entity.AdminCredentials true "логин, пароль, код подтверждения"
+// @Param adminData body entity.AdminCredentials true "Логин, пароль, код подтверждения"
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация или декодирование сообщения"
 // @Failure 403 {object} courseerror.CourseError "Неправильный логин, пароль или код"
 // @Failure 404 {object} courseerror.CourseError "Администратор не найден"
@@ -188,10 +191,11 @@ func (h Handlers) WithAdminCookieAuth() gin.HandlerFunc {
 // @Summary Изменить пароль администратора
 // @Accept json
 // @Produce json
+// @Description Используется для смены пароля администратора. Метод доступен только супер админу.
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/admin/management/resetPassword [patch]
 // @Tags Методы для администрирования
-// @Param adminData body entity.AdminCredentials true "логин, пароль"
+// @Param adminData body entity.AdminCredentials true "Логин, пароль"
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация или декодирование сообщения"
 // @Failure 403 {object} courseerror.CourseError "Неправильный логин, пароль или код"
 // @Failure 404 {object} courseerror.CourseError "Администратор не найден"
@@ -232,9 +236,10 @@ func (h Handlers) ChangeAdminPassword(ctx *gin.Context) {
 
 // @Summary Изменить ключ администратора
 // @Success 200 {object} string "image/png"
+// @Description Используется для изменения ключа в аутентификаторе. Метод доступен только супер админу.
 // @Router /v1/admin/management/resetKey [patch]
 // @Tags Методы для администрирования
-// @Param login query string true "логин"
+// @Param login query string true "Логин"
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация или не получилось декодировать сообщение"
 // @Failure 404 {object} courseerror.CourseError "Администратор не найден"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"

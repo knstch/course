@@ -16,6 +16,7 @@ var (
 
 // @Summary Купить курс
 // @Accept json
+// @Description Используется для покупки курса. Формирует инвойс и отправляет его в биллинг. Метод редиректит на страницу оплаты.
 // @Success 307 "Temporary Redirect"
 // @Router /v1/billing/buyCourse [post]
 // @Tags Методы биллинга
@@ -59,10 +60,11 @@ func (h Handlers) BuyCourse(ctx *gin.Context) {
 }
 
 // @Summary Оплата курса подтверждена
+// @Description Используется для подтверждения оплаты платежным шлюзом. Если оплата прошла успешно, редиректит на этот хендлер и затем происходит редирект на страницу с курсом.
 // @Success 307 "Temporary Redirect"
 // @Router /v1/billing/successPayment/{userData} [get]
 // @Tags Методы биллинга
-// @Param userData path string true "захешированные данные пользователя"
+// @Param userData path string true "Захешированные данные пользователя"
 // @Failure 400 {object} courseerror.CourseError "Инвойс ID не совпадает с хэшем из path"
 // @Failure 404 {object} courseerror.CourseError "Заказ не найден"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
@@ -89,10 +91,11 @@ func (h Handlers) CompletePurchase(ctx *gin.Context) {
 }
 
 // @Summary Оплата курса провалена
+// @Description Используется для отмены заказа, если платеж был провален. Метод редиректит на страницу с заказами пользователя.
 // @Success 307 "Temporary Redirect"
 // @Router /v1/billing/failPayment/{userData} [get]
 // @Tags Методы биллинга
-// @Param userData path string true "захешированные данные пользователя"
+// @Param userData path string true "Захешированные данные пользователя"
 // @Failure 404 {object} courseerror.CourseError "Заказ не найден"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) DeclineOrder(ctx *gin.Context) {
@@ -115,6 +118,7 @@ func (h Handlers) DeclineOrder(ctx *gin.Context) {
 // @Summary Изменить billing host
 // @Produce json
 // @Accept json
+// @Description Используется для изменения хоста платежного шлюза.
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/billing/management/manageBillingHost [patch]
 // @Tags Методы биллинга
@@ -154,10 +158,11 @@ func (h Handlers) ManageBillingHost(ctx *gin.Context) {
 // @Summary Изменить токен биллинга
 // @Accept json
 // @Produce json
+// @Description Используется для изменения токена доступа к платежному шлюзу.
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/billing/management/manageBillingToken [patch]
 // @Tags Методы биллинга
-// @Param token query string true "токен"
+// @Param token query string true "Токен"
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) ManageAccessToken(ctx *gin.Context) {

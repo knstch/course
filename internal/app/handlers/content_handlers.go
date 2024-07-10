@@ -10,12 +10,13 @@ import (
 
 // @Summary Найти курсы по фильтрам
 // @Produce json
+// @Description Используется для получения курсов по фильтрам. При передаче ID все остальные фильтры игнорируются и происходит проверка на наличие доступа к контенту.
 // @Success 200 {object} entity.CourseInfoWithPagination
 // @Router /v1/content/courses [get]
 // @Router /v1/profile/getCourses [get]
 // @Router /v1/admin/management/courses [get]
 // @Tags Методы взаимодействия с контентом
-// @Param id query string false "Используется для полного доступа к контенту, при передаче ID все остальные параметры игнорируются и происходит проверка на наличие доступа к контену"
+// @Param id query string false "ID курса"
 // @Param name query string false "Название курса"
 // @Param description query string false "Описание курса"
 // @Param cost query int false "Стоимость курса"
@@ -77,17 +78,18 @@ func (h Handlers) RetreiveCourses(ctx *gin.Context) {
 }
 
 // @Summary Найти модули по фильтрам
+// @Description Используется для получения модулей. Если было передано название курса, к которому принадлежит модуль, и пользователь залогинен то происходит проверка на наличие курса в профиле пользователя. Если он не куплен, то возвращается ошибка.
 // @Produce json
 // @Success 200 {object} entity.ModuleInfoWithPagination
 // @Router /v1/content/modules [get]
 // @Router /v1/profile/modules [get]
 // @Router /v1/admin/management/modules [get]
 // @Tags Методы взаимодействия с контентом
-// @Param name query string false "название модуля"
-// @Param description query string false "описание модуля"
-// @Param courseName query string false "название курса"
-// @Param page query string true "страница"
-// @Param limit query string true "лимит"
+// @Param name query string false "Название модуля"
+// @Param description query string false "Описание модуля"
+// @Param courseName query string false "Название курса"
+// @Param page query string true "Страница"
+// @Param limit query string true "Лимит"
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) RetreiveModules(ctx *gin.Context) {
@@ -124,16 +126,17 @@ func (h Handlers) RetreiveModules(ctx *gin.Context) {
 // @Summary Найти уроки по фильтрам
 // @Produce json
 // @Success 200 {object} entity.ModuleInfoWithPagination
+// @Description Используется для получения уроков. Если было передано название курса, к которому принадлежит модуль, и пользователь залогинен то происходит проверка на наличие курса в профиле пользователя. Если он не куплен, то возвращается ошибка.
 // @Router /v1/content/lessons [get]
 // @Router /v1/profile/lessons [get]
 // @Router /v1/admin/management/lessons [get]
 // @Tags Методы взаимодействия с контентом
-// @Param name query string false "название урока"
-// @Param description query string false "описание урока"
-// @Param courseName query string false "название курса"
-// @Param moduleName query string false "название модуля"
-// @Param page query string true "страница"
-// @Param limit query string true "лимит"
+// @Param name query string false "Название урока"
+// @Param description query string false "Описание урока"
+// @Param courseName query string false "Название курса"
+// @Param moduleName query string false "Название модуля"
+// @Param page query string true "Страница"
+// @Param limit query string true "Лимит"
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) RetreiveLessons(ctx *gin.Context) {

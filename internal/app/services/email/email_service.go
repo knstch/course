@@ -2,22 +2,35 @@
 package email
 
 import (
+	"encoding/base64"
 	"fmt"
+	"math/rand"
 	"time"
 
 	"github.com/go-redis/redis"
 	courseError "github.com/knstch/course/internal/app/course_error"
+	"google.golang.org/api/gmail/v1"
+)
+
+const (
+	me = "me"
+)
+
+var (
+	emailMessage = "From: kostyacherepanov1@gmail.com\r\nTo: %v\r\nSubject: %v\r\n\r\n%d"
 )
 
 // EmailService используется для отправки email.
 type EmailService struct {
 	redis *redis.Client
+	gmail *gmail.Service
 }
 
 // NewEmailService - это билдер для EmailService.
-func NewEmailService(redis *redis.Client) *EmailService {
+func NewEmailService(redis *redis.Client, gmail *gmail.Service) *EmailService {
 	return &EmailService{
-		redis: redis,
+		redis,
+		gmail,
 	}
 }
 
@@ -38,14 +51,27 @@ func (email EmailService) SendConfirmCode(userId *uint, emailToSend *string) *co
 }
 
 // generateEmailConfirmCode используется для генерации кода подтверждения.
-func (email EmailService) generateEmailConfirmCode() uint {
-	return 1111
+func (email EmailService) generateEmailConfirmCode() int {
+	return rand.Intn(9000) + 1000
 }
 
-// UNIMPLEMENTED
 // sendConfirmEmail отправляет код подтверждения на почту, принимает в качестве параметров код и почту для отправки.
 // Возвращает ошибку.
-func (email EmailService) sendConfirmEmail(_ uint, _ *string) *courseError.CourseError {
+func (email EmailService) sendConfirmEmail(code int, userEmail *string) *courseError.CourseError {
+	readyEmail := fmt.Sprintf(emailMessage, *userEmail, "код подтверждения", code)
+
+	message := []byte(readyEmail)
+
+	messageToSend := base64.URLEncoding.EncodeToString(message)
+
+	resp, err := email.gmail.Users.Messages.Send(me, &gmail.Message{
+		Raw: messageToSend,
+	}).Do()
+
+	if err != nil {
+		return courseError.CreateError(err, 17001)
+	}
+	fmt.Println(resp.Raw)
 	return nil
 }
 

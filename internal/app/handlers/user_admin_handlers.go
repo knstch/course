@@ -11,19 +11,20 @@ import (
 
 // @Summary Найти пользователей по фильтрам
 // @Produce json
+// @Description Используется для поиска пользователей по фильтрам. Требуется токен администратора.
 // @Success 200 {object} entity.UserDataWithPagination
 // @Router /v1/admin/management/users [get]
 // @Tags Методы для администрирования
-// @Param firstName query string false "имя"
-// @Param surname query string false "фамилия"
-// @Param phoneNumber query string false "номер телефона"
-// @Param email query string false "почта"
-// @Param active query string false "активный аккаунт"
-// @Param verified query string false "верифицированный аккаунт"
-// @Param courseName query string false "название курса"
-// @Param banned query string false "статус бана"
-// @Param page query string true "страница"
-// @Param limit query string true "лимит"
+// @Param firstName query string false "Имя"
+// @Param surname query string false "Фамилия"
+// @Param phoneNumber query string false "Номер телефона"
+// @Param email query string false "Почта"
+// @Param active query string false "Активный аккаунт"
+// @Param verified query string false "Верифицированный аккаунт"
+// @Param courseName query string false "Название курса"
+// @Param banned query string false "Статус бана"
+// @Param page query string true "Страница"
+// @Param limit query string true "Лимит"
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) FindUsersByFilters(ctx *gin.Context) {
@@ -62,6 +63,7 @@ func (h Handlers) FindUsersByFilters(ctx *gin.Context) {
 
 // @Summary Заблокировать пользователя
 // @Produce json
+// @Description Используется для блокировки пользователей по ID.
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/admin/management/ban [post]
 // @Tags Методы для администрирования
@@ -88,6 +90,7 @@ func (h Handlers) BanUser(ctx *gin.Context) {
 
 // @Summary Разблокировать пользователя
 // @Produce json
+// @Description Используется для разбана пользователей по ID. Требуется токен администратора.
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/admin/management/ban [post]
 // @Tags Методы для администрирования
@@ -115,6 +118,7 @@ func (h Handlers) UnbanUser(ctx *gin.Context) {
 
 // @Summary Получить пользователя по ID
 // @Produce json
+// @Description Используется для получения данных о пользователе по ID. Требуется токен администратора.
 // @Success 200 {object} entity.UserDataAdmin
 // @Router /v1/admin/management/user [get]
 // @Tags Методы для администрирования
@@ -147,6 +151,7 @@ func (h Handlers) GetUserById(ctx *gin.Context) {
 // @Summary Изменить профиль пользовтаеля
 // @Accept json
 // @Produce json
+// @Description Используется для редактирования профиля администратором. Требуется токен администратора.
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/admin/management/editUserProfile [patch]
 // @Tags Методы для администрирования
@@ -185,6 +190,7 @@ func (h Handlers) EditUserProfile(ctx *gin.Context) {
 
 // @Summary Удалить фото пользователя
 // @Produce json
+// @Description Используется для удаления фото пользователя администратором. Требуется токен администратора.
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/admin/management/deleteProfilePhoto [delete]
 // @Tags Методы для администрирования

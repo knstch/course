@@ -19,10 +19,11 @@ var (
 // @Summary Зарегестрироваться пользователю
 // @Produce json
 // @Accept json
+// @Description Используется для регистрации новых пользователей. После регистрации необходимо подтвердить почту.
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/auth/register [post]
 // @Tags Методы для авторизации пользователей
-// @Param credentials body entity.Credentials true "учетные данные"
+// @Param credentials body entity.Credentials true "Учетные данные"
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация, или не удалось декодировать сообщение, или почта уже занята"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) SignUp(ctx *gin.Context) {
@@ -54,10 +55,11 @@ func (h Handlers) SignUp(ctx *gin.Context) {
 // @Summary Залогиниться пользователю
 // @Produce json
 // @Accept json
+// @Description Используется для логина пользователей.
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/auth/login [post]
 // @Tags Методы для авторизации пользователей
-// @Param credentials body entity.Credentials true "учетные данные"
+// @Param credentials body entity.Credentials true "Учетные данные"
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация, или декодирование сообщения, или почта уже занята"
 // @Failure 404 {object} courseerror.CourseError "Пользователь не найден"
 // @Failure 405 {object} courseerror.CourseError "Пользователь неактивен"
@@ -94,6 +96,7 @@ func (h Handlers) SignIn(ctx *gin.Context) {
 
 // @Summary Подтвердить почту пользователя
 // @Produce json
+// @Description Используется для верификации почты пользователя.
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/auth/email/verification [post]
 // @Tags Методы для авторизации пользователей
@@ -141,10 +144,11 @@ func (h Handlers) Verification(ctx *gin.Context) {
 
 // @Summary Отправить новый код подтверждения
 // @Produce json
+// @Description Используется для отправки нового кода на почту.
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/auth/email/newConfirmKey [get]
 // @Tags Методы для авторизации пользователей
-// @Param email query string true "почта для отправки кода подтверждения"
+// @Param email query string true "Почта для отправки кода подтверждения"
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация или почта пользователя уже подтверждена"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) SendNewCode(ctx *gin.Context) {
@@ -175,10 +179,11 @@ func (h Handlers) SendNewCode(ctx *gin.Context) {
 
 // @Summary Отправить код для восстановления пароля
 // @Produce json
+// @Description Используется для восстановления пароля. Отправляет код на почту.
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/auth/sendRecoveryCode [get]
 // @Tags Методы для авторизации пользователей
-// @Param email query string true "почта для восстановления пароля"
+// @Param email query string true "Почта для восстановления пароля"
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) SendRecoverPasswordCode(ctx *gin.Context) {
@@ -201,10 +206,11 @@ func (h Handlers) SendRecoverPasswordCode(ctx *gin.Context) {
 // @Summary Установить новый пароль
 // @Accept json
 // @Produce json
+// @Description Используется для установки нового пароля. Для подтверждения нужен код с почты.
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/auth/recoverPassword [post]
 // @Tags Методы для авторизации пользователей
-// @Param recoverCredentials body entity.PasswordRecoverCredentials true "почта, новый пароль и код"
+// @Param recoverCredentials body entity.PasswordRecoverCredentials true "Почта, новый пароль и код"
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация или код подтверждения неверный"
 // @Failure 404 {object} courseerror.CourseError "Код не найден"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"

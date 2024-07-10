@@ -2,3 +2,4 @@ api
 .env
 go.sum
 vendor/
+keys/

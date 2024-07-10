@@ -31,6 +31,7 @@ type Config struct {
 	SuperAdminPassword    string `envconfig:"SUPER_ADMIN_PASSWORD"`
 	AdminSecret           string `envconfig:"ADMIN_SECRET"`
 	LogFileName           string `envconfig:"LOG_FILE_NAME"`
+	CredentialsKeyPath    string `envconfig:"CREDENTIALS_KEY_PATH"`
 }
 
 var (

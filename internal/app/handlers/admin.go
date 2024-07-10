@@ -12,6 +12,7 @@ import (
 // @Summary Удалить админа
 // @Produce json
 // @Success 200 {object} entity.SuccessResponse
+// @Description Используется для удаления админа. Метод доступен только супер админу.
 // @Router /v1/admin/management/removeAdmin [delete]
 // @Tags Методы для администрирования
 // @Param login query string true "логин"
@@ -48,6 +49,7 @@ func (h Handlers) DeleteAdmin(ctx *gin.Context) {
 
 // @Summary Изменить роль администратора
 // @Produce json
+// @Description Используется для изменения роли админа. Метод доступен только супер админу.
 // @Success 200 {object} entity.SuccessResponse
 // @Router /v1/admin/management/changeRole [patch]
 // @Tags Методы для администрирования
@@ -87,14 +89,15 @@ func (h Handlers) ChangeRole(ctx *gin.Context) {
 
 // @Summary Найти администраторов по фильтрам
 // @Produce json
+// @Description Используется для получения списка администраторов. Метод доступен только супер админу.
 // @Success 200 {object} entity.AdminsInfoWithPagination
 // @Router /v1/admin/management/getAdmins [get]
 // @Tags Методы для администрирования
-// @Param login query string false "логин"
-// @Param role query string false "роль"
-// @Param twoStepsAuth query string false "подключенная двойная авторизация"
-// @Param page query string true "страница"
-// @Param limit query string true "лимит"
+// @Param login query string false "Логин"
+// @Param role query string false "Роль"
+// @Param twoStepsAuth query string false "Подключенная двойная авторизация"
+// @Param page query string true "Страница"
+// @Param limit query string true "Лимит"
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация"
 // @Failure 403 {object} courseerror.CourseError "Нет прав"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
@@ -129,13 +132,14 @@ func (h Handlers) FindAdmins(ctx *gin.Context) {
 
 // @Summary Получить данные с платежами по дням
 // @Produce json
+// @Description Используется для получения данных о платежах по дням. Метод доступен только супер админу.
 // @Success 200 {object} []entity.PaymentStats
 // @Router /v1/admin/management/paymentStats [get]
 // @Tags Методы для администрирования
-// @Param from query string true "приод от"
-// @Param due query string false "период до"
-// @Param courseName query string false "название курса"
-// @Param paymentMethod query string false "способ платежа"
+// @Param from query string true "Приод от"
+// @Param due query string false "Период до"
+// @Param courseName query string false "Название курса"
+// @Param paymentMethod query string false "Способ платежа"
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация"
 // @Failure 403 {object} courseerror.CourseError "Нет прав"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
@@ -170,11 +174,12 @@ func (h Handlers) GetPaymentDashboard(ctx *gin.Context) {
 
 // @Summary Получить данные с юзерами по дням
 // @Produce json
+// @Description Используется для получения данных по новым пользователям по дням. Метод доступен только супер админу.
 // @Success 200 {object} []entity.UsersStats
 // @Router /v1/admin/management/usersStats [get]
 // @Tags Методы для администрирования
-// @Param from query string true "приод от"
-// @Param due query string false "период до"
+// @Param from query string true "Приод от"
+// @Param due query string false "Период до"
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация"
 // @Failure 403 {object} courseerror.CourseError "Нет прав"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
