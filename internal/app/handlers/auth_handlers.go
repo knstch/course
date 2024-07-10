@@ -12,10 +12,8 @@ import (
 )
 
 var (
-	errUserIdNotFoundInCtx             = errors.New("почта не найдена в контексте")
-	errVerificationStatusNotFoundInCtx = errors.New("статус верификации не найден в контексте")
-	errUserEmailIsAlreadyVerified      = errors.New("почта пользователя уже верифицирована")
-	errUserNotAuthentificated          = errors.New("пользователь не авторизован")
+	errUserEmailIsAlreadyVerified = errors.New("почта пользователя уже верифицирована")
+	errUserNotAuthentificated     = errors.New("пользователь не авторизован")
 )
 
 // @Summary Зарегестрироваться пользователю
@@ -107,24 +105,15 @@ func (h Handlers) SignIn(ctx *gin.Context) {
 func (h Handlers) Verification(ctx *gin.Context) {
 	confirmCode := ctx.Query("confirmCode")
 
-	userId, ok := ctx.Get("UserId")
-	if !ok {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errUserIdNotFoundInCtx, 11005))
-		return
-	}
-
-	verified, ok := ctx.Get("verified")
-	if !ok {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errVerificationStatusNotFoundInCtx, 11005))
-		return
-	}
+	userId := ctx.Value("UserId").(uint)
+	verified := ctx.Value("verified")
 
 	if verified.(bool) {
 		ctx.JSON(http.StatusBadRequest, courseerror.CreateError(errUserEmailIsAlreadyVerified, 11008))
 		return
 	}
 
-	token, err := h.authService.VerifyEmail(ctx, confirmCode, userId.(uint))
+	token, err := h.authService.VerifyEmail(ctx, confirmCode, userId)
 	if err != nil {
 		h.logger.Error(fmt.Sprintf("не получилось верифицировать почту пользователя c ID = %d", userId), "Verification", err.Message, err.Code)
 		if err.Code == 11003 {
@@ -159,11 +148,7 @@ func (h Handlers) Verification(ctx *gin.Context) {
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация или почта пользователя уже подтверждена"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) SendNewCode(ctx *gin.Context) {
-	verified, ok := ctx.Get("verified")
-	if !ok {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errVerificationStatusNotFoundInCtx, 11005))
-		return
-	}
+	verified := ctx.Value("verified")
 
 	if verified.(bool) {
 		ctx.JSON(http.StatusBadRequest, courseerror.CreateError(errUserEmailIsAlreadyVerified, 11008))
@@ -171,9 +156,10 @@ func (h Handlers) SendNewCode(ctx *gin.Context) {
 	}
 
 	email := ctx.Query("email")
+	userId := ctx.Value("UserId").(uint)
 
 	if err := h.authService.SendNewCofirmationCode(ctx, email); err != nil {
-		h.logger.Error(fmt.Sprintf("не получилось отправить код подтверждения на почту юзера с ID = %d", ctx.Value("UserId")), "SendNewCode", err.Message, err.Code)
+		h.logger.Error(fmt.Sprintf("не получилось отправить код подтверждения на почту юзера с ID = %d", userId), "SendNewCode", err.Message, err.Code)
 		if err.Code == 400 {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
 			return
@@ -182,7 +168,7 @@ func (h Handlers) SendNewCode(ctx *gin.Context) {
 		return
 	}
 
-	h.logger.Info("код подтверждения успешно отправлен юзеру", "SendNewCode", fmt.Sprint(ctx.Value("UserId")))
+	h.logger.Info("код подтверждения успешно отправлен юзеру", "SendNewCode", fmt.Sprint(userId))
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("код успешно отправлен"))
 }

@@ -24,9 +24,10 @@ var (
 // @Failure 409 {object} courseerror.CourseError "Курс уже куплен"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) BuyCourse(ctx *gin.Context) {
+	userId := ctx.Value("UserId").(uint)
 	verifiedStatus := ctx.GetBool("verified")
 	if !verifiedStatus {
-		h.logger.Error(fmt.Sprintf("пользователь не верифицирован, ID: %d", ctx.Value("UserId").(uint)), "BuyCourse", errNotVerified.Error(), 11008)
+		h.logger.Error(fmt.Sprintf("пользователь не верифицирован, ID: %d", userId), "BuyCourse", errNotVerified.Error(), 11008)
 		ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errNotVerified, 11008))
 	}
 
@@ -39,7 +40,7 @@ func (h Handlers) BuyCourse(ctx *gin.Context) {
 
 	linkToPay, err := h.sberBillingService.PlaceOrder(ctx, buyDetails)
 	if err != nil {
-		h.logger.Error(fmt.Sprintf("ошибка при размещении заказа пользователя с ID: %d при покупке курса с ID: %d", ctx.Value("UserId"), buyDetails.CourseId), "BuyCourse", err.Message, err.Code)
+		h.logger.Error(fmt.Sprintf("ошибка при размещении заказа пользователя с ID: %d при покупке курса с ID: %d", userId, buyDetails.CourseId), "BuyCourse", err.Message, err.Code)
 		if err.Code == 400 {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
 			return
@@ -52,7 +53,7 @@ func (h Handlers) BuyCourse(ctx *gin.Context) {
 		return
 	}
 
-	h.logger.Info(fmt.Sprintf("заказ пользователя с ID: %d был успешно размещен", ctx.Value("UserId")), "BuyCourse", fmt.Sprint(buyDetails.CourseId))
+	h.logger.Info(fmt.Sprintf("заказ пользователя с ID: %d был успешно размещен", userId), "BuyCourse", fmt.Sprint(buyDetails.CourseId))
 
 	ctx.Redirect(http.StatusTemporaryRedirect, *linkToPay)
 }
