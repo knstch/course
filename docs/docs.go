@@ -17,6 +17,7 @@ const docTemplate = `{
     "paths": {
         "/v1/admin/login": {
             "post": {
+                "description": "Используется для логина администратора.",
                 "consumes": [
                     "application/json"
                 ],
@@ -29,7 +30,7 @@ const docTemplate = `{
                 "summary": "Залогиниться администратору",
                 "parameters": [
                     {
-                        "description": "логин, пароль, код подтверждения",
+                        "description": "Логин, пароль, код подтверждения",
                         "name": "adminData",
                         "in": "body",
                         "required": true,
@@ -74,6 +75,7 @@ const docTemplate = `{
         },
         "/v1/admin/management/ban": {
             "post": {
+                "description": "Используется для разбана пользователей по ID. Требуется токен администратора.",
                 "produces": [
                     "application/json"
                 ],
@@ -114,6 +116,7 @@ const docTemplate = `{
         },
         "/v1/admin/management/changeRole": {
             "patch": {
+                "description": "Используется для изменения роли админа. Метод доступен только супер админу.",
                 "produces": [
                     "application/json"
                 ],
@@ -173,6 +176,7 @@ const docTemplate = `{
         },
         "/v1/admin/management/courses": {
             "get": {
+                "description": "Используется для получения курсов по фильтрам. При передаче ID все остальные фильтры игнорируются и происходит проверка на наличие доступа к контенту.",
                 "produces": [
                     "application/json"
                 ],
@@ -183,7 +187,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Используется для полного доступа к контенту, при передаче ID все остальные параметры игнорируются и происходит проверка на наличие доступа к контену",
+                        "description": "ID курса",
                         "name": "id",
                         "in": "query"
                     },
@@ -256,6 +260,7 @@ const docTemplate = `{
         },
         "/v1/admin/management/deleteProfilePhoto": {
             "delete": {
+                "description": "Используется для удаления фото пользователя администратором. Требуется токен администратора.",
                 "produces": [
                     "application/json"
                 ],
@@ -302,6 +307,7 @@ const docTemplate = `{
         },
         "/v1/admin/management/editUserProfile": {
             "patch": {
+                "description": "Используется для редактирования профиля администратором. Требуется токен администратора.",
                 "consumes": [
                     "application/json"
                 ],
@@ -360,6 +366,7 @@ const docTemplate = `{
         },
         "/v1/admin/management/getAdmins": {
             "get": {
+                "description": "Используется для получения списка администраторов. Метод доступен только супер админу.",
                 "produces": [
                     "application/json"
                 ],
@@ -370,32 +377,32 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "логин",
+                        "description": "Логин",
                         "name": "login",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "роль",
+                        "description": "Роль",
                         "name": "role",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "подключенная двойная авторизация",
+                        "description": "Подключенная двойная авторизация",
                         "name": "twoStepsAuth",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "страница",
+                        "description": "Страница",
                         "name": "page",
                         "in": "query",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "лимит",
+                        "description": "Лимит",
                         "name": "limit",
                         "in": "query",
                         "required": true
@@ -431,6 +438,7 @@ const docTemplate = `{
         },
         "/v1/admin/management/lessons": {
             "get": {
+                "description": "Используется для получения уроков. Если было передано название курса, к которому принадлежит модуль, и пользователь залогинен то происходит проверка на наличие курса в профиле пользователя. Если он не куплен, то возвращается ошибка.",
                 "produces": [
                     "application/json"
                 ],
@@ -441,38 +449,38 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "название урока",
+                        "description": "Название урока",
                         "name": "name",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "описание урока",
+                        "description": "Описание урока",
                         "name": "description",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "название курса",
+                        "description": "Название курса",
                         "name": "courseName",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "название модуля",
+                        "description": "Название модуля",
                         "name": "moduleName",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "страница",
+                        "description": "Страница",
                         "name": "page",
                         "in": "query",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "лимит",
+                        "description": "Лимит",
                         "name": "limit",
                         "in": "query",
                         "required": true
@@ -502,6 +510,7 @@ const docTemplate = `{
         },
         "/v1/admin/management/modules": {
             "get": {
+                "description": "Используется для получения модулей. Если было передано название курса, к которому принадлежит модуль, и пользователь залогинен то происходит проверка на наличие курса в профиле пользователя. Если он не куплен, то возвращается ошибка.",
                 "produces": [
                     "application/json"
                 ],
@@ -512,32 +521,32 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "название модуля",
+                        "description": "Название модуля",
                         "name": "name",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "описание модуля",
+                        "description": "Описание модуля",
                         "name": "description",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "название курса",
+                        "description": "Название курса",
                         "name": "courseName",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "страница",
+                        "description": "Страница",
                         "name": "page",
                         "in": "query",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "лимит",
+                        "description": "Лимит",
                         "name": "limit",
                         "in": "query",
                         "required": true
@@ -567,6 +576,7 @@ const docTemplate = `{
         },
         "/v1/admin/management/paymentStats": {
             "get": {
+                "description": "Используется для получения данных о платежах по дням. Метод доступен только супер админу.",
                 "produces": [
                     "application/json"
                 ],
@@ -577,26 +587,26 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "приод от",
+                        "description": "Приод от",
                         "name": "from",
                         "in": "query",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "период до",
+                        "description": "Период до",
                         "name": "due",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "название курса",
+                        "description": "Название курса",
                         "name": "courseName",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "способ платежа",
+                        "description": "Способ платежа",
                         "name": "paymentMethod",
                         "in": "query"
                     }
@@ -634,6 +644,7 @@ const docTemplate = `{
         },
         "/v1/admin/management/register": {
             "post": {
+                "description": "Используется для создания нового администратора. Метод доступен только супер админу.",
                 "consumes": [
                     "application/json"
                 ],
@@ -643,7 +654,7 @@ const docTemplate = `{
                 "summary": "Создать профиль нового администратора",
                 "parameters": [
                     {
-                        "description": "логин, пароль",
+                        "description": "Логин, пароль",
                         "name": "adminData",
                         "in": "body",
                         "required": true,
@@ -688,6 +699,7 @@ const docTemplate = `{
         },
         "/v1/admin/management/removeAdmin": {
             "delete": {
+                "description": "Используется для удаления админа. Метод доступен только супер админу.",
                 "produces": [
                     "application/json"
                 ],
@@ -740,6 +752,7 @@ const docTemplate = `{
         },
         "/v1/admin/management/resetKey": {
             "patch": {
+                "description": "Используется для изменения ключа в аутентификаторе. Метод доступен только супер админу.",
                 "tags": [
                     "Методы для администрирования"
                 ],
@@ -747,7 +760,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "логин",
+                        "description": "Логин",
                         "name": "login",
                         "in": "query",
                         "required": true
@@ -783,6 +796,7 @@ const docTemplate = `{
         },
         "/v1/admin/management/resetPassword": {
             "patch": {
+                "description": "Используется для смены пароля администратора. Метод доступен только супер админу.",
                 "consumes": [
                     "application/json"
                 ],
@@ -795,7 +809,7 @@ const docTemplate = `{
                 "summary": "Изменить пароль администратора",
                 "parameters": [
                     {
-                        "description": "логин, пароль",
+                        "description": "Логин, пароль",
                         "name": "adminData",
                         "in": "body",
                         "required": true,
@@ -840,6 +854,7 @@ const docTemplate = `{
         },
         "/v1/admin/management/user": {
             "get": {
+                "description": "Используется для получения данных о пользователе по ID. Требуется токен администратора.",
                 "produces": [
                     "application/json"
                 ],
@@ -886,6 +901,7 @@ const docTemplate = `{
         },
         "/v1/admin/management/users": {
             "get": {
+                "description": "Используется для поиска пользователей по фильтрам. Требуется токен администратора.",
                 "produces": [
                     "application/json"
                 ],
@@ -896,62 +912,62 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "имя",
+                        "description": "Имя",
                         "name": "firstName",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "фамилия",
+                        "description": "Фамилия",
                         "name": "surname",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "номер телефона",
+                        "description": "Номер телефона",
                         "name": "phoneNumber",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "почта",
+                        "description": "Почта",
                         "name": "email",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "активный аккаунт",
+                        "description": "Активный аккаунт",
                         "name": "active",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "верифицированный аккаунт",
+                        "description": "Верифицированный аккаунт",
                         "name": "verified",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "название курса",
+                        "description": "Название курса",
                         "name": "courseName",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "статус бана",
+                        "description": "Статус бана",
                         "name": "banned",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "страница",
+                        "description": "Страница",
                         "name": "page",
                         "in": "query",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "лимит",
+                        "description": "Лимит",
                         "name": "limit",
                         "in": "query",
                         "required": true
@@ -981,6 +997,7 @@ const docTemplate = `{
         },
         "/v1/admin/management/usersStats": {
             "get": {
+                "description": "Используется для получения данных по новым пользователям по дням. Метод доступен только супер админу.",
                 "produces": [
                     "application/json"
                 ],
@@ -991,14 +1008,14 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "приод от",
+                        "description": "Приод от",
                         "name": "from",
                         "in": "query",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "период до",
+                        "description": "Период до",
                         "name": "due",
                         "in": "query"
                     }
@@ -1036,6 +1053,7 @@ const docTemplate = `{
         },
         "/v1/admin/verify": {
             "post": {
+                "description": "Используется для проверки подключенного аутентификатора у админа.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1048,7 +1066,7 @@ const docTemplate = `{
                 "summary": "Верифицировать аутентификатор",
                 "parameters": [
                     {
-                        "description": "логин, пароль, код подтверждения",
+                        "description": "Логин, пароль, код подтверждения",
                         "name": "adminData",
                         "in": "body",
                         "required": true,
@@ -1093,6 +1111,7 @@ const docTemplate = `{
         },
         "/v1/auth/email/newConfirmKey": {
             "get": {
+                "description": "Используется для отправки нового кода на почту.",
                 "produces": [
                     "application/json"
                 ],
@@ -1103,7 +1122,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "почта для отправки кода подтверждения",
+                        "description": "Почта для отправки кода подтверждения",
                         "name": "email",
                         "in": "query",
                         "required": true
@@ -1133,6 +1152,7 @@ const docTemplate = `{
         },
         "/v1/auth/email/verification": {
             "post": {
+                "description": "Используется для верификации почты пользователя.",
                 "produces": [
                     "application/json"
                 ],
@@ -1185,6 +1205,7 @@ const docTemplate = `{
         },
         "/v1/auth/login": {
             "post": {
+                "description": "Используется для логина пользователей.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1197,7 +1218,7 @@ const docTemplate = `{
                 "summary": "Залогиниться пользователю",
                 "parameters": [
                     {
-                        "description": "учетные данные",
+                        "description": "Учетные данные",
                         "name": "credentials",
                         "in": "body",
                         "required": true,
@@ -1242,6 +1263,7 @@ const docTemplate = `{
         },
         "/v1/auth/recoverPassword": {
             "post": {
+                "description": "Используется для установки нового пароля. Для подтверждения нужен код с почты.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1254,7 +1276,7 @@ const docTemplate = `{
                 "summary": "Установить новый пароль",
                 "parameters": [
                     {
-                        "description": "почта, новый пароль и код",
+                        "description": "Почта, новый пароль и код",
                         "name": "recoverCredentials",
                         "in": "body",
                         "required": true,
@@ -1293,6 +1315,7 @@ const docTemplate = `{
         },
         "/v1/auth/register": {
             "post": {
+                "description": "Используется для регистрации новых пользователей. После регистрации необходимо подтвердить почту.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1305,7 +1328,7 @@ const docTemplate = `{
                 "summary": "Зарегестрироваться пользователю",
                 "parameters": [
                     {
-                        "description": "учетные данные",
+                        "description": "Учетные данные",
                         "name": "credentials",
                         "in": "body",
                         "required": true,
@@ -1338,6 +1361,7 @@ const docTemplate = `{
         },
         "/v1/auth/sendRecoveryCode": {
             "get": {
+                "description": "Используется для восстановления пароля. Отправляет код на почту.",
                 "produces": [
                     "application/json"
                 ],
@@ -1348,7 +1372,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "почта для восстановления пароля",
+                        "description": "Почта для восстановления пароля",
                         "name": "email",
                         "in": "query",
                         "required": true
@@ -1378,6 +1402,7 @@ const docTemplate = `{
         },
         "/v1/billing/buyCourse": {
             "post": {
+                "description": "Используется для покупки курса. Формирует инвойс и отправляет его в биллинг. Метод редиректит на страницу оплаты.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1423,6 +1448,7 @@ const docTemplate = `{
         },
         "/v1/billing/failPayment/{userData}": {
             "get": {
+                "description": "Используется для отмены заказа, если платеж был провален. Метод редиректит на страницу с заказами пользователя.",
                 "tags": [
                     "Методы биллинга"
                 ],
@@ -1430,7 +1456,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "захешированные данные пользователя",
+                        "description": "Захешированные данные пользователя",
                         "name": "userData",
                         "in": "path",
                         "required": true
@@ -1457,6 +1483,7 @@ const docTemplate = `{
         },
         "/v1/billing/management/createCourse": {
             "post": {
+                "description": "Используется для создания нового курса. Требуется токен администратора.",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -1545,6 +1572,7 @@ const docTemplate = `{
         },
         "/v1/billing/management/createModule": {
             "post": {
+                "description": "Используется для создания нового модуля в курсе. Требуется токен администратора.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1557,7 +1585,7 @@ const docTemplate = `{
                 "summary": "Создать модуль",
                 "parameters": [
                     {
-                        "description": "данные модуля",
+                        "description": "Данные модуля",
                         "name": "module",
                         "in": "body",
                         "required": true,
@@ -1596,6 +1624,7 @@ const docTemplate = `{
         },
         "/v1/billing/management/deleteLesson{id}": {
             "delete": {
+                "description": "Используется для удаления урока. Требуется токен администратора.",
                 "produces": [
                     "application/json"
                 ],
@@ -1642,6 +1671,7 @@ const docTemplate = `{
         },
         "/v1/billing/management/deleteModule/{id}": {
             "delete": {
+                "description": "Используется для удаления модуля. Требуется токен администратора.",
                 "produces": [
                     "application/json"
                 ],
@@ -1688,6 +1718,7 @@ const docTemplate = `{
         },
         "/v1/billing/management/editCourse": {
             "patch": {
+                "description": "Используется для редактирования курса. Требуется токен администратора.",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -1782,6 +1813,7 @@ const docTemplate = `{
         },
         "/v1/billing/management/editLesson": {
             "patch": {
+                "description": "Используется для редактирования урока. Требуется токен администратора.",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -1891,6 +1923,7 @@ const docTemplate = `{
         },
         "/v1/billing/management/editModule": {
             "post": {
+                "description": "Используется для редактирования модуля. Требуется токен администратора.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1903,7 +1936,7 @@ const docTemplate = `{
                 "summary": "Обновить модуль",
                 "parameters": [
                     {
-                        "description": "данные модуля",
+                        "description": "Данные модуля",
                         "name": "module",
                         "in": "body",
                         "required": true,
@@ -1948,6 +1981,7 @@ const docTemplate = `{
         },
         "/v1/billing/management/editVisibility": {
             "patch": {
+                "description": "Используется для изменения видимости курса для пользователей. Не влияет на уже купленные курсы, они будут видимы в профиле. Требуется токен администратора.",
                 "produces": [
                     "application/json"
                 ],
@@ -1994,6 +2028,7 @@ const docTemplate = `{
         },
         "/v1/billing/management/manageBillingHost": {
             "patch": {
+                "description": "Используется для изменения хоста платежного шлюза.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2039,6 +2074,7 @@ const docTemplate = `{
         },
         "/v1/billing/management/manageBillingToken": {
             "patch": {
+                "description": "Используется для изменения токена доступа к платежному шлюзу.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2052,7 +2088,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "токен",
+                        "description": "Токен",
                         "name": "token",
                         "in": "query",
                         "required": true
@@ -2082,6 +2118,7 @@ const docTemplate = `{
         },
         "/v1/billing/management/uploadLesson": {
             "post": {
+                "description": "Используется для загрузки нового урока в модуль. Требуется токен администратора.",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -2185,6 +2222,7 @@ const docTemplate = `{
         },
         "/v1/billing/successPayment/{userData}": {
             "get": {
+                "description": "Используется для подтверждения оплаты платежным шлюзом. Если оплата прошла успешно, редиректит на этот хендлер и затем происходит редирект на страницу с курсом.",
                 "tags": [
                     "Методы биллинга"
                 ],
@@ -2192,7 +2230,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "захешированные данные пользователя",
+                        "description": "Захешированные данные пользователя",
                         "name": "userData",
                         "in": "path",
                         "required": true
@@ -2225,6 +2263,7 @@ const docTemplate = `{
         },
         "/v1/content/courses": {
             "get": {
+                "description": "Используется для получения курсов по фильтрам. При передаче ID все остальные фильтры игнорируются и происходит проверка на наличие доступа к контенту.",
                 "produces": [
                     "application/json"
                 ],
@@ -2235,7 +2274,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Используется для полного доступа к контенту, при передаче ID все остальные параметры игнорируются и происходит проверка на наличие доступа к контену",
+                        "description": "ID курса",
                         "name": "id",
                         "in": "query"
                     },
@@ -2308,6 +2347,7 @@ const docTemplate = `{
         },
         "/v1/content/lessons": {
             "get": {
+                "description": "Используется для получения уроков. Если было передано название курса, к которому принадлежит модуль, и пользователь залогинен то происходит проверка на наличие курса в профиле пользователя. Если он не куплен, то возвращается ошибка.",
                 "produces": [
                     "application/json"
                 ],
@@ -2318,38 +2358,38 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "название урока",
+                        "description": "Название урока",
                         "name": "name",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "описание урока",
+                        "description": "Описание урока",
                         "name": "description",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "название курса",
+                        "description": "Название курса",
                         "name": "courseName",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "название модуля",
+                        "description": "Название модуля",
                         "name": "moduleName",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "страница",
+                        "description": "Страница",
                         "name": "page",
                         "in": "query",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "лимит",
+                        "description": "Лимит",
                         "name": "limit",
                         "in": "query",
                         "required": true
@@ -2379,6 +2419,7 @@ const docTemplate = `{
         },
         "/v1/content/modules": {
             "get": {
+                "description": "Используется для получения модулей. Если было передано название курса, к которому принадлежит модуль, и пользователь залогинен то происходит проверка на наличие курса в профиле пользователя. Если он не куплен, то возвращается ошибка.",
                 "produces": [
                     "application/json"
                 ],
@@ -2389,32 +2430,32 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "название модуля",
+                        "description": "Название модуля",
                         "name": "name",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "описание модуля",
+                        "description": "Описание модуля",
                         "name": "description",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "название курса",
+                        "description": "Название курса",
                         "name": "courseName",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "страница",
+                        "description": "Страница",
                         "name": "page",
                         "in": "query",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "лимит",
+                        "description": "Лимит",
                         "name": "limit",
                         "in": "query",
                         "required": true
@@ -2444,6 +2485,7 @@ const docTemplate = `{
         },
         "/v1/profile/confirmEmailChange": {
             "post": {
+                "description": "Используется для подтверждения изменения почты пользователя.",
                 "produces": [
                     "application/json"
                 ],
@@ -2490,6 +2532,7 @@ const docTemplate = `{
         },
         "/v1/profile/disable": {
             "post": {
+                "description": "Используется для заморозки профиля пользователем.",
                 "produces": [
                     "application/json"
                 ],
@@ -2521,6 +2564,7 @@ const docTemplate = `{
         },
         "/v1/profile/editEmail": {
             "patch": {
+                "description": "Используется для изменения почты пользователя.",
                 "produces": [
                     "application/json"
                 ],
@@ -2567,6 +2611,7 @@ const docTemplate = `{
         },
         "/v1/profile/editPassword": {
             "patch": {
+                "description": "Используется для изменения пароля пользователя.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2618,6 +2663,7 @@ const docTemplate = `{
         },
         "/v1/profile/editProfile": {
             "patch": {
+                "description": "Используется для редактирования профиля пользователем.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2669,6 +2715,7 @@ const docTemplate = `{
         },
         "/v1/profile/getCourses": {
             "get": {
+                "description": "Используется для получения курсов по фильтрам. При передаче ID все остальные фильтры игнорируются и происходит проверка на наличие доступа к контенту.",
                 "produces": [
                     "application/json"
                 ],
@@ -2679,7 +2726,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Используется для полного доступа к контенту, при передаче ID все остальные параметры игнорируются и происходит проверка на наличие доступа к контену",
+                        "description": "ID курса",
                         "name": "id",
                         "in": "query"
                     },
@@ -2752,6 +2799,7 @@ const docTemplate = `{
         },
         "/v1/profile/getUser": {
             "get": {
+                "description": "Используется для получения данных профиля пользователя.",
                 "produces": [
                     "application/json"
                 ],
@@ -2783,6 +2831,7 @@ const docTemplate = `{
         },
         "/v1/profile/lessons": {
             "get": {
+                "description": "Используется для получения уроков. Если было передано название курса, к которому принадлежит модуль, и пользователь залогинен то происходит проверка на наличие курса в профиле пользователя. Если он не куплен, то возвращается ошибка.",
                 "produces": [
                     "application/json"
                 ],
@@ -2793,38 +2842,38 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "название урока",
+                        "description": "Название урока",
                         "name": "name",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "описание урока",
+                        "description": "Описание урока",
                         "name": "description",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "название курса",
+                        "description": "Название курса",
                         "name": "courseName",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "название модуля",
+                        "description": "Название модуля",
                         "name": "moduleName",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "страница",
+                        "description": "Страница",
                         "name": "page",
                         "in": "query",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "лимит",
+                        "description": "Лимит",
                         "name": "limit",
                         "in": "query",
                         "required": true
@@ -2854,6 +2903,7 @@ const docTemplate = `{
         },
         "/v1/profile/modules": {
             "get": {
+                "description": "Используется для получения модулей. Если было передано название курса, к которому принадлежит модуль, и пользователь залогинен то происходит проверка на наличие курса в профиле пользователя. Если он не куплен, то возвращается ошибка.",
                 "produces": [
                     "application/json"
                 ],
@@ -2864,32 +2914,32 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "название модуля",
+                        "description": "Название модуля",
                         "name": "name",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "описание модуля",
+                        "description": "Описание модуля",
                         "name": "description",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "название курса",
+                        "description": "Название курса",
                         "name": "courseName",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "страница",
+                        "description": "Страница",
                         "name": "page",
                         "in": "query",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "лимит",
+                        "description": "Лимит",
                         "name": "limit",
                         "in": "query",
                         "required": true
@@ -2919,6 +2969,7 @@ const docTemplate = `{
         },
         "/v1/profile/setPhoto": {
             "patch": {
+                "description": "Используется для изменения фото профиля пользователя.",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -2962,6 +3013,7 @@ const docTemplate = `{
         },
         "/v1/profile/watchLesson": {
             "post": {
+                "description": "Используется для добавления урока в просмотренный.",
                 "produces": [
                     "application/json"
                 ],
@@ -2974,12 +3026,6 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/entity.SuccessResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Ошибка получения userId",
-                        "schema": {
-                            "$ref": "#/definitions/courseerror.CourseError"
                         }
                     },
                     "404": {

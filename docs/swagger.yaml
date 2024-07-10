@@ -298,8 +298,9 @@ paths:
     post:
       consumes:
       - application/json
+      description: Используется для логина администратора.
       parameters:
-      - description: логин, пароль, код подтверждения
+      - description: Логин, пароль, код подтверждения
         in: body
         name: adminData
         required: true
@@ -333,6 +334,7 @@ paths:
       - Методы для администрирования
   /v1/admin/management/ban:
     post:
+      description: Используется для разбана пользователей по ID. Требуется токен администратора.
       parameters:
       - description: ID
         in: query
@@ -359,6 +361,8 @@ paths:
       - Методы для администрирования
   /v1/admin/management/changeRole:
     patch:
+      description: Используется для изменения роли админа. Метод доступен только супер
+        админу.
       parameters:
       - description: логин
         in: query
@@ -398,10 +402,11 @@ paths:
       - Методы для администрирования
   /v1/admin/management/courses:
     get:
+      description: Используется для получения курсов по фильтрам. При передаче ID
+        все остальные фильтры игнорируются и происходит проверка на наличие доступа
+        к контенту.
       parameters:
-      - description: Используется для полного доступа к контенту, при передаче ID
-          все остальные параметры игнорируются и происходит проверка на наличие доступа
-          к контену
+      - description: ID курса
         in: query
         name: id
         type: string
@@ -455,6 +460,8 @@ paths:
       - Методы взаимодействия с контентом
   /v1/admin/management/deleteProfilePhoto:
     delete:
+      description: Используется для удаления фото пользователя администратором. Требуется
+        токен администратора.
       parameters:
       - description: ID
         in: query
@@ -487,6 +494,8 @@ paths:
     patch:
       consumes:
       - application/json
+      description: Используется для редактирования профиля администратором. Требуется
+        токен администратора.
       parameters:
       - description: Новые данные
         in: body
@@ -523,25 +532,27 @@ paths:
       - Методы для администрирования
   /v1/admin/management/getAdmins:
     get:
+      description: Используется для получения списка администраторов. Метод доступен
+        только супер админу.
       parameters:
-      - description: логин
+      - description: Логин
         in: query
         name: login
         type: string
-      - description: роль
+      - description: Роль
         in: query
         name: role
         type: string
-      - description: подключенная двойная авторизация
+      - description: Подключенная двойная авторизация
         in: query
         name: twoStepsAuth
         type: string
-      - description: страница
+      - description: Страница
         in: query
         name: page
         required: true
         type: string
-      - description: лимит
+      - description: Лимит
         in: query
         name: limit
         required: true
@@ -570,29 +581,33 @@ paths:
       - Методы для администрирования
   /v1/admin/management/lessons:
     get:
+      description: Используется для получения уроков. Если было передано название
+        курса, к которому принадлежит модуль, и пользователь залогинен то происходит
+        проверка на наличие курса в профиле пользователя. Если он не куплен, то возвращается
+        ошибка.
       parameters:
-      - description: название урока
+      - description: Название урока
         in: query
         name: name
         type: string
-      - description: описание урока
+      - description: Описание урока
         in: query
         name: description
         type: string
-      - description: название курса
+      - description: Название курса
         in: query
         name: courseName
         type: string
-      - description: название модуля
+      - description: Название модуля
         in: query
         name: moduleName
         type: string
-      - description: страница
+      - description: Страница
         in: query
         name: page
         required: true
         type: string
-      - description: лимит
+      - description: Лимит
         in: query
         name: limit
         required: true
@@ -617,25 +632,29 @@ paths:
       - Методы взаимодействия с контентом
   /v1/admin/management/modules:
     get:
+      description: Используется для получения модулей. Если было передано название
+        курса, к которому принадлежит модуль, и пользователь залогинен то происходит
+        проверка на наличие курса в профиле пользователя. Если он не куплен, то возвращается
+        ошибка.
       parameters:
-      - description: название модуля
+      - description: Название модуля
         in: query
         name: name
         type: string
-      - description: описание модуля
+      - description: Описание модуля
         in: query
         name: description
         type: string
-      - description: название курса
+      - description: Название курса
         in: query
         name: courseName
         type: string
-      - description: страница
+      - description: Страница
         in: query
         name: page
         required: true
         type: string
-      - description: лимит
+      - description: Лимит
         in: query
         name: limit
         required: true
@@ -660,21 +679,23 @@ paths:
       - Методы взаимодействия с контентом
   /v1/admin/management/paymentStats:
     get:
+      description: Используется для получения данных о платежах по дням. Метод доступен
+        только супер админу.
       parameters:
-      - description: приод от
+      - description: Приод от
         in: query
         name: from
         required: true
         type: string
-      - description: период до
+      - description: Период до
         in: query
         name: due
         type: string
-      - description: название курса
+      - description: Название курса
         in: query
         name: courseName
         type: string
-      - description: способ платежа
+      - description: Способ платежа
         in: query
         name: paymentMethod
         type: string
@@ -706,8 +727,10 @@ paths:
     post:
       consumes:
       - application/json
+      description: Используется для создания нового администратора. Метод доступен
+        только супер админу.
       parameters:
-      - description: логин, пароль
+      - description: Логин, пароль
         in: body
         name: adminData
         required: true
@@ -739,6 +762,7 @@ paths:
       - Методы для администрирования
   /v1/admin/management/removeAdmin:
     delete:
+      description: Используется для удаления админа. Метод доступен только супер админу.
       parameters:
       - description: логин
         in: query
@@ -773,8 +797,10 @@ paths:
       - Методы для администрирования
   /v1/admin/management/resetKey:
     patch:
+      description: Используется для изменения ключа в аутентификаторе. Метод доступен
+        только супер админу.
       parameters:
-      - description: логин
+      - description: Логин
         in: query
         name: login
         required: true
@@ -803,8 +829,10 @@ paths:
     patch:
       consumes:
       - application/json
+      description: Используется для смены пароля администратора. Метод доступен только
+        супер админу.
       parameters:
-      - description: логин, пароль
+      - description: Логин, пароль
         in: body
         name: adminData
         required: true
@@ -838,6 +866,8 @@ paths:
       - Методы для администрирования
   /v1/admin/management/user:
     get:
+      description: Используется для получения данных о пользователе по ID. Требуется
+        токен администратора.
       parameters:
       - description: ID
         in: query
@@ -868,45 +898,47 @@ paths:
       - Методы для администрирования
   /v1/admin/management/users:
     get:
+      description: Используется для поиска пользователей по фильтрам. Требуется токен
+        администратора.
       parameters:
-      - description: имя
+      - description: Имя
         in: query
         name: firstName
         type: string
-      - description: фамилия
+      - description: Фамилия
         in: query
         name: surname
         type: string
-      - description: номер телефона
+      - description: Номер телефона
         in: query
         name: phoneNumber
         type: string
-      - description: почта
+      - description: Почта
         in: query
         name: email
         type: string
-      - description: активный аккаунт
+      - description: Активный аккаунт
         in: query
         name: active
         type: string
-      - description: верифицированный аккаунт
+      - description: Верифицированный аккаунт
         in: query
         name: verified
         type: string
-      - description: название курса
+      - description: Название курса
         in: query
         name: courseName
         type: string
-      - description: статус бана
+      - description: Статус бана
         in: query
         name: banned
         type: string
-      - description: страница
+      - description: Страница
         in: query
         name: page
         required: true
         type: string
-      - description: лимит
+      - description: Лимит
         in: query
         name: limit
         required: true
@@ -931,13 +963,15 @@ paths:
       - Методы для администрирования
   /v1/admin/management/usersStats:
     get:
+      description: Используется для получения данных по новым пользователям по дням.
+        Метод доступен только супер админу.
       parameters:
-      - description: приод от
+      - description: Приод от
         in: query
         name: from
         required: true
         type: string
-      - description: период до
+      - description: Период до
         in: query
         name: due
         type: string
@@ -969,8 +1003,9 @@ paths:
     post:
       consumes:
       - application/json
+      description: Используется для проверки подключенного аутентификатора у админа.
       parameters:
-      - description: логин, пароль, код подтверждения
+      - description: Логин, пароль, код подтверждения
         in: body
         name: adminData
         required: true
@@ -1004,8 +1039,9 @@ paths:
       - Методы для администрирования
   /v1/auth/email/newConfirmKey:
     get:
+      description: Используется для отправки нового кода на почту.
       parameters:
-      - description: почта для отправки кода подтверждения
+      - description: Почта для отправки кода подтверждения
         in: query
         name: email
         required: true
@@ -1030,6 +1066,7 @@ paths:
       - Методы для авторизации пользователей
   /v1/auth/email/verification:
     post:
+      description: Используется для верификации почты пользователя.
       parameters:
       - description: Код подтверждения
         in: query
@@ -1067,8 +1104,9 @@ paths:
     post:
       consumes:
       - application/json
+      description: Используется для логина пользователей.
       parameters:
-      - description: учетные данные
+      - description: Учетные данные
         in: body
         name: credentials
         required: true
@@ -1105,8 +1143,10 @@ paths:
     post:
       consumes:
       - application/json
+      description: Используется для установки нового пароля. Для подтверждения нужен
+        код с почты.
       parameters:
-      - description: почта, новый пароль и код
+      - description: Почта, новый пароль и код
         in: body
         name: recoverCredentials
         required: true
@@ -1138,8 +1178,10 @@ paths:
     post:
       consumes:
       - application/json
+      description: Используется для регистрации новых пользователей. После регистрации
+        необходимо подтвердить почту.
       parameters:
-      - description: учетные данные
+      - description: Учетные данные
         in: body
         name: credentials
         required: true
@@ -1166,8 +1208,9 @@ paths:
       - Методы для авторизации пользователей
   /v1/auth/sendRecoveryCode:
     get:
+      description: Используется для восстановления пароля. Отправляет код на почту.
       parameters:
-      - description: почта для восстановления пароля
+      - description: Почта для восстановления пароля
         in: query
         name: email
         required: true
@@ -1194,6 +1237,8 @@ paths:
     post:
       consumes:
       - application/json
+      description: Используется для покупки курса. Формирует инвойс и отправляет его
+        в биллинг. Метод редиректит на страницу оплаты.
       parameters:
       - description: ID курса и способ платежа
         in: body
@@ -1221,8 +1266,10 @@ paths:
       - Методы биллинга
   /v1/billing/failPayment/{userData}:
     get:
+      description: Используется для отмены заказа, если платеж был провален. Метод
+        редиректит на страницу с заказами пользователя.
       parameters:
-      - description: захешированные данные пользователя
+      - description: Захешированные данные пользователя
         in: path
         name: userData
         required: true
@@ -1245,6 +1292,7 @@ paths:
     post:
       consumes:
       - multipart/form-data
+      description: Используется для создания нового курса. Требуется токен администратора.
       parameters:
       - description: Название курса
         in: formData
@@ -1304,8 +1352,10 @@ paths:
     post:
       consumes:
       - application/json
+      description: Используется для создания нового модуля в курсе. Требуется токен
+        администратора.
       parameters:
-      - description: данные модуля
+      - description: Данные модуля
         in: body
         name: module
         required: true
@@ -1335,6 +1385,7 @@ paths:
       - Методы взаимодействия с контентом
   /v1/billing/management/deleteLesson{id}:
     delete:
+      description: Используется для удаления урока. Требуется токен администратора.
       parameters:
       - description: ID урока
         in: path
@@ -1365,6 +1416,7 @@ paths:
       - Методы взаимодействия с контентом
   /v1/billing/management/deleteModule/{id}:
     delete:
+      description: Используется для удаления модуля. Требуется токен администратора.
       parameters:
       - description: ID модуля
         in: path
@@ -1397,6 +1449,7 @@ paths:
     patch:
       consumes:
       - multipart/form-data
+      description: Используется для редактирования курса. Требуется токен администратора.
       parameters:
       - description: Название курса
         in: formData
@@ -1460,6 +1513,7 @@ paths:
     patch:
       consumes:
       - multipart/form-data
+      description: Используется для редактирования урока. Требуется токен администратора.
       parameters:
       - description: Название урока
         in: formData
@@ -1534,8 +1588,9 @@ paths:
     post:
       consumes:
       - application/json
+      description: Используется для редактирования модуля. Требуется токен администратора.
       parameters:
-      - description: данные модуля
+      - description: Данные модуля
         in: body
         name: module
         required: true
@@ -1569,6 +1624,9 @@ paths:
       - Методы взаимодействия с контентом
   /v1/billing/management/editVisibility:
     patch:
+      description: Используется для изменения видимости курса для пользователей. Не
+        влияет на уже купленные курсы, они будут видимы в профиле. Требуется токен
+        администратора.
       parameters:
       - description: Изменить видимость
         in: query
@@ -1601,6 +1659,7 @@ paths:
     patch:
       consumes:
       - application/json
+      description: Используется для изменения хоста платежного шлюза.
       parameters:
       - description: Новый URL биллинг хоста
         in: body
@@ -1630,8 +1689,9 @@ paths:
     patch:
       consumes:
       - application/json
+      description: Используется для изменения токена доступа к платежному шлюзу.
       parameters:
-      - description: токен
+      - description: Токен
         in: query
         name: token
         required: true
@@ -1658,6 +1718,8 @@ paths:
     post:
       consumes:
       - multipart/form-data
+      description: Используется для загрузки нового урока в модуль. Требуется токен
+        администратора.
       parameters:
       - description: Название урока
         in: formData
@@ -1726,8 +1788,11 @@ paths:
       - Методы взаимодействия с контентом
   /v1/billing/successPayment/{userData}:
     get:
+      description: Используется для подтверждения оплаты платежным шлюзом. Если оплата
+        прошла успешно, редиректит на этот хендлер и затем происходит редирект на
+        страницу с курсом.
       parameters:
-      - description: захешированные данные пользователя
+      - description: Захешированные данные пользователя
         in: path
         name: userData
         required: true
@@ -1752,10 +1817,11 @@ paths:
       - Методы биллинга
   /v1/content/courses:
     get:
+      description: Используется для получения курсов по фильтрам. При передаче ID
+        все остальные фильтры игнорируются и происходит проверка на наличие доступа
+        к контенту.
       parameters:
-      - description: Используется для полного доступа к контенту, при передаче ID
-          все остальные параметры игнорируются и происходит проверка на наличие доступа
-          к контену
+      - description: ID курса
         in: query
         name: id
         type: string
@@ -1809,29 +1875,33 @@ paths:
       - Методы взаимодействия с контентом
   /v1/content/lessons:
     get:
+      description: Используется для получения уроков. Если было передано название
+        курса, к которому принадлежит модуль, и пользователь залогинен то происходит
+        проверка на наличие курса в профиле пользователя. Если он не куплен, то возвращается
+        ошибка.
       parameters:
-      - description: название урока
+      - description: Название урока
         in: query
         name: name
         type: string
-      - description: описание урока
+      - description: Описание урока
         in: query
         name: description
         type: string
-      - description: название курса
+      - description: Название курса
         in: query
         name: courseName
         type: string
-      - description: название модуля
+      - description: Название модуля
         in: query
         name: moduleName
         type: string
-      - description: страница
+      - description: Страница
         in: query
         name: page
         required: true
         type: string
-      - description: лимит
+      - description: Лимит
         in: query
         name: limit
         required: true
@@ -1856,25 +1926,29 @@ paths:
       - Методы взаимодействия с контентом
   /v1/content/modules:
     get:
+      description: Используется для получения модулей. Если было передано название
+        курса, к которому принадлежит модуль, и пользователь залогинен то происходит
+        проверка на наличие курса в профиле пользователя. Если он не куплен, то возвращается
+        ошибка.
       parameters:
-      - description: название модуля
+      - description: Название модуля
         in: query
         name: name
         type: string
-      - description: описание модуля
+      - description: Описание модуля
         in: query
         name: description
         type: string
-      - description: название курса
+      - description: Название курса
         in: query
         name: courseName
         type: string
-      - description: страница
+      - description: Страница
         in: query
         name: page
         required: true
         type: string
-      - description: лимит
+      - description: Лимит
         in: query
         name: limit
         required: true
@@ -1899,6 +1973,7 @@ paths:
       - Методы взаимодействия с контентом
   /v1/profile/confirmEmailChange:
     post:
+      description: Используется для подтверждения изменения почты пользователя.
       parameters:
       - description: Код подтверждения
         in: query
@@ -1929,6 +2004,7 @@ paths:
       - Методы для администрирования профиля
   /v1/profile/disable:
     post:
+      description: Используется для заморозки профиля пользователем.
       produces:
       - application/json
       responses:
@@ -1949,6 +2025,7 @@ paths:
       - Методы для администрирования профиля
   /v1/profile/editEmail:
     patch:
+      description: Используется для изменения почты пользователя.
       parameters:
       - description: Почта
         in: query
@@ -1981,6 +2058,7 @@ paths:
     patch:
       consumes:
       - application/json
+      description: Используется для изменения пароля пользователя.
       parameters:
       - description: Пароли
         in: body
@@ -2014,6 +2092,7 @@ paths:
     patch:
       consumes:
       - application/json
+      description: Используется для редактирования профиля пользователем.
       parameters:
       - description: Данные профиля
         in: body
@@ -2045,10 +2124,11 @@ paths:
       - Методы для администрирования профиля
   /v1/profile/getCourses:
     get:
+      description: Используется для получения курсов по фильтрам. При передаче ID
+        все остальные фильтры игнорируются и происходит проверка на наличие доступа
+        к контенту.
       parameters:
-      - description: Используется для полного доступа к контенту, при передаче ID
-          все остальные параметры игнорируются и происходит проверка на наличие доступа
-          к контену
+      - description: ID курса
         in: query
         name: id
         type: string
@@ -2102,6 +2182,7 @@ paths:
       - Методы взаимодействия с контентом
   /v1/profile/getUser:
     get:
+      description: Используется для получения данных профиля пользователя.
       produces:
       - application/json
       responses:
@@ -2122,29 +2203,33 @@ paths:
       - Методы для администрирования профиля
   /v1/profile/lessons:
     get:
+      description: Используется для получения уроков. Если было передано название
+        курса, к которому принадлежит модуль, и пользователь залогинен то происходит
+        проверка на наличие курса в профиле пользователя. Если он не куплен, то возвращается
+        ошибка.
       parameters:
-      - description: название урока
+      - description: Название урока
         in: query
         name: name
         type: string
-      - description: описание урока
+      - description: Описание урока
         in: query
         name: description
         type: string
-      - description: название курса
+      - description: Название курса
         in: query
         name: courseName
         type: string
-      - description: название модуля
+      - description: Название модуля
         in: query
         name: moduleName
         type: string
-      - description: страница
+      - description: Страница
         in: query
         name: page
         required: true
         type: string
-      - description: лимит
+      - description: Лимит
         in: query
         name: limit
         required: true
@@ -2169,25 +2254,29 @@ paths:
       - Методы взаимодействия с контентом
   /v1/profile/modules:
     get:
+      description: Используется для получения модулей. Если было передано название
+        курса, к которому принадлежит модуль, и пользователь залогинен то происходит
+        проверка на наличие курса в профиле пользователя. Если он не куплен, то возвращается
+        ошибка.
       parameters:
-      - description: название модуля
+      - description: Название модуля
         in: query
         name: name
         type: string
-      - description: описание модуля
+      - description: Описание модуля
         in: query
         name: description
         type: string
-      - description: название курса
+      - description: Название курса
         in: query
         name: courseName
         type: string
-      - description: страница
+      - description: Страница
         in: query
         name: page
         required: true
         type: string
-      - description: лимит
+      - description: Лимит
         in: query
         name: limit
         required: true
@@ -2214,6 +2303,7 @@ paths:
     patch:
       consumes:
       - multipart/form-data
+      description: Используется для изменения фото профиля пользователя.
       parameters:
       - description: Фото
         in: formData
@@ -2240,6 +2330,7 @@ paths:
       - Методы для администрирования профиля
   /v1/profile/watchLesson:
     post:
+      description: Используется для добавления урока в просмотренный.
       produces:
       - application/json
       responses:
@@ -2247,10 +2338,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/entity.SuccessResponse'
-        "400":
-          description: Ошибка получения userId
-          schema:
-            $ref: '#/definitions/courseerror.CourseError'
         "404":
           description: Урок не найден
           schema:
