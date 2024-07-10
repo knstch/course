@@ -14,8 +14,10 @@ func RequestsRouter(h *handlers.Handlers) *gin.Engine {
 	router := gin.Default()
 
 	api := router.Group("/api")
+
 	docs.SwaggerInfo.BasePath = "/api"
 	api.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	v1 := api.Group("/v1")
 
 	auth := v1.Group("auth")
