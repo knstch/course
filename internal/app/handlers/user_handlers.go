@@ -114,6 +114,10 @@ func (h Handlers) ManageEmail(ctx *gin.Context) {
 			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
 			return
 		}
+		if err.Code == 17002 {
+			ctx.AbortWithStatusJSON(http.StatusTooManyRequests, err)
+			return
+		}
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
 		return
 	}

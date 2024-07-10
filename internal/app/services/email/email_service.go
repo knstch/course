@@ -2,6 +2,7 @@
 package email
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"net/smtp"
@@ -16,13 +17,18 @@ const (
 	me           = "me"
 	recover      = "recover"
 	ConfirmEmail = "confirmEmail"
+	confirm      = "confirm"
 
 	recoverPasswordTitle = "Код для восстановления пароля"
 	confirmEmailTitle    = "Код для подтверждения почты"
+
+	emailSent = "sent"
 )
 
 var (
-	emailMessage = "From: %v\r\nTo: %v\r\nSubject: %v\r\n\r\n%d"
+	emailMessage          = "From: %v\r\nTo: %v\r\nSubject: %v\r\n\r\n%d"
+	errDoingAntispamCheck = errors.New("ошибка при проверке антиспам ключа")
+	ErrEmailIsAlreadySent = errors.New("письмо уже было отправлено, подождите 1 минуту перед отправкой нового")
 )
 
 // EmailService используется для отправки email.
@@ -49,6 +55,22 @@ func NewEmailService(redis *redis.Client, config *config.Config) *EmailService {
 // SendConfirmCode используется для отправки кода подтверждения. В качестве параметров принимает
 // ID пользователя и почту для отправки. Возвращает ошибку.
 func (email EmailService) SendConfirmCode(userId *uint, emailToSend *string, source string) *courseError.CourseError {
+	antispamKey := fmt.Sprintf("%v%v", confirm, *emailToSend)
+	antispamValue, err := email.redis.Get(antispamKey).Result()
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			if err := email.redis.Set(antispamKey, emailSent, time.Minute).Err(); err != nil {
+				return courseError.CreateError(err, 10031)
+			}
+		} else {
+			return courseError.CreateError(errDoingAntispamCheck, 11004)
+		}
+	}
+
+	if antispamValue != "" {
+		return courseError.CreateError(ErrEmailIsAlreadySent, 17002)
+	}
+
 	confirmCode := email.generateEmailConfirmCode()
 
 	if err := email.sendConfirmEmail(confirmCode, emailToSend, source); err != nil {
@@ -85,6 +107,22 @@ func (email EmailService) sendConfirmEmail(code int, userEmail *string, sourse s
 // SendPasswordRecoverConfirmCode используется для отправки кода подтверждения на почту для изменения пароля.
 // Принимает в качестве параметра почту для отправки, возвращает ошибку.
 func (email EmailService) SendPasswordRecoverConfirmCode(emailToSend string) *courseError.CourseError {
+	antispamKey := fmt.Sprintf("%v%v", recover, emailToSend)
+	antispamValue, err := email.redis.Get(antispamKey).Result()
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			if err := email.redis.Set(antispamKey, emailSent, time.Minute).Err(); err != nil {
+				return courseError.CreateError(err, 10031)
+			}
+		} else {
+			return courseError.CreateError(errDoingAntispamCheck, 11004)
+		}
+	}
+
+	if antispamValue != "" {
+		return courseError.CreateError(ErrEmailIsAlreadySent, 17002)
+	}
+
 	confirmCode := email.generateEmailConfirmCode()
 
 	if err := email.sendConfirmEmail(confirmCode, &emailToSend, recover); err != nil {

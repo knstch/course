@@ -41,6 +41,10 @@ func (h Handlers) SignUp(ctx *gin.Context) {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
 			return
 		}
+		if err.Code == 17002 {
+			ctx.AbortWithStatusJSON(http.StatusTooManyRequests, err)
+			return
+		}
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
 		return
 	}
@@ -168,6 +172,10 @@ func (h Handlers) SendNewCode(ctx *gin.Context) {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
 			return
 		}
+		if err.Code == 17002 {
+			ctx.AbortWithStatusJSON(http.StatusTooManyRequests, err)
+			return
+		}
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
 		return
 	}
@@ -192,6 +200,10 @@ func (h Handlers) SendRecoverPasswordCode(ctx *gin.Context) {
 		h.logger.Error(fmt.Sprintf("не получилось отправить код для восстановления пароля на почту %v", email), "SendRecoverPasswordCode", err.Message, err.Code)
 		if err.Code == 400 {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			return
+		}
+		if err.Code == 17002 {
+			ctx.AbortWithStatusJSON(http.StatusTooManyRequests, err)
 			return
 		}
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
