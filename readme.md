@@ -110,3 +110,4 @@ SUPER_ADMIN_PASSWORD=password
 LOG_FILE_NAME=course
 PROJECT_PATH=/home/konstantin/Desktop/course
 ````
+//
