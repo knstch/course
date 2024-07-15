@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"net"
 	"net/smtp"
+	"strings"
 	"time"
 
 	"github.com/go-redis/redis"
@@ -29,6 +31,7 @@ var (
 	emailMessage          = "From: %v\r\nTo: %v\r\nSubject: %v\r\n\r\n%d"
 	errDoingAntispamCheck = errors.New("ошибка при проверке антиспам ключа")
 	ErrEmailIsAlreadySent = errors.New("письмо уже было отправлено, подождите 1 минуту перед отправкой нового")
+	errInvalidEmail       = errors.New("передана несуществующая почта")
 )
 
 // EmailService используется для отправки email.
@@ -38,6 +41,7 @@ type EmailService struct {
 	smptPort    string
 	auth        smtp.Auth
 	senderEmail string
+	isTest      bool
 }
 
 // NewEmailService - это билдер для EmailService.
@@ -49,6 +53,7 @@ func NewEmailService(redis *redis.Client, config *config.Config) *EmailService {
 		config.SmtpPort,
 		auth,
 		config.ServiceEmail,
+		config.IsTest,
 	}
 }
 
@@ -72,6 +77,13 @@ func (email EmailService) SendConfirmCode(userId *uint, emailToSend *string, sou
 	}
 
 	confirmCode := email.generateEmailConfirmCode()
+
+	if email.isTest {
+		if err := email.redis.Set(fmt.Sprint(*userId), 1111, 15*time.Minute).Err(); err != nil {
+			return courseError.CreateError(err, 10031)
+		}
+		return nil
+	}
 
 	if err := email.sendConfirmEmail(confirmCode, emailToSend, source); err != nil {
 		return err
@@ -134,4 +146,45 @@ func (email EmailService) SendPasswordRecoverConfirmCode(emailToSend string) *co
 	}
 
 	return nil
+}
+
+func (email EmailService) ValidateEmail(emailToCheck string) *courseError.CourseError {
+	parts := strings.Split(emailToCheck, "@")
+
+	mxRecords, err := net.LookupMX(parts[1])
+	if err != nil {
+		return courseError.CreateError(err, 17003)
+	}
+
+	client, err := email.smtpDialTimeout(mxRecords[0].Host, 3*time.Second)
+	if err != nil {
+		return courseError.CreateError(err, 17003)
+	}
+	defer client.Close()
+
+	if err := client.Hello(parts[1]); err != nil {
+		return courseError.CreateError(err, 17003)
+	}
+
+	err = client.Mail(emailToCheck)
+	if err != nil {
+		return courseError.CreateError(err, 17003)
+	}
+
+	err = client.Rcpt(emailToCheck)
+	if err != nil {
+		return courseError.CreateError(errInvalidEmail, 17004)
+	}
+
+	return nil
+}
+
+func (email EmailService) smtpDialTimeout(addr string, timeout time.Duration) (*smtp.Client, error) {
+	conn, err := net.DialTimeout("tcp", addr+":25", timeout)
+	if err != nil {
+		return nil, err
+	}
+
+	host, _, _ := net.SplitHostPort(addr)
+	return smtp.NewClient(conn, host)
 }

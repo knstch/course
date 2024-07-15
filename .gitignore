@@ -3,3 +3,4 @@ api
 go.sum
 vendor/
 keys/
+log/

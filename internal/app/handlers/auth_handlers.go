@@ -45,6 +45,10 @@ func (h Handlers) SignUp(ctx *gin.Context) {
 			ctx.AbortWithStatusJSON(http.StatusTooManyRequests, err)
 			return
 		}
+		if err.Code == 17003 || err.Code == 17004 {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			return
+		}
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
 		return
 	}

@@ -71,6 +71,10 @@ func (auth AuthService) Register(ctx context.Context, credentials *entity.Creden
 		return nil, err
 	}
 
+	if err := auth.emailService.ValidateEmail(credentials.Email); err != nil {
+		return nil, err
+	}
+
 	userId, err := auth.authentificater.RegisterUser(ctx, credentials.Email, credentials.Password)
 	if err != nil {
 		return nil, err

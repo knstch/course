@@ -35,6 +35,7 @@ type Config struct {
 	ServiceEmailPassword  string `envconfig:"SERVICE_EMAIL_PASSWORD"`
 	SmtpHost              string `envconfig:"SMPT_HOST"`
 	SmtpPort              string `envconfig:"SMPT_PORT"`
+	IsTest                bool   `envconfig:"IS_TEST"`
 }
 
 var (
