@@ -68,6 +68,8 @@ const (
 		SMPT_PORT=587
 		IS_TEST=true
 	`
+
+	newPassForUserOne = "Passs@0101"
 )
 
 var (
@@ -419,6 +421,182 @@ func TestLogin(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, "http://localhost:8080/api/v1/auth/login", bytes.NewBuffer([]byte(tt.request.body)))
+
+			resp := httptest.NewRecorder()
+
+			router.ServeHTTP(resp, req)
+
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				log.Print(err)
+				return
+			}
+
+			assert.Equal(t, tt.want.statusCode, resp.Code)
+			assert.JSONEq(t, tt.want.body, string(body))
+		})
+	}
+}
+
+func TestSendRecoverPasswordCode(t *testing.T) {
+	tests := []struct {
+		name    string
+		want    want
+		request request
+	}{
+		{
+			name: "#1 Невалидный email",
+			want: want{
+				statusCode: http.StatusBadRequest,
+				body: `{
+					"error": "email: email передан неправильно.",
+					"code": 400
+				}`,
+			},
+			request: request{
+				body: "?email=aboba",
+			},
+		},
+		{
+			name: "#2 успешная отправка",
+			want: want{
+				statusCode: http.StatusOK,
+				body: `{
+					"message": "код для восстановления успешно отправлен",
+					"success": true
+				}`,
+			},
+			request: request{
+				body: fmt.Sprintf("?email=%s", userOne.email),
+			},
+		},
+		{
+			name: "#3 Слишком много запросов",
+			want: want{
+				statusCode: http.StatusTooManyRequests,
+				body: `{
+					"error": "письмо уже было отправлено, подождите 1 минуту перед отправкой нового",
+					"code": 17002
+				}`,
+			},
+			request: request{
+				body: fmt.Sprintf("?email=%s", userOne.email),
+			},
+		},
+	}
+
+	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	if err != nil {
+		log.Print(err)
+		return
+	}
+
+	container, err := app.InitContainer(dir, testsConfig)
+	if err != nil {
+		log.Print(err)
+		return
+	}
+
+	router := router.RequestsRouter(container.Handlers)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("http://localhost:8080/api/v1/auth/sendRecoveryCode%s", tt.request.body), nil)
+
+			resp := httptest.NewRecorder()
+
+			router.ServeHTTP(resp, req)
+
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				log.Print(err)
+				return
+			}
+
+			assert.Equal(t, tt.want.statusCode, resp.Code)
+			assert.JSONEq(t, tt.want.body, string(body))
+		})
+	}
+}
+
+func TestSetNewPassword(t *testing.T) {
+	tests := []struct {
+		name    string
+		want    want
+		request request
+	}{
+		{
+			name: "#1 невалидный JSON",
+			want: want{
+				statusCode: http.StatusBadRequest,
+				body: `{
+					"error": "запрос передан в неверном формате",
+					"code": 10101
+				}`,
+			},
+			request: request{
+				body: `{"email": "notanemail", "password": "newpassword", "code": "1234"`,
+			},
+		},
+		{
+			name: "#2 неверный код подтверждения",
+			want: want{
+				statusCode: http.StatusBadRequest,
+				body: `{
+					"error": "код подтверждения неверный",
+					"code": 11003
+				}`,
+			},
+			request: request{
+				body: fmt.Sprintf(`{"email": "%s", "password": "%s", "code": 2222}`, userOne.email, newPassForUserOne),
+			},
+		},
+		{
+			name: "#3 невалидный код подтверждения",
+			want: want{
+				statusCode: http.StatusBadRequest,
+				body: `{
+					"error": "код верификации передан неверно",
+					"code": 400
+				}`,
+			},
+			request: request{
+				body: fmt.Sprintf(`{"email": "%s", "password": "%s", "code": 11111}`, userOne.email, newPassForUserOne),
+			},
+		},
+		{
+			name: "#4 Успешное восстановление пароля",
+			want: want{
+				statusCode: http.StatusOK,
+				body: `{
+					"message": "пароль успешно восстановлен",
+					"success": true
+				}`,
+			},
+			request: request{
+				body: fmt.Sprintf(`{"email": "%s", "password": "%s", "code": "1111"}`, userOne.email, newPassForUserOne),
+			},
+		},
+	}
+
+	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	if err != nil {
+		log.Print(err)
+		return
+	}
+
+	container, err := app.InitContainer(dir, testsConfig)
+	if err != nil {
+		log.Print(err)
+		return
+	}
+
+	router := router.RequestsRouter(container.Handlers)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, "http://localhost:8080/api/v1/auth/recoverPassword", bytes.NewReader([]byte(tt.request.body)))
+			req.Header.Set("Content-Type", "application/json")
 
 			resp := httptest.NewRecorder()
 

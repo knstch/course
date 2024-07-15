@@ -201,6 +201,7 @@ func (h Handlers) SendNewCode(ctx *gin.Context) {
 // @Tags Методы для авторизации пользователей
 // @Param email query string true "Почта для восстановления пароля"
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация"
+// @Failure 429 {object} courseerror.CourseError "Слишком много запросов"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) SendRecoverPasswordCode(ctx *gin.Context) {
 	email := ctx.Query("email")

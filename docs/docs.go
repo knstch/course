@@ -1391,6 +1391,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/courseerror.CourseError"
                         }
                     },
+                    "429": {
+                        "description": "Слишком много запросов",
+                        "schema": {
+                            "$ref": "#/definitions/courseerror.CourseError"
+                        }
+                    },
                     "500": {
                         "description": "Возникла внутренняя ошибка",
                         "schema": {
