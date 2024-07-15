@@ -27,7 +27,6 @@ type tests struct {
 type want struct {
 	statusCode int
 	body       string
-	errorCode  int
 }
 
 type request struct {
@@ -100,7 +99,7 @@ func TestRegistration(t *testing.T) {
 		{
 			name: "#1 нормальная регистрация",
 			want: want{
-				statusCode: 200,
+				statusCode: http.StatusOK,
 				body: `{
     				"message": "пользователь зарегистрирован",
     				"success": true
@@ -114,7 +113,7 @@ func TestRegistration(t *testing.T) {
 		{
 			name: "#2 пользователь уже зарегистрирован",
 			want: want{
-				statusCode: 400,
+				statusCode: http.StatusBadRequest,
 				body: `{
     						"error": "пользователь с таким email уже существует",
     						"code": 11001
@@ -128,7 +127,7 @@ func TestRegistration(t *testing.T) {
 		{
 			name: "#3 указан неверный email",
 			want: want{
-				statusCode: 400,
+				statusCode: http.StatusBadRequest,
 				body: `{
     						"error": "email: email передан неправильно.",
     						"code": 400
@@ -142,7 +141,7 @@ func TestRegistration(t *testing.T) {
 		{
 			name: "#4 указан неверный пароль, меньше 8 символов",
 			want: want{
-				statusCode: 400,
+				statusCode: http.StatusBadRequest,
 				body: `{
     						"error": "password: пароль должен содержать как миниум 8 символов.",
     						"code": 400
@@ -156,7 +155,7 @@ func TestRegistration(t *testing.T) {
 		{
 			name: "#5 указан неверный пароль, без upper case",
 			want: want{
-				statusCode: 400,
+				statusCode: http.StatusBadRequest,
 				body: `{
     						"error": "password: пароль должен содержать как минимум 1 букву, 1 заглавную букву и 1 цифру.",
     						"code": 400
@@ -224,7 +223,7 @@ func TestRegistration(t *testing.T) {
 			assert.JSONEq(t, tt.want.body, string(body))
 
 			if tt.name == "#1 нормальная регистрация" {
-				userOne.cookie = append(userOne.cookie, req.Cookies()...)
+				userOne.cookie = append(userOne.cookie, resp.Result().Cookies()...)
 			}
 		})
 	}
@@ -233,12 +232,64 @@ func TestRegistration(t *testing.T) {
 func TestVerification(t *testing.T) {
 	tests := []tests{
 		{
-			name: "#1 нормальная верификация",
+			name: "#1 код верификации невалидный",
 			want: want{
-				statusCode: 200,
+				statusCode: http.StatusBadRequest,
+				body: `{
+    				"error": "Code: код верификации передан неверно.",
+    				"code": 400
+					}`,
+			},
+			request: request{
+				body: "?confirmCode=111",
+			},
+		},
+		{
+			name: "#2 код верификации неверный",
+			want: want{
+				statusCode: http.StatusForbidden,
+				body: `{
+    				"error": "код подтверждения не правильный",
+    				"code": 11003
+					}`,
+			},
+			request: request{
+				body: "?confirmCode=2222",
+			},
+		},
+		{
+			name: "#3 нет куки",
+			want: want{
+				statusCode: http.StatusForbidden,
+				body: `{
+    				"error": "пользователь не авторизован",
+    				"code": 11009
+					}`,
+			},
+			request: request{
+				body: "?confirmCode=2222",
+			},
+		},
+		{
+			name: "#4 нормальная верификация",
+			want: want{
+				statusCode: http.StatusOK,
 				body: `{
     				"message": "email верифицирован",
     				"success": true
+					}`,
+			},
+			request: request{
+				body: "?confirmCode=1111",
+			},
+		},
+		{
+			name: "#5 email уже верифицирован",
+			want: want{
+				statusCode: http.StatusBadRequest,
+				body: `{
+    				"error": "почта пользователя уже верифицирована",
+    				"code": 11008
 					}`,
 			},
 			request: request{
@@ -264,6 +315,110 @@ func TestVerification(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("http://localhost:8080/api/v1/auth/email/verification%s", tt.request.body), nil)
+			if tt.name != "#3 нет куки" {
+				for _, v := range userOne.cookie {
+					req.AddCookie(v)
+				}
+			}
+
+			resp := httptest.NewRecorder()
+
+			router.ServeHTTP(resp, req)
+
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				log.Print(err)
+				return
+			}
+
+			assert.Equal(t, tt.want.statusCode, resp.Code)
+			assert.JSONEq(t, tt.want.body, string(body))
+
+			if tt.name == "#4 нормальная верификация" {
+				userOne.cookie = userOne.cookie[:0]
+				userOne.cookie = append(userOne.cookie, resp.Result().Cookies()...)
+			}
+		})
+	}
+}
+
+func TestLogin(t *testing.T) {
+	tests := []tests{
+		{
+			name: "#1 нормальный логин",
+			want: want{
+				statusCode: http.StatusOK,
+				body: `{
+    				"message": "доступ разрешен",
+    				"success": true
+					}`,
+			},
+			request: request{
+				contentType: "application/json; charset=utf-8",
+				body:        fmt.Sprintf(`{"email": "%s","password": "%s"}`, userOne.email, userOne.password),
+			},
+		},
+		{
+			name: "#2 несуществующий пользователь",
+			want: want{
+				statusCode: http.StatusNotFound,
+				body: `{
+    				"error": "пользователь не найден",
+    				"code": 11002
+					}`,
+			},
+			request: request{
+				contentType: "application/json; charset=utf-8",
+				body:        fmt.Sprintf(`{"email": "aboba-1234@gmail.com","password": "%s"}`, userOne.password),
+			},
+		},
+		{
+			name: "#3 не передан email",
+			want: want{
+				statusCode: http.StatusBadRequest,
+				body: `{
+    				"error": "email: email обязательно.",
+    				"code": 400
+					}`,
+			},
+			request: request{
+				contentType: "application/json; charset=utf-8",
+				body:        fmt.Sprintf(`{"email": "","password": "%s"}`, userOne.password),
+			},
+		},
+		{
+			name: "#4 не передан пароль",
+			want: want{
+				statusCode: http.StatusBadRequest,
+				body: `{
+    				"error": "password: пароль обязателен.",
+    				"code": 400
+					}`,
+			},
+			request: request{
+				contentType: "application/json; charset=utf-8",
+				body:        fmt.Sprintf(`{"email": "%s","password": ""}`, userOne.email),
+			},
+		},
+	}
+
+	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	if err != nil {
+		log.Print(err)
+		return
+	}
+
+	container, err := app.InitContainer(dir, testsConfig)
+	if err != nil {
+		log.Print(err)
+		return
+	}
+
+	router := router.RequestsRouter(container.Handlers)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, "http://localhost:8080/api/v1/auth/login", bytes.NewBuffer([]byte(tt.request.body)))
 
 			resp := httptest.NewRecorder()
 

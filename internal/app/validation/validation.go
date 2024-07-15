@@ -21,7 +21,7 @@ const (
 	fileNamePattern = `\.(.+)$`
 	loginPattern    = `^[a-zA-Z.\-]{4,20}$`
 
-	errEmailIsNil                 = "email/логин обязательно"
+	errEmailIsNil                 = "email обязательно"
 	errBadEmail                   = "email передан неправильно"
 	errPasswordIsNil              = "пароль обязателен"
 	errBadPassword                = "пароль должен содержать как миниум 8 символов и включать в себя как минимум 1 цифру"

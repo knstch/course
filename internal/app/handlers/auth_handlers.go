@@ -83,6 +83,10 @@ func (h Handlers) SignIn(ctx *gin.Context) {
 	token, err := h.authService.LogIn(ctx, credentials)
 	if err != nil {
 		h.logger.Error(fmt.Sprintf("не получилось залогиниться c почтой %v", credentials.Email), "SignIn", err.Message, err.Code)
+		if err.Code == 400 {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			return
+		}
 		if err.Code == 11002 {
 			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
 			return

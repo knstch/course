@@ -137,6 +137,13 @@ func (email EmailService) SendPasswordRecoverConfirmCode(emailToSend string) *co
 
 	confirmCode := email.generateEmailConfirmCode()
 
+	if email.isTest {
+		if err := email.redis.Set(emailToSend, 1111, 15*time.Minute).Err(); err != nil {
+			return courseError.CreateError(err, 10031)
+		}
+		return nil
+	}
+
 	if err := email.sendConfirmEmail(confirmCode, &emailToSend, recover); err != nil {
 		return err
 	}
@@ -149,6 +156,10 @@ func (email EmailService) SendPasswordRecoverConfirmCode(emailToSend string) *co
 }
 
 func (email EmailService) ValidateEmail(emailToCheck string) *courseError.CourseError {
+	if email.isTest {
+		return nil
+	}
+
 	parts := strings.Split(emailToCheck, "@")
 
 	mxRecords, err := net.LookupMX(parts[1])
