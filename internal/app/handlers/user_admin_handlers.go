@@ -53,7 +53,7 @@ func (h Handlers) FindUsersByFilters(ctx *gin.Context) {
 	}
 
 	h.logger.Info(fmt.Sprintf("пользователи успешно получены по фильртрам админом с ID: %d",
-		ctx.Value("adminId").(uint)),
+		ctx.Value("AdminId").(uint)),
 		"FindUsersByFilters",
 		fmt.Sprintf("фильтры: firstName - %v, surname - %v, phoneNumber - %v, email - %v, active - %v, verified - %v, courseName - %v, banned - %v, page - %v, limit- %v",
 			firstName, surname, phoneNumber, email, active, verified, courseName, banned, page, limit))
@@ -83,7 +83,7 @@ func (h Handlers) BanUser(ctx *gin.Context) {
 	}
 
 	h.logger.Info(fmt.Sprintf("пользователь успешно забанен админом с ID: %v",
-		ctx.Value("adminId").(uint)), "BanUser", fmt.Sprintf("userId: %v", id))
+		ctx.Value("AdminId").(uint)), "BanUser", fmt.Sprintf("userId: %v", id))
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("пользователь успешно заблокирован"))
 }
@@ -111,7 +111,7 @@ func (h Handlers) UnbanUser(ctx *gin.Context) {
 	}
 
 	h.logger.Info(fmt.Sprintf("пользователь успешно разблокирован админом с ID: %v",
-		ctx.Value("adminId").(uint)), "UnbanUser", fmt.Sprintf("userId: %v", id))
+		ctx.Value("AdminId").(uint)), "UnbanUser", fmt.Sprintf("userId: %v", id))
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("пользователь успешно разблокирован"))
 }
@@ -143,7 +143,7 @@ func (h Handlers) GetUserById(ctx *gin.Context) {
 		return
 	}
 
-	h.logger.Info(fmt.Sprintf("пользователь успешно получен админом с ID: %d", ctx.Value("adminId").(uint)), "GetUserById", fmt.Sprintf("userId: %v", id))
+	h.logger.Info(fmt.Sprintf("пользователь успешно получен админом с ID: %d", ctx.Value("AdminId").(uint)), "GetUserById", fmt.Sprintf("userId: %v", id))
 
 	ctx.JSON(http.StatusOK, user)
 }
@@ -183,7 +183,7 @@ func (h Handlers) EditUserProfile(ctx *gin.Context) {
 		return
 	}
 
-	h.logger.Info(fmt.Sprintf("информация профиля пользователя с ID: %v админом с ID: %d успешно изменена", id, ctx.Value("adminId").(uint)), "EditUserProfile", "")
+	h.logger.Info(fmt.Sprintf("информация профиля пользователя с ID: %v админом с ID: %d успешно изменена", id, ctx.Value("AdminId").(uint)), "EditUserProfile", "")
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("данные успешно изменены"))
 }
@@ -213,7 +213,7 @@ func (h Handlers) RemoveUserProfilePhoto(ctx *gin.Context) {
 		return
 	}
 
-	h.logger.Info(fmt.Sprintf("фото профиля пользователя с ID: %v админом с ID: %d успешно удалено", id, ctx.Value("adminId").(uint)), "RemoveUserProfilePhoto", "")
+	h.logger.Info(fmt.Sprintf("фото профиля пользователя с ID: %v админом с ID: %d успешно удалено", id, ctx.Value("AdminId").(uint)), "RemoveUserProfilePhoto", "")
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("фото успешно удалено"))
 }

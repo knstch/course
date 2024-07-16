@@ -2,7 +2,6 @@ package admin
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -114,10 +113,10 @@ func (admin AdminService) SignIn(ctx context.Context, login, password, code stri
 func (admin AdminService) mintJWT(id *uint, role *string) (*string, *courseError.CourseError) {
 	timeNow := time.Now()
 	authToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"iat":     timeNow.Unix(),
-		"exp":     timeNow.Add(3 * 24 * time.Hour).Unix(),
-		"adminId": *id,
-		"role":    *role,
+		"Iat":     timeNow.Unix(),
+		"Exp":     timeNow.Add(3 * 24 * time.Hour).Unix(),
+		"AdminId": *id,
+		"Role":    *role,
 	})
 
 	signedAuthToken, err := authToken.SignedString([]byte(admin.secret))
@@ -126,40 +125,6 @@ func (admin AdminService) mintJWT(id *uint, role *string) (*string, *courseError
 	}
 
 	return &signedAuthToken, nil
-}
-
-// ValidateAdminAccessToken используется для валидации токена администратора. Используется в middleware.
-// Если токен не найден в БД или имеет статус available = false, возвращает ошибку.
-func (admin AdminService) ValidateAdminAccessToken(ctx context.Context, token *string) *courseError.CourseError {
-	if err := admin.adminManager.CheckAdminAccessToken(ctx, token); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// DecodeToken используется для декодирования токена, принимает в качестве параметра токен и
-// парсит его, и возвращает данные из токена или ошибку.
-func (admin AdminService) DecodeToken(ctx context.Context, tokenString string) (*Claims, *courseError.CourseError) {
-	claims := &Claims{}
-
-	_, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {
-		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, nil
-		}
-		return []byte(admin.secret), nil
-	})
-	if err != nil {
-		if errors.Is(err, jwt.ErrTokenExpired) {
-			if err := admin.adminManager.DisableAdminToken(ctx, &tokenString); err != nil {
-				return nil, err
-			}
-			return nil, courseError.CreateError(err, 11007)
-		}
-		return nil, courseError.CreateError(err, 11011)
-	}
-
-	return claims, nil
 }
 
 // ManageAdminPassword используется для изменения пароля администратора. Принимает логин

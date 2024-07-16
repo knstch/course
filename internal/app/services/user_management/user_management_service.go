@@ -38,7 +38,9 @@ func (user UserManagementService) RetreiveUsersByFilters(ctx context.Context,
 	firstName, surname, phoneNumber, email, active, isVerified, courseName, banned, page, limit string) (
 	*entity.UserDataWithPagination, *courseError.CourseError) {
 
-	if err := validation.NewUserFiltersToValidate(firstName, surname, phoneNumber, email, active, isVerified, banned, page, limit).Validate(ctx); err != nil {
+	if err := validation.NewUserFiltersToValidate(firstName,
+		surname, phoneNumber, email, active, isVerified,
+		banned, page, limit).Validate(ctx); err != nil {
 		return nil, err
 	}
 

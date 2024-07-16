@@ -66,7 +66,7 @@ func (h Handlers) CreateNewCourse(ctx *gin.Context) {
 		return
 	}
 
-	h.logger.Info(fmt.Sprintf("курс был успешно размещен админом с ID: %d", ctx.Value("adminId").(uint)),
+	h.logger.Info(fmt.Sprintf("курс был успешно размещен админом с ID: %d", ctx.Value("AdminId").(uint)),
 		"CreateNewCourse", fmt.Sprintf("courseId: %d", *id))
 
 	ctx.JSON(http.StatusOK, entity.NewId(id))
@@ -106,7 +106,7 @@ func (h Handlers) CreateNewModule(ctx *gin.Context) {
 		return
 	}
 
-	h.logger.Info(fmt.Sprintf("модуль был успешно добавлен админом с ID: %d", ctx.Value("adminId").(uint)), "CreateNewModule", fmt.Sprintf("moduleId: %d", *id))
+	h.logger.Info(fmt.Sprintf("модуль был успешно добавлен админом с ID: %d", ctx.Value("AdminId").(uint)), "CreateNewModule", fmt.Sprintf("moduleId: %d", *id))
 
 	ctx.JSON(http.StatusOK, entity.NewId(id))
 }
@@ -174,7 +174,7 @@ func (h Handlers) UploadNewLesson(ctx *gin.Context) {
 		return
 	}
 
-	h.logger.Info(fmt.Sprintf("урок был успешно добавлен админом с ID: %d", ctx.Value("adminId").(uint)), "UploadNewLesson", fmt.Sprintf("lessonId: %d", *lessonId))
+	h.logger.Info(fmt.Sprintf("урок был успешно добавлен админом с ID: %d", ctx.Value("AdminId").(uint)), "UploadNewLesson", fmt.Sprintf("lessonId: %d", *lessonId))
 
 	ctx.JSON(http.StatusOK, entity.NewId(lessonId))
 }
@@ -233,7 +233,7 @@ func (h Handlers) UpdateCourse(ctx *gin.Context) {
 		return
 	}
 
-	h.logger.Info(fmt.Sprintf("курс был успешно обновлен админом с ID: %d", ctx.Value("adminId").(uint)), "UpdateCourse", fmt.Sprintf("name: %v", name))
+	h.logger.Info(fmt.Sprintf("курс был успешно обновлен админом с ID: %d", ctx.Value("AdminId").(uint)), "UpdateCourse", fmt.Sprintf("name: %v", name))
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("данные о курсе успешно отредактированы"))
 }
@@ -276,7 +276,7 @@ func (h Handlers) UpdateModule(ctx *gin.Context) {
 		return
 	}
 
-	h.logger.Info(fmt.Sprintf("модуль был успешно обновлен админом с ID: %d", ctx.Value("adminId").(uint)), "UpdateModule", fmt.Sprintf("name: %v", module.Name))
+	h.logger.Info(fmt.Sprintf("модуль был успешно обновлен админом с ID: %d", ctx.Value("AdminId").(uint)), "UpdateModule", fmt.Sprintf("name: %v", module.Name))
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("данные о модуле успешно отредактированы"))
 }
@@ -361,7 +361,7 @@ func (h Handlers) UpdateLesson(ctx *gin.Context) {
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
 	}
 
-	h.logger.Info(fmt.Sprintf("урок был успешно обновлен админом с ID: %d", ctx.Value("adminId").(uint)), "UpdateLesson", fmt.Sprintf("name: %v", name))
+	h.logger.Info(fmt.Sprintf("урок был успешно обновлен админом с ID: %d", ctx.Value("AdminId").(uint)), "UpdateLesson", fmt.Sprintf("name: %v", name))
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("урок успешно отредактирован"))
 }
@@ -392,7 +392,7 @@ func (h Handlers) ManageVisibility(ctx *gin.Context) {
 		return
 	}
 
-	h.logger.Info(fmt.Sprintf("видимость курса была успешно обновлена админом с ID: %d", ctx.Value("adminId").(uint)), "ManageVisibility", fmt.Sprintf("ID курса: %v", id))
+	h.logger.Info(fmt.Sprintf("видимость курса была успешно обновлена админом с ID: %d", ctx.Value("AdminId").(uint)), "ManageVisibility", fmt.Sprintf("ID курса: %v", id))
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("видимость модуля успешно изменена"))
 }
@@ -422,7 +422,7 @@ func (h Handlers) EraseModule(ctx *gin.Context) {
 		return
 	}
 
-	h.logger.Info(fmt.Sprintf("модуль был успешно удален админом с ID: %d", ctx.Value("adminId").(uint)), "EraseModule", fmt.Sprintf("ID модуля: %v", id))
+	h.logger.Info(fmt.Sprintf("модуль был успешно удален админом с ID: %d", ctx.Value("AdminId").(uint)), "EraseModule", fmt.Sprintf("ID модуля: %v", id))
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("модуль и вложенные уроки удалены"))
 }
@@ -453,7 +453,7 @@ func (h Handlers) EraseLesson(ctx *gin.Context) {
 		return
 	}
 
-	h.logger.Info(fmt.Sprintf("урок был успешно удален админом с ID: %d", ctx.Value("adminId").(uint)), "EraseLesson", fmt.Sprintf("ID урока: %v", id))
+	h.logger.Info(fmt.Sprintf("урок был успешно удален админом с ID: %d", ctx.Value("AdminId").(uint)), "EraseLesson", fmt.Sprintf("ID урока: %v", id))
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("урок успешно удален"))
 }

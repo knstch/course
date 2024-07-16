@@ -21,9 +21,9 @@ import (
 // @Failure 404 {object} courseerror.CourseError "Админ не найден"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) DeleteAdmin(ctx *gin.Context) {
-	role := ctx.Value("role").(string)
+	role := ctx.Value("Role").(string)
 	if role != "super_admin" {
-		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("adminId")), "DeleteAdmin", errNoRights.Error(), 16004)
+		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("AdminId")), "DeleteAdmin", errNoRights.Error(), 16004)
 		ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errNoRights, 16004))
 		return
 	}
@@ -60,14 +60,14 @@ func (h Handlers) DeleteAdmin(ctx *gin.Context) {
 // @Failure 404 {object} courseerror.CourseError "Администратор не найден"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) ChangeRole(ctx *gin.Context) {
-	role := ctx.Value("role").(string)
+	role := ctx.Value("Role").(string)
 	if role != "super_admin" {
-		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("adminId")), "ChangeRole", errNoRights.Error(), 16004)
+		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("AdminId")), "ChangeRole", errNoRights.Error(), 16004)
 		ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errNoRights, 16004))
 		return
 	}
 	login := ctx.Query("login")
-	adminRole := ctx.Query("role")
+	adminRole := ctx.Query("Role")
 	if err := h.adminService.ManageRole(ctx, login, adminRole); err != nil {
 		h.logger.Error(fmt.Sprintf("ошибка при изменении роли на %v у админа с логином %v", adminRole, login), "ChangeRole", err.Message, err.Code)
 		if err.Code == 400 {
@@ -102,15 +102,15 @@ func (h Handlers) ChangeRole(ctx *gin.Context) {
 // @Failure 403 {object} courseerror.CourseError "Нет прав"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) FindAdmins(ctx *gin.Context) {
-	currentRole := ctx.Value("role").(string)
+	currentRole := ctx.Value("Role").(string)
 	if currentRole != "super_admin" {
-		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("adminId")), "ChangeRole", errNoRights.Error(), 16004)
+		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("AdminId")), "ChangeRole", errNoRights.Error(), 16004)
 		ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errNoRights, 16004))
 		return
 	}
 
 	login := ctx.Query("login")
-	role := ctx.Query("role")
+	role := ctx.Query("Role")
 	twoStepsAuth := ctx.Query("twoStepsAuth")
 	page := ctx.Query("page")
 	limit := ctx.Query("limit")
@@ -144,9 +144,9 @@ func (h Handlers) FindAdmins(ctx *gin.Context) {
 // @Failure 403 {object} courseerror.CourseError "Нет прав"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) GetPaymentDashboard(ctx *gin.Context) {
-	role := ctx.Value("role").(string)
+	role := ctx.Value("Role").(string)
 	if role != "super_admin" && role != "admin" {
-		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("adminId")), "GetPaymentDashboard", errNoRights.Error(), 16004)
+		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("AdminId")), "GetPaymentDashboard", errNoRights.Error(), 16004)
 		ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errNoRights, 16004))
 		return
 	}
@@ -184,9 +184,9 @@ func (h Handlers) GetPaymentDashboard(ctx *gin.Context) {
 // @Failure 403 {object} courseerror.CourseError "Нет прав"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) GetUsersDashboard(ctx *gin.Context) {
-	role := ctx.Value("role").(string)
+	role := ctx.Value("Role").(string)
 	if role != "super_admin" && role != "admin" {
-		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("adminId")), "GetUsersDashboard", errNoRights.Error(), 16004)
+		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("AdminId")), "GetUsersDashboard", errNoRights.Error(), 16004)
 		ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errNoRights, 16004))
 		return
 	}

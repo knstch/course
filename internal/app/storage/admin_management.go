@@ -46,7 +46,7 @@ func (storage Storage) ChangeRole(ctx context.Context, login, role string) *cour
 		return courseError.CreateError(err, 10002)
 	}
 
-	if err := tx.Model(&dto.Admin{}).Where("login = ?", login).Update("role", role).Error; err != nil {
+	if err := tx.Model(&dto.Admin{}).Where("login = ?", login).Update("Role", role).Error; err != nil {
 		tx.Rollback()
 		return courseError.CreateError(err, 10003)
 	}

@@ -33,10 +33,10 @@ func (h Handlers) CreateAdmin(ctx *gin.Context) {
 		return
 	}
 
-	role := ctx.Value("role").(string)
+	role := ctx.Value("Role").(string)
 	if role != "super_admin" {
 		ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errNoRights, 16004))
-		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("adminId")), "CreateAdmin", errNoRights.Error(), 16004)
+		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("AdminId")), "CreateAdmin", errNoRights.Error(), 16004)
 		return
 	}
 
@@ -149,45 +149,6 @@ func (h Handlers) LogIn(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("доступ разрешен"))
 }
 
-func (h Handlers) WithAdminCookieAuth() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		cookie, err := ctx.Request.Cookie("admin_auth")
-		if err != nil {
-			h.logger.Error(fmt.Sprintf("не получилось получить куки, запрос с IP: %v", ctx.ClientIP()), "WithAdminCookieAuth", errUserNotAuthentificated.Error(), 11009)
-			ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errUserNotAuthentificated, 11009))
-			return
-		}
-
-		if err := h.adminService.ValidateAdminAccessToken(ctx, &cookie.Value); err != nil {
-			h.logger.Error("не получилось валидировать токен", "WithAdminCookieAuth", err.Message, err.Code)
-			if err.Code == 11006 {
-				ctx.AbortWithStatusJSON(http.StatusForbidden, err)
-				return
-			}
-			ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
-			return
-		}
-
-		payload, tokenError := h.adminService.DecodeToken(ctx, cookie.Value)
-		if tokenError != nil {
-			h.logger.Error("не получилось декодировать токен", "WithAdminCookieAuth", tokenError.Message, tokenError.Code)
-			if tokenError.Code == 11006 || tokenError.Code == 11007 {
-				ctx.AbortWithStatusJSON(http.StatusForbidden, err)
-				return
-			}
-			ctx.AbortWithStatusJSON(http.StatusInternalServerError, tokenError)
-			return
-		}
-
-		ctx.Set("adminId", payload.AdminId)
-		ctx.Set("role", payload.Role)
-
-		h.logger.Info(fmt.Sprintf("админ перешел по URL: %v c IP: %v", ctx.Request.URL.String(), ctx.ClientIP()), "WithAdminCookieAuth", fmt.Sprint(payload.AdminId))
-
-		ctx.Next()
-	}
-}
-
 // @Summary Изменить пароль администратора
 // @Accept json
 // @Produce json
@@ -201,9 +162,9 @@ func (h Handlers) WithAdminCookieAuth() gin.HandlerFunc {
 // @Failure 404 {object} courseerror.CourseError "Администратор не найден"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) ChangeAdminPassword(ctx *gin.Context) {
-	role := ctx.Value("role").(string)
+	role := ctx.Value("Role").(string)
 	if role != "super_admin" {
-		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("adminId")), "ChangeAdminPassword", errNoRights.Error(), 16004)
+		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("AdminId")), "ChangeAdminPassword", errNoRights.Error(), 16004)
 		ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errNoRights, 16004))
 		return
 	}
@@ -244,9 +205,9 @@ func (h Handlers) ChangeAdminPassword(ctx *gin.Context) {
 // @Failure 404 {object} courseerror.CourseError "Администратор не найден"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) ChangeAdminAuthKey(ctx *gin.Context) {
-	role := ctx.Value("role").(string)
+	role := ctx.Value("Role").(string)
 	if role != "super_admin" {
-		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("adminId")), "ChangeAdminAuthKey", errNoRights.Error(), 16004)
+		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("AdminId")), "ChangeAdminAuthKey", errNoRights.Error(), 16004)
 		ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errNoRights, 16004))
 		return
 	}
