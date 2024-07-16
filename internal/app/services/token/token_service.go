@@ -77,6 +77,7 @@ func (token TokenService) DecodeUserToken(ctx context.Context, tokenString strin
 	return claims, nil
 }
 
+// DecodeAdminToken используется для декодирования токена администратора.
 func (token TokenService) DecodeAdminToken(ctx context.Context, tokenString string) (*AdminClaims, *courseError.CourseError) {
 	claims := &AdminClaims{}
 
