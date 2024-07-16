@@ -109,6 +109,8 @@ func (t TokenService) ValidateAdminAccessToken(ctx context.Context, token *strin
 	return nil
 }
 
+// ValidateAdminAccessToken используется для валидации токена пользователя. Используется в middleware.
+// Если токен не найден в БД или имеет статус available = false, возвращает ошибку.
 func (t TokenService) ValidateAccessToken(ctx context.Context, token *string) *courseError.CourseError {
 	if err := t.tokenManager.CheckAccessToken(ctx, *token); err != nil {
 		return err
