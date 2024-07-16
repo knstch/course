@@ -3,7 +3,6 @@ package token
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/knstch/course/internal/app/config"
@@ -74,7 +73,7 @@ func (token TokenService) DecodeUserToken(ctx context.Context, tokenString strin
 	if claims.UserID == 0 {
 		return nil, courseError.CreateError(err, 11007)
 	}
-	fmt.Println("CLAIMS: ", claims.Exp)
+
 	return claims, nil
 }
 
