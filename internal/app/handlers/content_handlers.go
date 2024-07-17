@@ -28,6 +28,8 @@ import (
 // @Failure 403 {object} courseerror.CourseError "Нет доступа к расширенному контенту"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) RetreiveCourses(ctx *gin.Context) {
+	var statusCode int
+
 	params := contentmanagement.CourseQueryParams{
 		ID:          ctx.Query("id"),
 		Name:        ctx.Query("name"),
@@ -50,14 +52,20 @@ func (h Handlers) RetreiveCourses(ctx *gin.Context) {
 			params.Limit,
 		), "RetreiveCourses", err.Message, err.Code)
 		if err.Code == 400 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "GET", "RetreiveCourses")
 			return
 		}
 		if err.Code == 13004 {
-			ctx.AbortWithStatusJSON(http.StatusForbidden, err)
+			statusCode = http.StatusForbidden
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "GET", "RetreiveCourses")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "GET", "RetreiveCourses")
 		return
 	}
 
@@ -72,7 +80,9 @@ func (h Handlers) RetreiveCourses(ctx *gin.Context) {
 			params.Limit,
 		))
 
-	ctx.JSON(http.StatusOK, coursesInfo)
+	statusCode = http.StatusOK
+	ctx.JSON(statusCode, coursesInfo)
+	h.metrics.RecordResponse(statusCode, "GET", "RetreiveCourses")
 }
 
 // @Summary Найти модули по фильтрам
@@ -91,6 +101,8 @@ func (h Handlers) RetreiveCourses(ctx *gin.Context) {
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) RetreiveModules(ctx *gin.Context) {
+	var statusCode int
+
 	name := ctx.Query("name")
 	description := ctx.Query("description")
 	courseName := ctx.Query("courseName")
@@ -107,10 +119,14 @@ func (h Handlers) RetreiveModules(ctx *gin.Context) {
 		h.logger.Error(fmt.Sprintf("ошибка при получении модулей по фильтрам: name - %v, description - %v, courseName - %v, page - %v, limit - %v", name, description, courseName, page, limit),
 			"RetreiveModules", err.Message, err.Code)
 		if err.Code == 400 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "GET", "RetreiveModules")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "GET", "RetreiveModules")
 		return
 	}
 
@@ -118,7 +134,9 @@ func (h Handlers) RetreiveModules(ctx *gin.Context) {
 		fmt.Sprintf("фильтры: name - %v, description - %v, courseName - %v, page - %v, limit - %v",
 			name, description, courseName, page, limit))
 
-	ctx.JSON(http.StatusOK, modules)
+	statusCode = http.StatusOK
+	ctx.JSON(statusCode, modules)
+	h.metrics.RecordResponse(statusCode, "GET", "RetreiveModules")
 }
 
 // @Summary Найти уроки по фильтрам
@@ -138,6 +156,8 @@ func (h Handlers) RetreiveModules(ctx *gin.Context) {
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) RetreiveLessons(ctx *gin.Context) {
+	var statusCode int
+
 	name := ctx.Query("name")
 	description := ctx.Query("description")
 	moduleName := ctx.Query("moduleName")
@@ -155,10 +175,14 @@ func (h Handlers) RetreiveLessons(ctx *gin.Context) {
 		h.logger.Error(fmt.Sprintf("ошибка получения уроков по фильтрам: name - %v, description - %v, moduleName - %v, courseName - %v, page - %v, limit - %v",
 			name, description, moduleName, courseName, page, limit), "RetreiveLessons", err.Message, err.Code)
 		if err.Code == 400 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "GET", "RetreiveLessons")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "GET", "RetreiveLessons")
 		return
 	}
 
@@ -167,5 +191,7 @@ func (h Handlers) RetreiveLessons(ctx *gin.Context) {
 		fmt.Sprintf("фильтры: name - %v, description - %v, moduleName - %v, courseName - %v, page - %v, limit - %v",
 			name, description, moduleName, courseName, page, limit))
 
-	ctx.JSON(http.StatusOK, lessons)
+	statusCode = http.StatusOK
+	ctx.JSON(statusCode, lessons)
+	h.metrics.RecordResponse(statusCode, "GET", "RetreiveLessons")
 }

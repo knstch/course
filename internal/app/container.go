@@ -8,6 +8,7 @@ import (
 	"github.com/knstch/course/internal/app/grpc"
 	"github.com/knstch/course/internal/app/handlers"
 	"github.com/knstch/course/internal/app/logger"
+	"github.com/knstch/course/internal/app/metrics"
 	authmiddleware "github.com/knstch/course/internal/app/middleware/auth_middleware"
 	"github.com/knstch/course/internal/app/services/token"
 	"github.com/knstch/course/internal/app/storage"
@@ -22,6 +23,8 @@ type Container struct {
 
 // InitContainer инициализирует контейнер, в качестве параметра принимает конфиг и возвращает готовый контейнер или ошибку.
 func InitContainer(dir string, config *config.Config) (*Container, error) {
+	metrics := metrics.InitMetrics()
+
 	psqlStorage, err := storage.NewStorage(config.DSN, config.Secret)
 	if err != nil {
 		return nil, err
@@ -54,7 +57,7 @@ func InitContainer(dir string, config *config.Config) (*Container, error) {
 
 	middlware := authmiddleware.NewMiddleware(defaultLogger, config, tokenService)
 
-	handlers := handlers.NewHandlers(psqlStorage, config, redisClient, httpClient, grpcClient, defaultLogger)
+	handlers := handlers.NewHandlers(psqlStorage, config, redisClient, httpClient, grpcClient, defaultLogger, metrics)
 
 	return &Container{
 		psqlStorage,

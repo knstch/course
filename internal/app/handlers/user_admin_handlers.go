@@ -28,6 +28,8 @@ import (
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) FindUsersByFilters(ctx *gin.Context) {
+	var statusCode int
+
 	firstName := ctx.Query("firstName")
 	surname := ctx.Query("surname")
 	phoneNumber := ctx.Query("phoneNumber")
@@ -45,10 +47,14 @@ func (h Handlers) FindUsersByFilters(ctx *gin.Context) {
 			fmt.Sprintf("ошибка при поиске по фильтрам: firstName - %v, surname - %v, phoneNumber - %v, email - %v, active - %v, verified - %v, courseName - %v, banned - %v, page - %v, limit- %v", firstName, surname,
 				phoneNumber, email, active, verified, courseName, banned, page, limit), "FindUsersByFilters", err.Message, err.Code)
 		if err.Code == 400 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "GET", "FindUsersByFilters")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "GET", "FindUsersByFilters")
 		return
 	}
 
@@ -58,7 +64,9 @@ func (h Handlers) FindUsersByFilters(ctx *gin.Context) {
 		fmt.Sprintf("фильтры: firstName - %v, surname - %v, phoneNumber - %v, email - %v, active - %v, verified - %v, courseName - %v, banned - %v, page - %v, limit- %v",
 			firstName, surname, phoneNumber, email, active, verified, courseName, banned, page, limit))
 
-	ctx.JSON(http.StatusOK, users)
+	statusCode = http.StatusOK
+	ctx.JSON(statusCode, users)
+	h.metrics.RecordResponse(statusCode, "GET", "FindUsersByFilters")
 }
 
 // @Summary Заблокировать пользователя
@@ -71,21 +79,29 @@ func (h Handlers) FindUsersByFilters(ctx *gin.Context) {
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) BanUser(ctx *gin.Context) {
+	var statusCode int
+
 	id := ctx.Query("id")
 	if err := h.userManagementService.DeactivateUser(ctx, id); err != nil {
 		h.logger.Error("ошибка при блокировке пользователя", "BanUser", err.Message, err.Code)
 		if err.Code == 400 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "POST", "BanUser")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "POST", "BanUser")
 		return
 	}
 
 	h.logger.Info(fmt.Sprintf("пользователь успешно забанен админом с ID: %v",
 		ctx.Value("AdminId").(uint)), "BanUser", fmt.Sprintf("userId: %v", id))
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("пользователь успешно заблокирован"))
+	statusCode = http.StatusOK
+	ctx.JSON(statusCode, entity.CreateSuccessResponse("пользователь успешно заблокирован"))
+	h.metrics.RecordResponse(statusCode, "POST", "BanUser")
 }
 
 // @Summary Разблокировать пользователя
@@ -98,22 +114,30 @@ func (h Handlers) BanUser(ctx *gin.Context) {
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) UnbanUser(ctx *gin.Context) {
+	var statusCode int
+
 	id := ctx.Query("id")
 
 	if err := h.userManagementService.ActivateUser(ctx, id); err != nil {
 		h.logger.Error("ошибка при разблокировке пользователя", "UnbanUser", err.Message, err.Code)
 		if err.Code == 400 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "POST", "UnbanUser")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "POST", "UnbanUser")
 		return
 	}
 
 	h.logger.Info(fmt.Sprintf("пользователь успешно разблокирован админом с ID: %v",
 		ctx.Value("AdminId").(uint)), "UnbanUser", fmt.Sprintf("userId: %v", id))
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("пользователь успешно разблокирован"))
+	statusCode = http.StatusOK
+	ctx.JSON(statusCode, entity.CreateSuccessResponse("пользователь успешно разблокирован"))
+	h.metrics.RecordResponse(statusCode, "POST", "UnbanUser")
 }
 
 // @Summary Получить пользователя по ID
@@ -127,25 +151,35 @@ func (h Handlers) UnbanUser(ctx *gin.Context) {
 // @Failure 404 {object} courseerror.CourseError "Пользователь не найден"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) GetUserById(ctx *gin.Context) {
+	var statusCode int
+
 	id := ctx.Query("id")
 	user, err := h.userManagementService.RetreiveUserById(ctx, id)
 	if err != nil {
 		h.logger.Error(fmt.Sprintf("ошибка при получении пользователя по ID: %v", id), "GetUserById", err.Message, err.Code)
 		if err.Code == 400 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "GET", "GetUserById")
 			return
 		}
 		if err.Code == 11101 {
-			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
+			statusCode = http.StatusNotFound
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "GET", "GetUserById")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "GET", "GetUserById")
 		return
 	}
 
 	h.logger.Info(fmt.Sprintf("пользователь успешно получен админом с ID: %d", ctx.Value("AdminId").(uint)), "GetUserById", fmt.Sprintf("userId: %v", id))
 
-	ctx.JSON(http.StatusOK, user)
+	statusCode = http.StatusOK
+	ctx.JSON(statusCode, user)
+	h.metrics.RecordResponse(statusCode, "GET", "GetUserById")
 }
 
 // @Summary Изменить профиль пользовтаеля
@@ -161,31 +195,43 @@ func (h Handlers) GetUserById(ctx *gin.Context) {
 // @Failure 404 {object} courseerror.CourseError "Пользователь не найден"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) EditUserProfile(ctx *gin.Context) {
+	var statusCode int
+
 	id := ctx.Query("id")
 	userInfo := entity.NewUserInfo()
 	if err := ctx.ShouldBindJSON(&userInfo); err != nil {
+		statusCode = http.StatusBadRequest
 		h.logger.Error("не получилось обработать тело запроса", "EditUserProfile", err.Error(), 10101)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errBrokenJSON, 10101))
+		ctx.AbortWithStatusJSON(statusCode, courseerror.CreateError(errBrokenJSON, 10101))
+		h.metrics.RecordResponse(statusCode, "PATCH", "GetUserById")
 		return
 	}
 
 	if err := h.userService.FillProfile(ctx, userInfo, id, true); err != nil {
 		h.logger.Error("ошибка при заполнении профиля", "EditUserProfile", err.Message, err.Code)
 		if err.Code == 400 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "PATCH", "EditUserProfile")
 			return
 		}
 		if err.Code == 11101 {
-			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
+			statusCode = http.StatusNotFound
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "PATCH", "EditUserProfile")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "PATCH", "EditUserProfile")
 		return
 	}
 
 	h.logger.Info(fmt.Sprintf("информация профиля пользователя с ID: %v админом с ID: %d успешно изменена", id, ctx.Value("AdminId").(uint)), "EditUserProfile", "")
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("данные успешно изменены"))
+	statusCode = http.StatusOK
+	ctx.JSON(statusCode, entity.CreateSuccessResponse("данные успешно изменены"))
+	h.metrics.RecordResponse(statusCode, "PATCH", "EditUserProfile")
 }
 
 // @Summary Удалить фото пользователя
@@ -199,21 +245,31 @@ func (h Handlers) EditUserProfile(ctx *gin.Context) {
 // @Failure 404 {object} courseerror.CourseError "Пользователь не найден"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) RemoveUserProfilePhoto(ctx *gin.Context) {
+	var statusCode int
+
 	id := ctx.Query("id")
 	if err := h.userManagementService.EraseUserProfilePhoto(ctx, id); err != nil {
 		h.logger.Error(fmt.Sprintf("ошибка при удаления фото профиля пользователя с ID: %v", id), "RemoveUserProfilePhoto", err.Message, err.Code)
 		if err.Code == 400 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "DELETE", "RemoveUserProfilePhoto")
 			return
 		}
 		if err.Code == 11101 {
-			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
+			statusCode = http.StatusNotFound
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "DELETE", "RemoveUserProfilePhoto")
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "DELETE", "RemoveUserProfilePhoto")
 		return
 	}
 
 	h.logger.Info(fmt.Sprintf("фото профиля пользователя с ID: %v админом с ID: %d успешно удалено", id, ctx.Value("AdminId").(uint)), "RemoveUserProfilePhoto", "")
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("фото успешно удалено"))
+	statusCode = http.StatusOK
+	ctx.JSON(statusCode, entity.CreateSuccessResponse("фото успешно удалено"))
+	h.metrics.RecordResponse(statusCode, "DELETE", "RemoveUserProfilePhoto")
 }

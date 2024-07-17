@@ -21,30 +21,42 @@ import (
 // @Failure 404 {object} courseerror.CourseError "Админ не найден"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) DeleteAdmin(ctx *gin.Context) {
+	var statusCode int
+
 	role := ctx.Value("Role").(string)
 	if role != "super_admin" {
+		statusCode = http.StatusForbidden
 		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("AdminId")), "DeleteAdmin", errNoRights.Error(), 16004)
-		ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errNoRights, 16004))
+		ctx.AbortWithStatusJSON(statusCode, courseerror.CreateError(errNoRights, 16004))
+		h.metrics.RecordResponse(statusCode, "DELETE", "DeleteAdmin")
 		return
 	}
 	login := ctx.Query("login")
 	if err := h.adminService.EraseAdmin(ctx, login); err != nil {
 		h.logger.Error("не получилось удалить админа", "DeleteAdmin", err.Message, err.Code)
 		if err.Code == 400 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "DELETE", "DeleteAdmin")
 			return
 		}
 		if err.Code == 16002 {
-			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
+			statusCode = http.StatusNotFound
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "DELETE", "DeleteAdmin")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "DELETE", "DeleteAdmin")
 		return
 	}
 
 	h.logger.Info("админ упешно удален", "DeleteAdmin", login)
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("администратор успешно удален"))
+	statusCode = http.StatusOK
+	ctx.JSON(statusCode, entity.CreateSuccessResponse("администратор успешно удален"))
+	h.metrics.RecordResponse(statusCode, "DELETE", "DeleteAdmin")
 }
 
 // @Summary Изменить роль администратора
@@ -60,10 +72,14 @@ func (h Handlers) DeleteAdmin(ctx *gin.Context) {
 // @Failure 404 {object} courseerror.CourseError "Администратор не найден"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) ChangeRole(ctx *gin.Context) {
+	var statusCode int
+
 	role := ctx.Value("Role").(string)
 	if role != "super_admin" {
+		statusCode = http.StatusForbidden
 		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("AdminId")), "ChangeRole", errNoRights.Error(), 16004)
-		ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errNoRights, 16004))
+		ctx.AbortWithStatusJSON(statusCode, courseerror.CreateError(errNoRights, 16004))
+		h.metrics.RecordResponse(statusCode, "PATCH", "ChangeRole")
 		return
 	}
 	login := ctx.Query("login")
@@ -71,20 +87,28 @@ func (h Handlers) ChangeRole(ctx *gin.Context) {
 	if err := h.adminService.ManageRole(ctx, login, adminRole); err != nil {
 		h.logger.Error(fmt.Sprintf("ошибка при изменении роли на %v у админа с логином %v", adminRole, login), "ChangeRole", err.Message, err.Code)
 		if err.Code == 400 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "PATCH", "ChangeRole")
 			return
 		}
 		if err.Code == 16002 {
-			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
+			statusCode = http.StatusNotFound
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "PATCH", "ChangeRole")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "PATCH", "ChangeRole")
 		return
 	}
 
 	h.logger.Info(fmt.Sprintf("роль админа с логином %v успешно изменена", login), "ChangeRole", adminRole)
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("роль успешно изменена"))
+	statusCode = http.StatusOK
+	ctx.JSON(statusCode, entity.CreateSuccessResponse("роль успешно изменена"))
+	h.metrics.RecordResponse(statusCode, "PATCH", "ChangeRole")
 }
 
 // @Summary Найти администраторов по фильтрам
@@ -102,10 +126,14 @@ func (h Handlers) ChangeRole(ctx *gin.Context) {
 // @Failure 403 {object} courseerror.CourseError "Нет прав"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) FindAdmins(ctx *gin.Context) {
+	var statusCode int
+
 	currentRole := ctx.Value("Role").(string)
 	if currentRole != "super_admin" {
-		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("AdminId")), "ChangeRole", errNoRights.Error(), 16004)
-		ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errNoRights, 16004))
+		statusCode = http.StatusForbidden
+		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("AdminId")), "FindAdmins", errNoRights.Error(), 16004)
+		ctx.AbortWithStatusJSON(statusCode, courseerror.CreateError(errNoRights, 16004))
+		h.metrics.RecordResponse(statusCode, "GET", "FindAdmins")
 		return
 	}
 
@@ -118,16 +146,22 @@ func (h Handlers) FindAdmins(ctx *gin.Context) {
 	if err != nil {
 		h.logger.Error(fmt.Sprintf("ошибка при поиске админов по запросу: login - %v, role - %v, twoStepsAuth - %v, page - %v, limit - %v", login, role, twoStepsAuth, page, limit), "FindAdmins", err.Message, err.Code)
 		if err.Code == 400 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "GET", "FindAdmins")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "GET", "FindAdmins")
 		return
 	}
 
 	h.logger.Info("админы успешно найдены", "FindAdmins", fmt.Sprintf("фильтры: login - %v, role - %v, twoStepsAuth - %v, page - %v, limit - %v", login, role, twoStepsAuth, page, limit))
 
-	ctx.JSON(http.StatusOK, admins)
+	statusCode = http.StatusOK
+	ctx.JSON(statusCode, admins)
+	h.metrics.RecordResponse(statusCode, "GET", "FindAdmins")
 }
 
 // @Summary Получить данные с платежами по дням
@@ -144,10 +178,14 @@ func (h Handlers) FindAdmins(ctx *gin.Context) {
 // @Failure 403 {object} courseerror.CourseError "Нет прав"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) GetPaymentDashboard(ctx *gin.Context) {
+	var statusCode int
+
 	role := ctx.Value("Role").(string)
 	if role != "super_admin" && role != "admin" {
+		statusCode = http.StatusForbidden
 		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("AdminId")), "GetPaymentDashboard", errNoRights.Error(), 16004)
-		ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errNoRights, 16004))
+		ctx.AbortWithStatusJSON(statusCode, courseerror.CreateError(errNoRights, 16004))
+		h.metrics.RecordResponse(statusCode, "GET", "GetPaymentDashboard")
 		return
 	}
 
@@ -160,16 +198,22 @@ func (h Handlers) GetPaymentDashboard(ctx *gin.Context) {
 	if err != nil {
 		h.logger.Error(fmt.Sprintf("ошибка при получении статистики по платежам по фильтрам: from -  %v, due - %v, courseName - %v, paymentMethod - %v", from, due, courseName, paymentMethod), "GetPaymentDashboard", err.Message, err.Code)
 		if err.Code == 400 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "GET", "GetPaymentDashboard")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "GET", "GetPaymentDashboard")
 		return
 	}
 
 	h.logger.Info("статистика успешно получена", "GetPaymentDashboard", fmt.Sprintf("фильтры: from -  %v, due - %v, courseName - %v, paymentMethod - %v", from, due, courseName, paymentMethod))
 
-	ctx.JSON(http.StatusOK, stats)
+	statusCode = http.StatusOK
+	ctx.JSON(statusCode, stats)
+	h.metrics.RecordResponse(statusCode, "GET", "GetPaymentDashboard")
 }
 
 // @Summary Получить данные с юзерами по дням
@@ -184,10 +228,14 @@ func (h Handlers) GetPaymentDashboard(ctx *gin.Context) {
 // @Failure 403 {object} courseerror.CourseError "Нет прав"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) GetUsersDashboard(ctx *gin.Context) {
+	var statusCode int
+
 	role := ctx.Value("Role").(string)
 	if role != "super_admin" && role != "admin" {
+		statusCode = http.StatusForbidden
 		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("AdminId")), "GetUsersDashboard", errNoRights.Error(), 16004)
-		ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errNoRights, 16004))
+		ctx.AbortWithStatusJSON(statusCode, courseerror.CreateError(errNoRights, 16004))
+		h.metrics.RecordResponse(statusCode, "GET", "GetPaymentDashboard")
 		return
 	}
 
@@ -195,14 +243,20 @@ func (h Handlers) GetUsersDashboard(ctx *gin.Context) {
 	if err != nil {
 		h.logger.Error("ошибка при получении статистики пользователей", "GetUsersDashboard", err.Message, err.Code)
 		if err.Code == 400 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "GET", "GetPaymentDashboard")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "GET", "GetPaymentDashboard")
 		return
 	}
 
 	h.logger.Info("статистика по пользователям успшно получена", "GetUsersDashboard", "")
 
-	ctx.JSON(http.StatusOK, stats)
+	statusCode = http.StatusOK
+	ctx.JSON(statusCode, stats)
+	h.metrics.RecordResponse(statusCode, "GET", "GetPaymentDashboard")
 }

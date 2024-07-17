@@ -16,7 +16,12 @@ import (
 	"github.com/knstch/course/internal/app/services/user"
 	usermanagement "github.com/knstch/course/internal/app/services/user_management"
 	"github.com/knstch/course/internal/app/storage"
+	"github.com/prometheus/client_golang/prometheus"
 )
+
+type Metrics struct {
+	StatusCodesCounter *prometheus.CounterVec
+}
 
 type Handlers struct {
 	authService              auth.AuthService
@@ -28,9 +33,20 @@ type Handlers struct {
 	adminService             admin.AdminService
 	address                  string
 	logger                   logger.Logger
+	metrics                  MetricsRecorder
 }
 
-func NewHandlers(storage *storage.Storage, config *config.Config, redisClient *redis.Client, client *http.Client, grpcClient *grpc.GrpcClient, logger logger.Logger) *Handlers {
+type MetricsRecorder interface {
+	RecordResponse(statusCode int, method, function string)
+}
+
+func NewHandlers(storage *storage.Storage,
+	config *config.Config,
+	redisClient *redis.Client,
+	client *http.Client,
+	grpcClient *grpc.GrpcClient,
+	logger logger.Logger,
+	metrics MetricsRecorder) *Handlers {
 	emailService := email.NewEmailService(redisClient, config)
 	return &Handlers{
 		authService:              auth.NewAuthService(storage, config, redisClient, emailService),
@@ -42,6 +58,7 @@ func NewHandlers(storage *storage.Storage, config *config.Config, redisClient *r
 		emailService:             emailService,
 		address:                  config.HostAddress,
 		logger:                   logger,
+		metrics:                  metrics,
 	}
 }
 
