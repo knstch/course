@@ -27,17 +27,24 @@ var (
 // @Failure 409 {object} courseerror.CourseError "Курс уже куплен"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) BuyCourse(ctx *gin.Context) {
+	var statusCode int
+
 	userId := ctx.Value("UserId").(uint)
 	verifiedStatus := ctx.GetBool("verified")
 	if !verifiedStatus {
+		statusCode = http.StatusForbidden
 		h.logger.Error(fmt.Sprintf("пользователь не верифицирован, ID: %d", userId), "BuyCourse", errNotVerified.Error(), 11008)
-		ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errNotVerified, 11008))
+		ctx.AbortWithStatusJSON(statusCode, courseerror.CreateError(errNotVerified, 11008))
+		h.metrics.RecordResponse(statusCode, "POST", "BuyCourse")
+		return
 	}
 
 	buyDetails := entity.CreateNewBuyDetails()
 	if err := ctx.ShouldBindJSON(&buyDetails); err != nil {
+		statusCode = http.StatusBadRequest
 		h.logger.Error("не получилось обработать тело запроса", "BuyCourse", err.Error(), 10101)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errBrokenJSON, 10101))
+		ctx.AbortWithStatusJSON(statusCode, courseerror.CreateError(errBrokenJSON, 10101))
+		h.metrics.RecordResponse(statusCode, "POST", "BuyCourse")
 		return
 	}
 
@@ -48,20 +55,28 @@ func (h Handlers) BuyCourse(ctx *gin.Context) {
 	if err != nil {
 		h.logger.Error(fmt.Sprintf("ошибка при размещении заказа пользователя с ID: %d при покупке курса с ID: %d", userId, buyDetails.CourseId), "BuyCourse", err.Message, err.Code)
 		if err.Code == 400 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "POST", "BuyCourse")
 			return
 		}
 		if err.Code == 15004 {
-			ctx.AbortWithStatusJSON(http.StatusConflict, err)
+			statusCode = http.StatusConflict
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "POST", "BuyCourse")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "POST", "BuyCourse")
 		return
 	}
 
 	h.logger.Info(fmt.Sprintf("заказ пользователя с ID: %d был успешно размещен", userId), "BuyCourse", fmt.Sprint(buyDetails.CourseId))
 
-	ctx.Redirect(http.StatusTemporaryRedirect, *linkToPay)
+	statusCode = http.StatusTemporaryRedirect
+	ctx.Redirect(statusCode, *linkToPay)
+	h.metrics.RecordResponse(statusCode, "POST", "BuyCourse")
 }
 
 // @Summary Оплата курса подтверждена
@@ -74,25 +89,35 @@ func (h Handlers) BuyCourse(ctx *gin.Context) {
 // @Failure 404 {object} courseerror.CourseError "Заказ не найден"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) CompletePurchase(ctx *gin.Context) {
+	var statusCode int
+
 	userData := ctx.Param("userData")
 	courseName, err := h.sberBillingService.ConfirmPayment(ctx, userData)
 	if err != nil {
 		h.logger.Error(fmt.Sprintf("ошибка при завершении покупки заказа %v", userData), "CompletePurchase", err.Message, err.Code)
 		if err.Code == 11004 || err.Code == 15001 || err.Code == 15002 {
-			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
+			statusCode = http.StatusNotFound
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "GET", "CompletePurchase")
 			return
 		}
 		if err.Code == 15003 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "GET", "CompletePurchase")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "GET", "CompletePurchase")
 		return
 	}
 
 	h.logger.Info("курс успешно приобретен", "CompletePurchase", userData)
 
-	ctx.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%v/%v", h.address, courseName))
+	statusCode = http.StatusTemporaryRedirect
+	ctx.Redirect(statusCode, fmt.Sprintf("%v/%v", h.address, courseName))
+	h.metrics.RecordResponse(statusCode, "GET", "CompletePurchase")
 }
 
 // @Summary Оплата курса провалена
@@ -104,20 +129,28 @@ func (h Handlers) CompletePurchase(ctx *gin.Context) {
 // @Failure 404 {object} courseerror.CourseError "Заказ не найден"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) DeclineOrder(ctx *gin.Context) {
+	var statusCode int
+
 	userData := ctx.Param("userData")
 	if err := h.sberBillingService.FailPayment(ctx, userData); err != nil {
 		h.logger.Error(fmt.Sprintf("ошибка при отмененной оплатае с заказом: %v", userData), "DeclineOrder", err.Message, err.Code)
 		if err.Code == 11004 || err.Code == 15001 {
-			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
+			statusCode = http.StatusNotFound
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "GET", "DeclineOrder")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "GET", "DeclineOrder")
 		return
 	}
 
 	h.logger.Info("заказ успешно отменен", "DeclineOrder", userData)
 
-	ctx.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%v/orders", h.address))
+	statusCode = http.StatusTemporaryRedirect
+	ctx.Redirect(statusCode, fmt.Sprintf("%v/orders", h.address))
+	h.metrics.RecordResponse(statusCode, "GET", "DeclineOrder")
 }
 
 // @Summary Изменить billing host
@@ -131,33 +164,45 @@ func (h Handlers) DeclineOrder(ctx *gin.Context) {
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация или декодирование сообщения"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) ManageBillingHost(ctx *gin.Context) {
+	var statusCode int
+
 	role := ctx.Value("Role").(string)
 	if role != "super_admin" {
+		statusCode = http.StatusForbidden
 		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("AdminId")), "ManageBillingHost", errNoRights.Error(), 16004)
-		ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errNoRights, 16004))
+		ctx.AbortWithStatusJSON(statusCode, courseerror.CreateError(errNoRights, 16004))
+		h.metrics.RecordResponse(statusCode, "PATCH", "ManageBillingHost")
 		return
 	}
 
 	host := entity.CreateBillingHost()
 	if err := ctx.ShouldBindJSON(&host); err != nil {
+		statusCode = http.StatusBadRequest
 		h.logger.Error("не получилось обработать тело запроса", "ManageBillingHost", err.Error(), 10101)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errBrokenJSON, 10101))
+		ctx.AbortWithStatusJSON(statusCode, courseerror.CreateError(errBrokenJSON, 10101))
+		h.metrics.RecordResponse(statusCode, "PATCH", "ManageBillingHost")
 		return
 	}
 
 	if err := h.sberBillingService.ChangeApiHost(ctx, host.Url); err != nil {
 		h.logger.Error(fmt.Sprintf("ошибка при изменении BillingApiHost на %v", host.Url), "ManageBillingHost", err.Message, err.Code)
 		if err.Code == 400 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "PATCH", "ManageBillingHost")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "PATCH", "ManageBillingHost")
 		return
 	}
 
 	h.logger.Info(fmt.Sprintf("BillingApiHost успешно изменен админом с ID: %d", ctx.Value("AdminId")), "ManageBillingHost", host.Url)
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("хост успешно изменен"))
+	statusCode = http.StatusOK
+	ctx.JSON(statusCode, entity.CreateSuccessResponse("хост успешно изменен"))
+	h.metrics.RecordResponse(statusCode, "PATCH", "ManageBillingHost")
 }
 
 // @Summary Изменить токен биллинга
@@ -171,10 +216,14 @@ func (h Handlers) ManageBillingHost(ctx *gin.Context) {
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) ManageAccessToken(ctx *gin.Context) {
+	var statusCode int
+
 	role := ctx.Value("Role").(string)
 	if role != "super_admin" {
+		statusCode = http.StatusForbidden
 		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("AdminId")), "ManageAccessToken", errNoRights.Error(), 16004)
-		ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errNoRights, 16004))
+		ctx.AbortWithStatusJSON(statusCode, courseerror.CreateError(errNoRights, 16004))
+		h.metrics.RecordResponse(statusCode, "PATCH", "ManageAccessToken")
 		return
 	}
 
@@ -183,14 +232,20 @@ func (h Handlers) ManageAccessToken(ctx *gin.Context) {
 	if err := h.sberBillingService.ChangeAccessToken(ctx, token); err != nil {
 		h.logger.Error(fmt.Sprintf("ошибка при изменении токена доступа для billingHost на токен: %v", token), "ManageAccessToken", err.Message, err.Code)
 		if err.Code == 400 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "PATCH", "ManageAccessToken")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "PATCH", "ManageAccessToken")
 		return
 	}
 
 	h.logger.Info(fmt.Sprintf("токен billingHost успешно изменен админом с ID: %d", ctx.Value("AdminId")), "ManageAccessToken", token)
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("токен успешно изменен"))
+	statusCode = http.StatusOK
+	ctx.JSON(statusCode, entity.CreateSuccessResponse("токен успешно изменен"))
+	h.metrics.RecordResponse(statusCode, "PATCH", "ManageAccessToken")
 }

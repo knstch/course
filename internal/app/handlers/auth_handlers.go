@@ -30,10 +30,14 @@ var (
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация, или не удалось декодировать сообщение, или почта уже занята"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) SignUp(ctx *gin.Context) {
+	var statusCode int
+
 	credentials := entity.NewCredentials()
 	if err := ctx.ShouldBindJSON(&credentials); err != nil {
+		statusCode = http.StatusBadRequest
 		h.logger.Error("не получилось обработать тело запроса", "SignUp", err.Error(), 10101)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errBrokenJSON, 10101))
+		ctx.AbortWithStatusJSON(statusCode, courseerror.CreateError(errBrokenJSON, 10101))
+		h.metrics.RecordResponse(statusCode, "POST", "SignUp")
 		return
 	}
 
@@ -41,18 +45,26 @@ func (h Handlers) SignUp(ctx *gin.Context) {
 	if err != nil {
 		h.logger.Error(fmt.Sprintf("не получилось зарегистрировать пользователя с почтой %v", credentials.Email), "SignUp", err.Message, err.Code)
 		if err.Code == 11001 || err.Code == 400 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "POST", "SignUp")
 			return
 		}
 		if err.Code == 17002 {
-			ctx.AbortWithStatusJSON(http.StatusTooManyRequests, err)
+			statusCode = http.StatusTooManyRequests
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "POST", "SignUp")
 			return
 		}
 		if err.Code == 17003 || err.Code == 17004 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "POST", "SignUp")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "POST", "SignUp")
 		return
 	}
 
@@ -60,7 +72,9 @@ func (h Handlers) SignUp(ctx *gin.Context) {
 
 	h.logger.Info("пользователь успешно зарегистрирован", "SignUp", credentials.Email)
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("пользователь зарегистрирован"))
+	statusCode = http.StatusOK
+	ctx.JSON(statusCode, entity.CreateSuccessResponse("пользователь зарегистрирован"))
+	h.metrics.RecordResponse(statusCode, "POST", "SignUp")
 }
 
 // @Summary Залогиниться пользователю
@@ -76,10 +90,14 @@ func (h Handlers) SignUp(ctx *gin.Context) {
 // @Failure 405 {object} courseerror.CourseError "Пользователь неактивен"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) SignIn(ctx *gin.Context) {
+	var statusCode int
+
 	credentials := entity.NewCredentials()
 	if err := ctx.ShouldBindJSON(&credentials); err != nil {
+		statusCode = http.StatusBadRequest
 		h.logger.Error("не получилось обработать тело запроса", "SignIn", err.Error(), 10101)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errBrokenJSON, 10101))
+		ctx.AbortWithStatusJSON(statusCode, courseerror.CreateError(errBrokenJSON, 10101))
+		h.metrics.RecordResponse(statusCode, "POST", "SignIn")
 		return
 	}
 
@@ -87,26 +105,36 @@ func (h Handlers) SignIn(ctx *gin.Context) {
 	if err != nil {
 		h.logger.Error(fmt.Sprintf("не получилось залогиниться c почтой %v", credentials.Email), "SignIn", err.Message, err.Code)
 		if err.Code == 400 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "POST", "SignIn")
 			return
 		}
 		if err.Code == 11002 {
-			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
+			statusCode = http.StatusNotFound
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "POST", "SignIn")
 			return
 		}
 		if err.Code == 11011 {
-			ctx.AbortWithStatusJSON(http.StatusMethodNotAllowed, err)
+			statusCode = http.StatusMethodNotAllowed
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "POST", "SignIn")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "POST", "SignIn")
 		return
 	}
 
-	ctx.SetCookie("auth", *token, 432000, "/", h.address, true, true)
+	ctx.SetCookie("auth", *token, fiveDaysInSeconds, "/", h.address, true, true)
 
 	h.logger.Info(fmt.Sprintf("пользователь успешно залогинен c IP: %v", ctx.ClientIP()), "SignIn", credentials.Email)
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("доступ разрешен"))
+	statusCode = http.StatusOK
+	ctx.JSON(statusCode, entity.CreateSuccessResponse("доступ разрешен"))
+	h.metrics.RecordResponse(statusCode, "POST", "SignIn")
 }
 
 // @Summary Подтвердить почту пользователя
@@ -121,13 +149,16 @@ func (h Handlers) SignIn(ctx *gin.Context) {
 // @Failure 404 {object} courseerror.CourseError "Код подтверждения не найден"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) Verification(ctx *gin.Context) {
-	confirmCode := ctx.Query("confirmCode")
+	var statusCode int
 
+	confirmCode := ctx.Query("confirmCode")
 	userId := ctx.Value("UserId").(uint)
 	verified := ctx.Value("verified")
 
 	if verified.(bool) {
-		ctx.JSON(http.StatusBadRequest, courseerror.CreateError(errUserEmailIsAlreadyVerified, 11008))
+		statusCode = http.StatusBadRequest
+		ctx.JSON(statusCode, courseerror.CreateError(errUserEmailIsAlreadyVerified, 11008))
+		h.metrics.RecordResponse(statusCode, "POST", "Verification")
 		return
 	}
 
@@ -135,26 +166,36 @@ func (h Handlers) Verification(ctx *gin.Context) {
 	if err != nil {
 		h.logger.Error(fmt.Sprintf("не получилось верифицировать почту пользователя c ID = %d", userId), "Verification", err.Message, err.Code)
 		if err.Code == 11003 {
-			ctx.AbortWithStatusJSON(http.StatusForbidden, err)
+			statusCode = http.StatusForbidden
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "POST", "Verification")
 			return
 		}
 		if err.Code == 11004 {
-			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
+			statusCode = http.StatusNotFound
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "POST", "Verification")
 			return
 		}
 		if err.Code == 400 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "POST", "Verification")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "POST", "Verification")
 		return
 	}
 
-	ctx.SetCookie("auth", *token, 432000, "/", h.address, true, true)
+	ctx.SetCookie("auth", *token, fiveDaysInSeconds, "/", h.address, true, true)
 
 	h.logger.Info("пользователь успешно верифицирован", "Verification", fmt.Sprintf("userId: %d", userId))
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("email верифицирован"))
+	statusCode = http.StatusOK
+	ctx.JSON(statusCode, entity.CreateSuccessResponse("email верифицирован"))
+	h.metrics.RecordResponse(statusCode, "POST", "Verification")
 }
 
 // @Summary Отправить новый код подтверждения
@@ -167,10 +208,14 @@ func (h Handlers) Verification(ctx *gin.Context) {
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация или почта пользователя уже подтверждена"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) SendNewCode(ctx *gin.Context) {
+	var statusCode int
+
 	verified := ctx.Value("verified")
 
 	if verified.(bool) {
-		ctx.JSON(http.StatusBadRequest, courseerror.CreateError(errUserEmailIsAlreadyVerified, 11008))
+		statusCode = http.StatusBadRequest
+		ctx.JSON(statusCode, courseerror.CreateError(errUserEmailIsAlreadyVerified, 11008))
+		h.metrics.RecordResponse(statusCode, "GET", "SendNewCode")
 		return
 	}
 
@@ -180,20 +225,28 @@ func (h Handlers) SendNewCode(ctx *gin.Context) {
 	if err := h.authService.SendNewCofirmationCode(ctx, email); err != nil {
 		h.logger.Error(fmt.Sprintf("не получилось отправить код подтверждения на почту юзера с ID = %d", userId), "SendNewCode", err.Message, err.Code)
 		if err.Code == 400 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "GET", "SendNewCode")
 			return
 		}
 		if err.Code == 17002 {
-			ctx.AbortWithStatusJSON(http.StatusTooManyRequests, err)
+			statusCode = http.StatusTooManyRequests
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "GET", "SendNewCode")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "GET", "SendNewCode")
 		return
 	}
 
 	h.logger.Info("код подтверждения успешно отправлен юзеру", "SendNewCode", fmt.Sprint(userId))
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("код успешно отправлен"))
+	statusCode = http.StatusOK
+	ctx.JSON(statusCode, entity.CreateSuccessResponse("код успешно отправлен"))
+	h.metrics.RecordResponse(statusCode, "GET", "SendNewCode")
 }
 
 // @Summary Отправить код для восстановления пароля
@@ -207,24 +260,34 @@ func (h Handlers) SendNewCode(ctx *gin.Context) {
 // @Failure 429 {object} courseerror.CourseError "Слишком много запросов"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) SendRecoverPasswordCode(ctx *gin.Context) {
+	var statusCode int
+
 	email := ctx.Query("email")
 	if err := h.authService.SendPasswordRecoverRequest(ctx, email); err != nil {
 		h.logger.Error(fmt.Sprintf("не получилось отправить код для восстановления пароля на почту %v", email), "SendRecoverPasswordCode", err.Message, err.Code)
 		if err.Code == 400 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "GET", "SendRecoverPasswordCode")
 			return
 		}
 		if err.Code == 17002 {
-			ctx.AbortWithStatusJSON(http.StatusTooManyRequests, err)
+			statusCode = http.StatusTooManyRequests
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "GET", "SendRecoverPasswordCode")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "GET", "SendRecoverPasswordCode")
 		return
 	}
 
 	h.logger.Info(fmt.Sprintf("код для восстановления пароля успешно отправлен c IP: %v", ctx.ClientIP()), "SendRecoverPasswordCode", email)
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("код для восстановления успешно отправлен"))
+	statusCode = http.StatusOK
+	ctx.JSON(statusCode, entity.CreateSuccessResponse("код для восстановления успешно отправлен"))
+	h.metrics.RecordResponse(statusCode, "GET", "SendRecoverPasswordCode")
 }
 
 // @Summary Установить новый пароль
@@ -239,28 +302,40 @@ func (h Handlers) SendRecoverPasswordCode(ctx *gin.Context) {
 // @Failure 404 {object} courseerror.CourseError "Код не найден"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) SetNewPassword(ctx *gin.Context) {
+	var statusCode int
+
 	recoverCredentials := entity.NewPasswordRecoverCredentials()
 	if err := ctx.ShouldBindJSON(&recoverCredentials); err != nil {
+		statusCode = http.StatusBadRequest
 		h.logger.Error("не получилось обработать тело запроса", "SendRecoverPasswordCode", err.Error(), 10101)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errBrokenJSON, 10101))
+		ctx.AbortWithStatusJSON(statusCode, courseerror.CreateError(errBrokenJSON, 10101))
+		h.metrics.RecordResponse(statusCode, "POST", "SetNewPassword")
 		return
 	}
 
 	if err := h.authService.RecoverPassword(ctx, *recoverCredentials); err != nil {
 		h.logger.Error(fmt.Sprintf("не получилось изменить пароль пользователя с email = %v", recoverCredentials.Email), "SetNewPassword", err.Message, err.Code)
 		if err.Code == 400 || err.Code == 11003 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "POST", "SetNewPassword")
 			return
 		}
 		if err.Code == 11004 {
-			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
+			statusCode = http.StatusNotFound
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "POST", "SetNewPassword")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "POST", "SetNewPassword")
 		return
 	}
 
 	h.logger.Info("пароль успешно изменен", "SetNewPassword", recoverCredentials.Email)
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("пароль успешно восстановлен"))
+	statusCode = http.StatusOK
+	ctx.JSON(statusCode, entity.CreateSuccessResponse("пароль успешно восстановлен"))
+	h.metrics.RecordResponse(statusCode, "POST", "SetNewPassword")
 }

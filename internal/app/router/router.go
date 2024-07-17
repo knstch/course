@@ -6,6 +6,7 @@ import (
 	"github.com/knstch/course/docs"
 	"github.com/knstch/course/internal/app/handlers"
 	authmiddleware "github.com/knstch/course/internal/app/middleware/auth_middleware"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
@@ -18,6 +19,10 @@ func RequestsRouter(h *handlers.Handlers, m *authmiddleware.Middleware) *gin.Eng
 
 	docs.SwaggerInfo.BasePath = "/api"
 	api.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+	metrics := api.Group("/metrics")
+	metrics.Use(m.WithMetricsAuth())
+	metrics.GET("", gin.WrapH(promhttp.Handler()))
 
 	v1 := api.Group("/v1")
 

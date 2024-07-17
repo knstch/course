@@ -1,0 +1,14 @@
+global:
+  scrape_interval: 15s
+  external_labels:
+    monitor: 'prometheus-monitor'
+
+scrape_configs:
+  - job_name: 'course'
+    scheme: http
+    metrics_path: /api/metrics
+    basic_auth:
+      username: 'basic'
+      password: 'auth'
+    static_configs:
+      - targets: ['host.docker.internal:8080']

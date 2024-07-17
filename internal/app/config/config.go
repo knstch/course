@@ -46,6 +46,9 @@ type Config struct {
 	SmtpPort string `envconfig:"SMPT_PORT"`
 
 	IsTest bool `envconfig:"IS_TEST"`
+
+	TechMetricsLogin    string `envconfig:"TECH_METRICS_LOGIN"`
+	TechMetricsPassword string `envconfig:"TECH_METRICS_PASSWORD"`
 }
 
 var (

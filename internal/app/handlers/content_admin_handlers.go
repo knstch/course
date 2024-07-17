@@ -32,14 +32,18 @@ var (
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 // @Failure 503 {object} courseerror.CourseError "CDN недоступен"
 func (h Handlers) CreateNewCourse(ctx *gin.Context) {
+	var statusCode int
+
 	name := ctx.PostForm("name")
 	description := ctx.PostForm("description")
 	cost := ctx.PostForm("cost")
 	discount := ctx.PostForm("discount")
 	file, header, err := ctx.Request.FormFile("preview")
 	if err != nil {
+		statusCode = http.StatusBadRequest
 		h.logger.Error("не получилось обработать фото", "CreateNewCourse", err.Error(), 400)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errBadFormData, 400))
+		ctx.AbortWithStatusJSON(statusCode, courseerror.CreateError(errBadFormData, 400))
+		h.metrics.RecordResponse(statusCode, "POST", "CreateNewCourse")
 		return
 	}
 
@@ -47,29 +51,41 @@ func (h Handlers) CreateNewCourse(ctx *gin.Context) {
 	if courseErr != nil {
 		h.logger.Error("не получилось добавить курс", "CreateNewCourse", courseErr.Message, courseErr.Code)
 		if courseErr.Code == 400 || courseErr.Code == 11105 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, courseErr)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, courseErr)
+			h.metrics.RecordResponse(statusCode, "POST", "CreateNewCourse")
 			return
 		}
 		if courseErr.Code == 11050 {
-			ctx.AbortWithStatusJSON(http.StatusForbidden, courseErr)
+			statusCode = http.StatusForbidden
+			ctx.AbortWithStatusJSON(statusCode, courseErr)
+			h.metrics.RecordResponse(statusCode, "POST", "CreateNewCourse")
 			return
 		}
 		if courseErr.Code == 11041 {
-			ctx.AbortWithStatusJSON(http.StatusServiceUnavailable, courseErr)
+			statusCode = http.StatusServiceUnavailable
+			ctx.AbortWithStatusJSON(statusCode, courseErr)
+			h.metrics.RecordResponse(statusCode, "POST", "CreateNewCourse")
 			return
 		}
 		if courseErr.Code == 13001 {
-			ctx.AbortWithStatusJSON(http.StatusConflict, courseErr)
+			statusCode = http.StatusConflict
+			ctx.AbortWithStatusJSON(statusCode, courseErr)
+			h.metrics.RecordResponse(statusCode, "POST", "CreateNewCourse")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, courseErr)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, courseErr)
+		h.metrics.RecordResponse(statusCode, "POST", "CreateNewCourse")
 		return
 	}
 
 	h.logger.Info(fmt.Sprintf("курс был успешно размещен админом с ID: %d", ctx.Value("AdminId").(uint)),
 		"CreateNewCourse", fmt.Sprintf("courseId: %d", *id))
 
-	ctx.JSON(http.StatusOK, entity.NewId(id))
+	statusCode = http.StatusOK
+	ctx.JSON(statusCode, entity.NewId(id))
+	h.metrics.RecordResponse(statusCode, "POST", "CreateNewCourse")
 }
 
 // @Summary Создать модуль
@@ -84,10 +100,14 @@ func (h Handlers) CreateNewCourse(ctx *gin.Context) {
 // @Failure 409 {object} courseerror.CourseError "Модуль с таким названием или позицией уже существует"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) CreateNewModule(ctx *gin.Context) {
+	var statusCode int
+
 	module := entity.NewModule()
 	if err := ctx.ShouldBindJSON(&module); err != nil {
+		statusCode = http.StatusBadRequest
 		h.logger.Error("не получилось обработать тело запроса", "CreateNewModule", err.Error(), 10101)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errBrokenJSON, 10101))
+		ctx.AbortWithStatusJSON(statusCode, courseerror.CreateError(errBrokenJSON, 10101))
+		h.metrics.RecordResponse(statusCode, "POST", "CreateNewModule")
 		return
 	}
 
@@ -95,20 +115,28 @@ func (h Handlers) CreateNewModule(ctx *gin.Context) {
 	if err != nil {
 		h.logger.Error("не получилось добавить модуль", "CreateNewModule", err.Message, err.Code)
 		if err.Code == 400 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "POST", "CreateNewModule")
 			return
 		}
 		if err.Code == 13001 {
-			ctx.AbortWithStatusJSON(http.StatusConflict, err)
+			statusCode = http.StatusConflict
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "POST", "CreateNewModule")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "POST", "CreateNewModule")
 		return
 	}
 
 	h.logger.Info(fmt.Sprintf("модуль был успешно добавлен админом с ID: %d", ctx.Value("AdminId").(uint)), "CreateNewModule", fmt.Sprintf("moduleId: %d", *id))
 
-	ctx.JSON(http.StatusOK, entity.NewId(id))
+	statusCode = http.StatusOK
+	ctx.JSON(statusCode, entity.NewId(id))
+	h.metrics.RecordResponse(statusCode, "POST", "CreateNewModule")
 }
 
 // @Summary Создать урок
@@ -131,17 +159,23 @@ func (h Handlers) CreateNewModule(ctx *gin.Context) {
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 // @Failure 503 {object} courseerror.CourseError "CDN недоступен"
 func (h Handlers) UploadNewLesson(ctx *gin.Context) {
+	var statusCode int
+
 	lesson, err := ctx.FormFile("lesson")
 	if err != nil {
+		statusCode = http.StatusBadRequest
 		h.logger.Error("не получилось обработать видео", "UploadNewLesson", err.Error(), 400)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(err, 400))
+		ctx.AbortWithStatusJSON(statusCode, courseerror.CreateError(err, 400))
+		h.metrics.RecordResponse(statusCode, "POST", "UploadNewLesson")
 		return
 	}
 
 	preview, previewHeader, err := ctx.Request.FormFile("preview")
 	if err != nil {
+		statusCode = http.StatusBadRequest
 		h.logger.Error("не получилось обработать фото", "UploadNewLesson", err.Error(), 400)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errBadFormData, 400))
+		ctx.AbortWithStatusJSON(statusCode, courseerror.CreateError(errBadFormData, 400))
+		h.metrics.RecordResponse(statusCode, "POST", "UploadNewLesson")
 		return
 	}
 
@@ -155,28 +189,40 @@ func (h Handlers) UploadNewLesson(ctx *gin.Context) {
 	if courseErr != nil {
 		h.logger.Error("не получилось добавить урок", "UploadNewLesson", courseErr.Message, courseErr.Code)
 		if courseErr.Code == 400 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, courseErr)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, courseErr)
+			h.metrics.RecordResponse(statusCode, "POST", "UploadNewLesson")
 			return
 		}
 		if courseErr.Code == 11050 {
-			ctx.AbortWithStatusJSON(http.StatusForbidden, courseErr)
+			statusCode = http.StatusForbidden
+			ctx.AbortWithStatusJSON(statusCode, courseErr)
+			h.metrics.RecordResponse(statusCode, "POST", "UploadNewLesson")
 			return
 		}
 		if courseErr.Code == 13001 || courseErr.Code == 13002 {
-			ctx.AbortWithStatusJSON(http.StatusConflict, courseErr)
+			statusCode = http.StatusConflict
+			ctx.AbortWithStatusJSON(statusCode, courseErr)
+			h.metrics.RecordResponse(statusCode, "POST", "UploadNewLesson")
 			return
 		}
 		if courseErr.Code == 11051 || courseErr.Code == 14002 || courseErr.Code == 11041 {
-			ctx.AbortWithStatusJSON(http.StatusServiceUnavailable, courseErr)
+			statusCode = http.StatusServiceUnavailable
+			ctx.AbortWithStatusJSON(statusCode, courseErr)
+			h.metrics.RecordResponse(statusCode, "POST", "UploadNewLesson")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, courseErr)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, courseErr)
+		h.metrics.RecordResponse(statusCode, "POST", "UploadNewLesson")
 		return
 	}
 
 	h.logger.Info(fmt.Sprintf("урок был успешно добавлен админом с ID: %d", ctx.Value("AdminId").(uint)), "UploadNewLesson", fmt.Sprintf("lessonId: %d", *lessonId))
 
-	ctx.JSON(http.StatusOK, entity.NewId(lessonId))
+	statusCode = http.StatusOK
+	ctx.JSON(statusCode, entity.NewId(lessonId))
+	h.metrics.RecordResponse(statusCode, "POST", "UploadNewLesson")
 }
 
 // @Summary Обновить курс
@@ -198,6 +244,8 @@ func (h Handlers) UploadNewLesson(ctx *gin.Context) {
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 // @Failure 503 {object} courseerror.CourseError "CDN недоступен"
 func (h Handlers) UpdateCourse(ctx *gin.Context) {
+	var statusCode int
+
 	var fileNotExists bool
 	name := ctx.PostForm("name")
 	description := ctx.PostForm("description")
@@ -209,8 +257,10 @@ func (h Handlers) UpdateCourse(ctx *gin.Context) {
 		if errors.Is(err, http.ErrMissingFile) {
 			fileNotExists = true
 		} else {
+			statusCode = http.StatusBadRequest
 			h.logger.Error("не получилось обработать фото", "UpdateCourse", err.Error(), 400)
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errBadFormData, 400))
+			ctx.AbortWithStatusJSON(statusCode, courseerror.CreateError(errBadFormData, 400))
+			h.metrics.RecordResponse(statusCode, "PATCH", "UpdateCourse")
 			return
 		}
 	}
@@ -218,24 +268,34 @@ func (h Handlers) UpdateCourse(ctx *gin.Context) {
 	if err := h.contentManagementService.ManageCourse(ctx, courseId, name, description, cost, discount, header, &file, fileNotExists); err != nil {
 		h.logger.Error("не получилось обновить курс", "UpdateCourse", err.Message, err.Code)
 		if err.Code == 400 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "PATCH", "UpdateCourse")
 			return
 		}
 		if err.Code == 13003 {
-			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
+			statusCode = http.StatusNotFound
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "PATCH", "UpdateCourse")
 			return
 		}
 		if err.Code == 13001 {
-			ctx.AbortWithStatusJSON(http.StatusConflict, err)
+			statusCode = http.StatusConflict
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "PATCH", "UpdateCourse")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "PATCH", "UpdateCourse")
 		return
 	}
 
 	h.logger.Info(fmt.Sprintf("курс был успешно обновлен админом с ID: %d", ctx.Value("AdminId").(uint)), "UpdateCourse", fmt.Sprintf("name: %v", name))
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("данные о курсе успешно отредактированы"))
+	statusCode = http.StatusOK
+	ctx.JSON(statusCode, entity.CreateSuccessResponse("данные о курсе успешно отредактированы"))
+	h.metrics.RecordResponse(statusCode, "PATCH", "UpdateCourse")
 }
 
 // @Summary Обновить модуль
@@ -251,34 +311,48 @@ func (h Handlers) UpdateCourse(ctx *gin.Context) {
 // @Failure 409 {object} courseerror.CourseError "Модуль с таким названием или позицией уже существует"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) UpdateModule(ctx *gin.Context) {
+	var statusCode int
+
 	module := entity.NewModule()
 	if err := ctx.ShouldBindJSON(&module); err != nil {
+		statusCode = http.StatusBadRequest
 		h.logger.Error("не получилось обработать тело запроса", "UpdateModule", err.Error(), 10101)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errBrokenJSON, 10101))
+		ctx.AbortWithStatusJSON(statusCode, courseerror.CreateError(errBrokenJSON, 10101))
+		h.metrics.RecordResponse(statusCode, "PATCH", "UpdateModule")
 		return
 	}
 
 	if err := h.contentManagementService.ManageModule(ctx, module); err != nil {
 		h.logger.Error("не получилось обновить модуль", "UpdateModule", err.Message, err.Code)
 		if err.Code == 400 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "PATCH", "UpdateModule")
 			return
 		}
 		if err.Code == 13001 {
-			ctx.AbortWithStatusJSON(http.StatusConflict, err)
+			statusCode = http.StatusConflict
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "PATCH", "UpdateModule")
 			return
 		}
 		if err.Code == 13002 {
-			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
+			statusCode = http.StatusNotFound
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "PATCH", "UpdateModule")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "PATCH", "UpdateModule")
 		return
 	}
 
 	h.logger.Info(fmt.Sprintf("модуль был успешно обновлен админом с ID: %d", ctx.Value("AdminId").(uint)), "UpdateModule", fmt.Sprintf("name: %v", module.Name))
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("данные о модуле успешно отредактированы"))
+	statusCode = http.StatusOK
+	ctx.JSON(statusCode, entity.CreateSuccessResponse("данные о модуле успешно отредактированы"))
+	h.metrics.RecordResponse(statusCode, "PATCH", "UpdateModule")
 }
 
 // @Summary Обновить урок
@@ -305,14 +379,17 @@ func (h Handlers) UpdateLesson(ctx *gin.Context) {
 	var (
 		videoNotExists   bool
 		previewNotExists bool
+		statusCode       int
 	)
 	lesson, err := ctx.FormFile("lesson")
 	if err != nil {
 		if errors.Is(err, http.ErrMissingFile) {
 			videoNotExists = true
 		} else {
+			statusCode = http.StatusBadRequest
 			h.logger.Error("не получилось обработать видео", "UpdateLesson", err.Error(), 400)
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errBadFormData, 400))
+			ctx.AbortWithStatusJSON(statusCode, courseerror.CreateError(errBadFormData, 400))
+			h.metrics.RecordResponse(statusCode, "PATCH", "UpdateLesson")
 			return
 		}
 	}
@@ -322,8 +399,10 @@ func (h Handlers) UpdateLesson(ctx *gin.Context) {
 		if errors.Is(err, http.ErrMissingFile) {
 			previewNotExists = true
 		} else {
+			statusCode = http.StatusBadRequest
 			h.logger.Error("не получилось обработать фото", "UpdateLesson", err.Error(), 400)
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, courseerror.CreateError(errBadFormData, 400))
+			ctx.AbortWithStatusJSON(statusCode, courseerror.CreateError(errBadFormData, 400))
+			h.metrics.RecordResponse(statusCode, "PATCH", "UpdateLesson")
 			return
 		}
 
@@ -339,31 +418,45 @@ func (h Handlers) UpdateLesson(ctx *gin.Context) {
 		previewHeader, &preview, videoNotExists, previewNotExists); err != nil {
 		h.logger.Error("не получилось обновить урок", "UpdateLesson", err.Message, err.Code)
 		if err.Code == 13005 {
-			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
+			statusCode = http.StatusNotFound
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "PATCH", "UpdateLesson")
 			return
 		}
 		if err.Code == 11050 {
-			ctx.AbortWithStatusJSON(http.StatusForbidden, err)
+			statusCode = http.StatusForbidden
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "PATCH", "UpdateLesson")
 			return
 		}
 		if err.Code == 13001 {
-			ctx.AbortWithStatusJSON(http.StatusConflict, err)
+			statusCode = http.StatusConflict
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "PATCH", "UpdateLesson")
 			return
 		}
 		if err.Code == 13005 {
-			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
+			statusCode = http.StatusNotFound
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "PATCH", "UpdateLesson")
 			return
 		}
 		if err.Code == 400 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "PATCH", "UpdateLesson")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "PATCH", "UpdateLesson")
 	}
 
 	h.logger.Info(fmt.Sprintf("урок был успешно обновлен админом с ID: %d", ctx.Value("AdminId").(uint)), "UpdateLesson", fmt.Sprintf("name: %v", name))
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("урок успешно отредактирован"))
+	statusCode = http.StatusOK
+	ctx.JSON(statusCode, entity.CreateSuccessResponse("урок успешно отредактирован"))
+	h.metrics.RecordResponse(statusCode, "PATCH", "UpdateLesson")
 }
 
 // @Summary Изменить видимость курса
@@ -377,24 +470,34 @@ func (h Handlers) UpdateLesson(ctx *gin.Context) {
 // @Failure 404 {object} courseerror.CourseError "Курс не найден"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) ManageVisibility(ctx *gin.Context) {
+	var statusCode int
+
 	id := ctx.Query("id")
 	if err := h.contentManagementService.ManageShowStatus(ctx, id); err != nil {
 		h.logger.Error("не получилось обновить видимость курса", "ManageVisibility", err.Message, err.Code)
 		if err.Code == 400 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "PATCH", "ManageVisibility")
 			return
 		}
 		if err.Code == 13003 {
-			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
+			statusCode = http.StatusNotFound
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "PATCH", "ManageVisibility")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "PATCH", "ManageVisibility")
 		return
 	}
 
 	h.logger.Info(fmt.Sprintf("видимость курса была успешно обновлена админом с ID: %d", ctx.Value("AdminId").(uint)), "ManageVisibility", fmt.Sprintf("ID курса: %v", id))
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("видимость модуля успешно изменена"))
+	statusCode = http.StatusOK
+	ctx.JSON(statusCode, entity.CreateSuccessResponse("видимость модуля успешно изменена"))
+	h.metrics.RecordResponse(statusCode, "PATCH", "ManageVisibility")
 }
 
 // @Summary Удалить модуль
@@ -408,23 +511,33 @@ func (h Handlers) ManageVisibility(ctx *gin.Context) {
 // @Failure 404 {object} courseerror.CourseError "Модуль не найден"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) EraseModule(ctx *gin.Context) {
+	var statusCode int
+
 	id := ctx.Param("id")
 	if err := h.contentManagementService.RemoveModule(ctx, id); err != nil {
 		h.logger.Error("ошибка при удалении модуля", "EraseModule", err.Message, err.Code)
 		if err.Code == 400 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "DELETE", "EraseModule")
 			return
 		}
 		if err.Code == 13002 {
-			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
+			statusCode = http.StatusNotFound
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "DELETE", "EraseModule")
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "DELETE", "EraseModule")
 		return
 	}
 
 	h.logger.Info(fmt.Sprintf("модуль был успешно удален админом с ID: %d", ctx.Value("AdminId").(uint)), "EraseModule", fmt.Sprintf("ID модуля: %v", id))
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("модуль и вложенные уроки удалены"))
+	statusCode = http.StatusOK
+	ctx.JSON(statusCode, entity.CreateSuccessResponse("модуль и вложенные уроки удалены"))
+	h.metrics.RecordResponse(statusCode, "DELETE", "EraseModule")
 }
 
 // @Summary Удалить урок
@@ -438,22 +551,32 @@ func (h Handlers) EraseModule(ctx *gin.Context) {
 // @Failure 404 {object} courseerror.CourseError "Модуль не найден"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) EraseLesson(ctx *gin.Context) {
+	var statusCode int
+
 	id := ctx.Param("id")
 	if err := h.contentManagementService.RemoveLesson(ctx, id); err != nil {
 		h.logger.Error("ошибка при удалении уроки", "EraseLesson", err.Message, err.Code)
 		if err.Code == 400 {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
+			statusCode = http.StatusBadRequest
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "DELETE", "EraseLesson")
 			return
 		}
 		if err.Code == 13005 {
-			ctx.AbortWithStatusJSON(http.StatusNotFound, err)
+			statusCode = http.StatusNotFound
+			ctx.AbortWithStatusJSON(statusCode, err)
+			h.metrics.RecordResponse(statusCode, "DELETE", "EraseLesson")
 			return
 		}
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, err)
+		h.metrics.RecordResponse(statusCode, "DELETE", "EraseLesson")
 		return
 	}
 
 	h.logger.Info(fmt.Sprintf("урок был успешно удален админом с ID: %d", ctx.Value("AdminId").(uint)), "EraseLesson", fmt.Sprintf("ID урока: %v", id))
 
-	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("урок успешно удален"))
+	statusCode = http.StatusOK
+	ctx.JSON(statusCode, entity.CreateSuccessResponse("урок успешно удален"))
+	h.metrics.RecordResponse(statusCode, "DELETE", "EraseLesson")
 }
