@@ -12,30 +12,40 @@ import (
 )
 
 type Config struct {
-	Port                  string `envconfig:"PORT"`
-	DSN                   string `envconfig:"DSN"`
-	Secret                string `envconfig:"SECRET"`
-	JwtSecret             string `envconfig:"JWT_SECRET"`
+	Port string `envconfig:"PORT"`
+
+	DSN string `envconfig:"DSN"`
+
+	Secret      string `envconfig:"SECRET"`
+	AdminSecret string `envconfig:"ADMIN_SECRET"`
+
 	RedisEmailChannelName string `envconfig:"REDIS_EMAIL_CHANNEL_NAME"`
 	RedisDSN              string `envconfig:"REDIS_DSN"`
-	Address               string `envconfig:"ADDRESS"`
-	CdnHttpHost           string `envconfig:"CDN_HTTP_HOST"`
-	CdnHost               string `envconfig:"CDN_HTTP_HOST"`
-	CdnApiKey             string `envconfig:"CDN_API_KEY"`
-	CdnAdminApiKey        string `envconfig:"ADMIN_API_KEY"`
-	CdnGrpcPort           string `envconfig:"CDN_GRPC_PORT"`
-	CdnGrpcHost           string `envconfig:"CDN_GRPC_HOST"`
-	SberApiHost           string `envconfig:"SBER_API_HOST"`
-	SberAccessToken       string `envconfig:"SBER_ACCESS_TOKEN"`
-	SuperAdminLogin       string `envconfig:"SUPER_ADMIN_LOGIN"`
-	SuperAdminPassword    string `envconfig:"SUPER_ADMIN_PASSWORD"`
-	AdminSecret           string `envconfig:"ADMIN_SECRET"`
-	LogFileName           string `envconfig:"LOG_FILE_NAME"`
-	ServiceEmail          string `envconfig:"SERVICE_EMAIL"`
-	ServiceEmailPassword  string `envconfig:"SERVICE_EMAIL_PASSWORD"`
-	SmtpHost              string `envconfig:"SMPT_HOST"`
-	SmtpPort              string `envconfig:"SMPT_PORT"`
-	IsTest                bool   `envconfig:"IS_TEST"`
+
+	HostAddress string `envconfig:"ADDRESS"`
+
+	CdnHttpHost    string `envconfig:"CDN_HTTP_HOST"`
+	CdnHost        string `envconfig:"CDN_HTTP_HOST"`
+	CdnApiKey      string `envconfig:"CDN_API_KEY"`
+	CdnAdminApiKey string `envconfig:"ADMIN_API_KEY"`
+	CdnGrpcPort    string `envconfig:"CDN_GRPC_PORT"`
+	CdnGrpcHost    string `envconfig:"CDN_GRPC_HOST"`
+
+	SberApiHost     string `envconfig:"SBER_API_HOST"`
+	SberAccessToken string `envconfig:"SBER_ACCESS_TOKEN"`
+
+	SuperAdminLogin    string `envconfig:"SUPER_ADMIN_LOGIN"`
+	SuperAdminPassword string `envconfig:"SUPER_ADMIN_PASSWORD"`
+
+	LogFileName string `envconfig:"LOG_FILE_NAME"`
+
+	ServiceEmail         string `envconfig:"SERVICE_EMAIL"`
+	ServiceEmailPassword string `envconfig:"SERVICE_EMAIL_PASSWORD"`
+
+	SmtpHost string `envconfig:"SMPT_HOST"`
+	SmtpPort string `envconfig:"SMPT_PORT"`
+
+	IsTest bool `envconfig:"IS_TEST"`
 }
 
 var (

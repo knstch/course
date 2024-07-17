@@ -7,6 +7,7 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/knstch/course/internal/app/config"
 	"github.com/knstch/course/internal/app/grpc"
+	"github.com/knstch/course/internal/app/logger"
 	"github.com/knstch/course/internal/app/services/admin"
 	"github.com/knstch/course/internal/app/services/auth"
 	"github.com/knstch/course/internal/app/services/billing"
@@ -26,15 +27,10 @@ type Handlers struct {
 	sberBillingService       billing.SberBillingService
 	adminService             admin.AdminService
 	address                  string
-	logger                   logger
+	logger                   logger.Logger
 }
 
-type logger interface {
-	Error(message, method, errMessage string, code int)
-	Info(message, method, request string)
-}
-
-func NewHandlers(storage *storage.Storage, config *config.Config, redisClient *redis.Client, client *http.Client, grpcClient *grpc.GrpcClient, logger logger) *Handlers {
+func NewHandlers(storage *storage.Storage, config *config.Config, redisClient *redis.Client, client *http.Client, grpcClient *grpc.GrpcClient, logger logger.Logger) *Handlers {
 	emailService := email.NewEmailService(redisClient, config)
 	return &Handlers{
 		authService:              auth.NewAuthService(storage, config, redisClient, emailService),
@@ -44,7 +40,7 @@ func NewHandlers(storage *storage.Storage, config *config.Config, redisClient *r
 		sberBillingService:       billing.NewSberBillingService(config, storage, redisClient),
 		adminService:             admin.NewAdminService(storage, config.AdminSecret),
 		emailService:             emailService,
-		address:                  config.Address,
+		address:                  config.HostAddress,
 		logger:                   logger,
 	}
 }

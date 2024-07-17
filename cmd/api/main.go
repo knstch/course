@@ -48,7 +48,7 @@ func run() error {
 
 	srv := http.Server{
 		Addr:    ":" + config.Port,
-		Handler: router.RequestsRouter(container.Handlers),
+		Handler: router.RequestsRouter(container.Handlers, container.Middleware),
 	}
 
 	idleConnsClosed := make(chan struct{})

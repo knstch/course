@@ -11,9 +11,12 @@ import (
 	"github.com/knstch/course/internal/domain/entity"
 )
 
+const (
+	fiveDaysInSeconds = 432000
+)
+
 var (
 	errUserEmailIsAlreadyVerified = errors.New("почта пользователя уже верифицирована")
-	errUserNotAuthentificated     = errors.New("пользователь не авторизован")
 )
 
 // @Summary Зарегестрироваться пользователю
@@ -53,7 +56,7 @@ func (h Handlers) SignUp(ctx *gin.Context) {
 		return
 	}
 
-	ctx.SetCookie("auth", *token, 432000, "/", h.address, true, true)
+	ctx.SetCookie("auth", *token, fiveDaysInSeconds, "/", h.address, true, true)
 
 	h.logger.Info("пользователь успешно зарегистрирован", "SignUp", credentials.Email)
 
@@ -260,43 +263,4 @@ func (h Handlers) SetNewPassword(ctx *gin.Context) {
 	h.logger.Info("пароль успешно изменен", "SetNewPassword", recoverCredentials.Email)
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("пароль успешно восстановлен"))
-}
-
-func (h Handlers) WithCookieAuth() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		cookie, err := ctx.Request.Cookie("auth")
-		if err != nil {
-			h.logger.Error(fmt.Sprintf("отсутствуют куки, вызов с IP: %v", ctx.ClientIP()), "WithCookieAuth", err.Error(), 11009)
-			ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errUserNotAuthentificated, 11009))
-			return
-		}
-
-		if err := h.authService.ValidateAccessToken(ctx, &cookie.Value); err != nil {
-			h.logger.Error("не получилось валидировать токен", "WithCookieAuth", err.Message, err.Code)
-			if err.Code == 11006 {
-				ctx.AbortWithStatusJSON(http.StatusForbidden, err)
-				return
-			}
-			ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
-			return
-		}
-
-		payload, tokenError := h.authService.DecodeToken(ctx, cookie.Value)
-		if tokenError != nil {
-			h.logger.Error("не получилось декодировать токен", "WithCookieAuth", tokenError.Message, tokenError.Code)
-			if tokenError.Code == 11006 || tokenError.Code == 11007 {
-				ctx.AbortWithStatusJSON(http.StatusForbidden, err)
-				return
-			}
-			ctx.AbortWithStatusJSON(http.StatusInternalServerError, tokenError)
-			return
-		}
-
-		ctx.Set("UserId", payload.UserID)
-		ctx.Set("verified", payload.Verified)
-
-		h.logger.Info(fmt.Sprintf("пользователь успешно перел по URL: %v c IP: %v", ctx.Request.URL.String(), ctx.ClientIP()), "WithCookieAuth", fmt.Sprint(payload.UserID))
-
-		ctx.Next()
-	}
 }

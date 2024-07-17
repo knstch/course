@@ -62,8 +62,8 @@ const (
 		SUPER_ADMIN_PASSWORD=password
 		LOG_FILE_NAME=course
 		PROJECT_PATH=/home/konstantin/Desktop/course
-		SERVICE_EMAIL=kostyacherepanov1@gmail.com
-		SERVICE_EMAIL_PASSWORD="rwsw qefe tdxk fgxl"
+		SERVICE_EMAIL=
+		SERVICE_EMAIL_PASSWORD=
 		SMPT_HOST=smtp.gmail.com
 		SMPT_PORT=587
 		IS_TEST=true
@@ -204,7 +204,7 @@ func TestRegistration(t *testing.T) {
 		return
 	}
 
-	router := router.RequestsRouter(container.Handlers)
+	router := router.RequestsRouter(container.Handlers, container.Middleware)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -312,7 +312,7 @@ func TestVerification(t *testing.T) {
 		return
 	}
 
-	router := router.RequestsRouter(container.Handlers)
+	router := router.RequestsRouter(container.Handlers, container.Middleware)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -416,7 +416,7 @@ func TestLogin(t *testing.T) {
 		return
 	}
 
-	router := router.RequestsRouter(container.Handlers)
+	router := router.RequestsRouter(container.Handlers, container.Middleware)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -497,7 +497,7 @@ func TestSendRecoverPasswordCode(t *testing.T) {
 		return
 	}
 
-	router := router.RequestsRouter(container.Handlers)
+	router := router.RequestsRouter(container.Handlers, container.Middleware)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -591,7 +591,7 @@ func TestSetNewPassword(t *testing.T) {
 		return
 	}
 
-	router := router.RequestsRouter(container.Handlers)
+	router := router.RequestsRouter(container.Handlers, container.Middleware)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -44,7 +44,9 @@ func (storage Storage) FillUserProfile(ctx context.Context, firstName, surname s
 		return courseError.CreateError(err, 10002)
 	}
 
-	if err := tx.Model(&dto.User{}).Where("id = ?", userId).Updates(storage.newUserProfileUpdate(firstName, surname, phoneNumber)).Error; err != nil {
+	updates := storage.newUserProfileUpdate(firstName, surname, phoneNumber)
+
+	if err := tx.Model(&dto.User{}).Where("id = ?", userId).Updates(updates).Error; err != nil {
 		tx.Rollback()
 		return courseError.CreateError(err, 10003)
 	}
@@ -136,7 +138,7 @@ func (storage Storage) ChangeEmail(ctx context.Context, newEmail string, userId 
 func (storage Storage) SetPhoto(ctx context.Context, path string) *courseError.CourseError {
 	tx := storage.db.WithContext(ctx).Begin()
 
-	userId := ctx.Value("userId").(uint)
+	userId := ctx.Value("UserId").(uint)
 
 	photo := dto.CreateNewPhoto().AddPath(path)
 	if err := tx.Create(&photo).Error; err != nil {
@@ -160,7 +162,7 @@ func (storage Storage) RetreiveUserData(ctx context.Context) (*entity.UserData, 
 
 	userData := entity.CreateNewUserData()
 
-	userId := ctx.Value("userId").(uint)
+	userId := ctx.Value("UserId").(uint)
 
 	user := dto.CreateNewUser()
 	if err := tx.Where("id = ?", userId).First(&user).Error; err != nil {
@@ -228,7 +230,7 @@ func (storage Storage) RetreiveUserData(ctx context.Context) (*entity.UserData, 
 func (storage Storage) GetUserCourses(ctx context.Context) ([]dto.Order, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
 
-	userId := ctx.Value("userId").(uint)
+	userId := ctx.Value("UserId").(uint)
 
 	courses := dto.NewUserCourses()
 
@@ -272,7 +274,7 @@ func (storage Storage) GetCourseCost(ctx context.Context, courseId uint) (*uint,
 func (storage Storage) DeactivateProfile(ctx context.Context) *courseError.CourseError {
 	tx := storage.db.WithContext(ctx).Begin()
 
-	userId := ctx.Value("userId").(uint)
+	userId := ctx.Value("UserId").(uint)
 
 	if err := tx.Table("users").Where("id = ?", userId).Update("active", false).Error; err != nil {
 		tx.Rollback()
@@ -295,7 +297,7 @@ func (storage Storage) DeactivateProfile(ctx context.Context) *courseError.Cours
 func (storage Storage) SetWatchedStatus(ctx context.Context, lessonId uint) *courseError.CourseError {
 	tx := storage.db.WithContext(ctx).Begin()
 
-	userId := ctx.Value("userId").(uint)
+	userId := ctx.Value("UserId").(uint)
 
 	lesson := dto.CreateNewLesson()
 	if err := tx.Where("id = ?", lessonId).First(&lesson).Error; err != nil {
@@ -320,7 +322,7 @@ func (storage Storage) SetWatchedStatus(ctx context.Context, lessonId uint) *cou
 func (storage Storage) checkWatchedLessons(ctx context.Context, courseId string) ([]dto.WatchHistory, *courseError.CourseError) {
 	tx := storage.db.WithContext(ctx).Begin()
 
-	userId := ctx.Value("userId").(uint)
+	userId := ctx.Value("UserId").(uint)
 
 	var watched []dto.WatchHistory
 	if err := tx.Table("watch_histories").

@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	courseerror "github.com/knstch/course/internal/app/course_error"
@@ -39,7 +41,10 @@ func (h Handlers) BuyCourse(ctx *gin.Context) {
 		return
 	}
 
-	linkToPay, err := h.sberBillingService.PlaceOrder(ctx, buyDetails)
+	timeoutCtx, cancel := context.WithTimeout(ctx, time.Minute*15)
+	defer cancel()
+
+	linkToPay, err := h.sberBillingService.PlaceOrder(timeoutCtx, buyDetails)
 	if err != nil {
 		h.logger.Error(fmt.Sprintf("ошибка при размещении заказа пользователя с ID: %d при покупке курса с ID: %d", userId, buyDetails.CourseId), "BuyCourse", err.Message, err.Code)
 		if err.Code == 400 {
@@ -126,9 +131,9 @@ func (h Handlers) DeclineOrder(ctx *gin.Context) {
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация или декодирование сообщения"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) ManageBillingHost(ctx *gin.Context) {
-	role := ctx.Value("role").(string)
+	role := ctx.Value("Role").(string)
 	if role != "super_admin" {
-		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("adminId")), "ManageBillingHost", errNoRights.Error(), 16004)
+		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("AdminId")), "ManageBillingHost", errNoRights.Error(), 16004)
 		ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errNoRights, 16004))
 		return
 	}
@@ -150,7 +155,7 @@ func (h Handlers) ManageBillingHost(ctx *gin.Context) {
 		return
 	}
 
-	h.logger.Info(fmt.Sprintf("BillingApiHost успешно изменен админом с ID: %d", ctx.Value("adminId")), "ManageBillingHost", host.Url)
+	h.logger.Info(fmt.Sprintf("BillingApiHost успешно изменен админом с ID: %d", ctx.Value("AdminId")), "ManageBillingHost", host.Url)
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("хост успешно изменен"))
 }
@@ -166,9 +171,9 @@ func (h Handlers) ManageBillingHost(ctx *gin.Context) {
 // @Failure 400 {object} courseerror.CourseError "Провалена валидация"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) ManageAccessToken(ctx *gin.Context) {
-	role := ctx.Value("role").(string)
+	role := ctx.Value("Role").(string)
 	if role != "super_admin" {
-		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("adminId")), "ManageAccessToken", errNoRights.Error(), 16004)
+		h.logger.Error(fmt.Sprintf("у админа не хватило прав, id: %d", ctx.Value("AdminId")), "ManageAccessToken", errNoRights.Error(), 16004)
 		ctx.AbortWithStatusJSON(http.StatusForbidden, courseerror.CreateError(errNoRights, 16004))
 		return
 	}
@@ -185,7 +190,7 @@ func (h Handlers) ManageAccessToken(ctx *gin.Context) {
 		return
 	}
 
-	h.logger.Info(fmt.Sprintf("токен billingHost успешно изменен админом с ID: %d", ctx.Value("adminId")), "ManageAccessToken", token)
+	h.logger.Info(fmt.Sprintf("токен billingHost успешно изменен админом с ID: %d", ctx.Value("AdminId")), "ManageAccessToken", token)
 
 	ctx.JSON(http.StatusOK, entity.CreateSuccessResponse("токен успешно изменен"))
 }

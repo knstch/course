@@ -5,12 +5,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/knstch/course/docs"
 	"github.com/knstch/course/internal/app/handlers"
+	authmiddleware "github.com/knstch/course/internal/app/middleware/auth_middleware"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 // RequestsRouter используется для инициализации роутера, принимает в качестве параметра хендлеры и возвращает готовый роутер.
-func RequestsRouter(h *handlers.Handlers) *gin.Engine {
+func RequestsRouter(h *handlers.Handlers, m *authmiddleware.Middleware) *gin.Engine {
 	router := gin.Default()
 
 	api := router.Group("/api")
@@ -27,12 +28,12 @@ func RequestsRouter(h *handlers.Handlers) *gin.Engine {
 	auth.POST("/recoverPassword", h.SetNewPassword)
 
 	email := auth.Group("email")
-	email.Use(h.WithCookieAuth())
+	email.Use(m.WithCookieAuth())
 	email.POST("/verification", h.Verification)
 	email.GET("/newConfirmKey", h.SendNewCode)
 
 	profile := v1.Group("profile")
-	profile.Use(h.WithCookieAuth())
+	profile.Use(m.WithCookieAuth())
 	profile.PATCH("/editProfile", h.ManageProfile)
 	profile.PATCH("/editPassword", h.ManagePassword)
 	profile.PATCH("/editEmail", h.ManageEmail)
@@ -50,7 +51,7 @@ func RequestsRouter(h *handlers.Handlers) *gin.Engine {
 	admin.POST("/verify", h.VerifyAuthentificator)
 
 	management := admin.Group("management")
-	management.Use(h.WithAdminCookieAuth())
+	management.Use(m.WithAdminCookieAuth())
 	management.POST("/register", h.CreateAdmin)
 	management.PATCH("/resetPassword", h.ChangeAdminPassword)
 	management.PATCH("/resetKey", h.ChangeAdminAuthKey)
@@ -86,7 +87,7 @@ func RequestsRouter(h *handlers.Handlers) *gin.Engine {
 	content.GET("/lessons", h.RetreiveLessons)
 
 	billing := v1.Group("billing")
-	billing.Use(h.WithCookieAuth())
+	billing.Use(m.WithCookieAuth())
 	billing.POST("/buyCourse", h.BuyCourse)
 	billing.GET("/successPayment/:userData", h.CompletePurchase)
 	billing.GET("/failPayment/:userData", h.DeclineOrder)

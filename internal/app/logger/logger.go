@@ -9,6 +9,11 @@ import (
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 )
 
+type Logger interface {
+	Error(message, method, errMessage string, code int)
+	Info(message, method, request string)
+}
+
 // Log хранит внутри себя сущность zap.Logger, которая содержит методы логирования.
 type Log struct {
 	logger *zap.Logger

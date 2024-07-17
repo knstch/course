@@ -23,8 +23,6 @@ type authentificater interface {
 	SignIn(ctx context.Context, email, password string) (*uint, *bool, *courseError.CourseError)
 	VerifyEmail(ctx context.Context, userId uint, isEdit bool) *courseError.CourseError
 	DisableTokens(ctx context.Context, userId uint) *courseError.CourseError
-	DisableToken(ctx context.Context, token string) *courseError.CourseError
-	CheckAccessToken(ctx context.Context, token string) *courseError.CourseError
 	RecoverPassword(ctx context.Context, email, password string) *courseError.CourseError
 }
 
@@ -173,10 +171,10 @@ func (auth AuthService) SendNewCofirmationCode(ctx context.Context, userEmail st
 func (auth AuthService) mintJWT(id uint, verified bool) (*string, *courseError.CourseError) {
 	timeNow := time.Now()
 	authToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"iat":      timeNow.Unix(),
-		"exp":      timeNow.Add(30 * 24 * time.Hour).Unix(),
+		"Iat":      timeNow.Unix(),
+		"Exp":      timeNow.Add(30 * 24 * time.Hour).Unix(),
 		"UserId":   id,
-		"verified": verified,
+		"Verified": verified,
 	})
 
 	signedAuthToken, err := authToken.SignedString([]byte(auth.secret))
@@ -210,44 +208,6 @@ func (auth AuthService) LogIn(ctx context.Context, credentials *entity.Credentia
 	}
 
 	return token, nil
-}
-
-// ValidateAccessToken проверяет валидность токена доступа в БД, возвращает ошибку.
-func (auth AuthService) ValidateAccessToken(ctx context.Context, token *string) *courseError.CourseError {
-	if err := auth.authentificater.CheckAccessToken(ctx, *token); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// DecodeToken используется для декодирования токена, принимает в качестве параметра токен,
-// и возвращает данные из токена или ошибку. Если время жизни токена истекло, то меняет его
-// статус в БД на available = false.
-func (auth AuthService) DecodeToken(ctx context.Context, tokenString string) (*Claims, *courseError.CourseError) {
-	claims := &Claims{}
-
-	_, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {
-		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, nil
-		}
-		return []byte(auth.secret), nil
-	})
-	if err != nil {
-		if errors.Is(err, jwt.ErrTokenExpired) {
-			if err := auth.authentificater.DisableToken(ctx, tokenString); err != nil {
-				return nil, err
-			}
-			return nil, courseError.CreateError(err, 11007)
-		}
-		return nil, courseError.CreateError(err, 11011)
-	}
-
-	if claims.UserID == 0 {
-		return nil, courseError.CreateError(err, 11007)
-	}
-
-	return claims, nil
 }
 
 // SendPasswordRecoverRequest используется для отправки кода для восстановления пароля на email

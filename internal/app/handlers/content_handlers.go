@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/knstch/course/internal/app/course_error"
+	contentmanagement "github.com/knstch/course/internal/app/services/content_management"
 )
 
 // @Summary Найти курсы по фильтрам
@@ -27,32 +28,27 @@ import (
 // @Failure 403 {object} courseerror.CourseError "Нет доступа к расширенному контенту"
 // @Failure 500 {object} courseerror.CourseError "Возникла внутренняя ошибка"
 func (h Handlers) RetreiveCourses(ctx *gin.Context) {
-	id := ctx.Query("id")
-	name := ctx.Query("name")
-	description := ctx.Query("description")
-	cost := ctx.Query("cost")
-	discount := ctx.Query("discount")
-	page := ctx.Query("page")
-	limit := ctx.Query("limit")
-	coursesInfo, err := h.contentManagementService.GetCourseInfo(
-		ctx,
-		id,
-		name,
-		description,
-		cost,
-		discount,
-		page,
-		limit,
-	)
+	params := contentmanagement.CourseQueryParams{
+		ID:          ctx.Query("id"),
+		Name:        ctx.Query("name"),
+		Description: ctx.Query("description"),
+		Cost:        ctx.Query("cost"),
+		Discount:    ctx.Query("discount"),
+		Page:        ctx.Query("page"),
+		Limit:       ctx.Query("limit"),
+	}
+
+	coursesInfo, err := h.contentManagementService.GetCourseInfo(ctx, &params)
 	if err != nil {
 		h.logger.Error(fmt.Sprintf("ошибка при получения курсов по фильтрам: id - %v, name - %v, description - %v, cost - %v, discount - %v, page - %v, limit - %v",
-			id,
-			name,
-			description,
-			cost,
-			discount,
-			page,
-			limit), "RetreiveCourses", err.Message, err.Code)
+			params.ID,
+			params.Name,
+			params.Description,
+			params.Cost,
+			params.Discount,
+			params.Page,
+			params.Limit,
+		), "RetreiveCourses", err.Message, err.Code)
 		if err.Code == 400 {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err)
 			return
@@ -66,13 +62,15 @@ func (h Handlers) RetreiveCourses(ctx *gin.Context) {
 	}
 
 	h.logger.Info("курсы успешно получены", "RetreiveCourses",
-		fmt.Sprintf("фильтры: id - %v, name - %v, description - %v, cost - %v, discount - %v, page - %v, limit - %v", id,
-			name,
-			description,
-			cost,
-			discount,
-			page,
-			limit))
+		fmt.Sprintf("фильтры: id - %s, name - %s, description - %s, cost - %s, discount - %s, page - %s, limit - %s",
+			params.ID,
+			params.Name,
+			params.Description,
+			params.Cost,
+			params.Discount,
+			params.Page,
+			params.Limit,
+		))
 
 	ctx.JSON(http.StatusOK, coursesInfo)
 }
