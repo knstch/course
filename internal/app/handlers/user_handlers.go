@@ -332,16 +332,16 @@ func (h Handlers) WatchVideo(ctx *gin.Context) {
 		if err.Code == 13005 {
 			statusCode = http.StatusNotFound
 			ctx.AbortWithStatusJSON(statusCode, err)
-			h.metrics.RecordResponse(statusCode, "POST", "FreezeProfile")
+			h.metrics.RecordResponse(statusCode, "POST", "WatchVideo")
 			return
 		}
 		statusCode = http.StatusInternalServerError
 		ctx.AbortWithStatusJSON(statusCode, err)
-		h.metrics.RecordResponse(statusCode, "POST", "FreezeProfile")
+		h.metrics.RecordResponse(statusCode, "POST", "WatchVideo")
 		return
 	}
 
 	statusCode = http.StatusOK
 	ctx.JSON(statusCode, entity.CreateSuccessResponse("урок успешно помечен как просмотренный"))
-	h.metrics.RecordResponse(statusCode, "POST", "FreezeProfile")
+	h.metrics.RecordResponse(statusCode, "POST", "WatchVideo")
 }
