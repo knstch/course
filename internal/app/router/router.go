@@ -19,7 +19,10 @@ func RequestsRouter(h *handlers.Handlers, m *authmiddleware.Middleware) *gin.Eng
 
 	docs.SwaggerInfo.BasePath = "/api"
 	api.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	api.GET("/metrics", gin.WrapH(promhttp.Handler()))
+
+	metrics := api.Group("/metrics")
+	metrics.Use(m.WithMetricsAuth())
+	metrics.GET("", gin.WrapH(promhttp.Handler()))
 
 	v1 := api.Group("/v1")
 

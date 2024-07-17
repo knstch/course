@@ -23,14 +23,18 @@ func NewMiddleware(logger logger.Logger, config *config.Config, tokenService *to
 		config.Secret,
 		config.AdminSecret,
 		tokenService,
+		config.TechMetricsLogin,
+		config.TechMetricsPassword,
 	}
 }
 
 type Middleware struct {
-	logger       logger.Logger
-	userSecret   string
-	adminSecret  string
-	tokenService *token.TokenService
+	logger          logger.Logger
+	userSecret      string
+	adminSecret     string
+	tokenService    *token.TokenService
+	metricsLogin    string
+	metricsPassword string
 }
 
 // Claims содержит в себе поля, которые хранятся в JWT.
@@ -126,5 +130,17 @@ func (m Middleware) WithAdminCookieAuth() gin.HandlerFunc {
 		m.logger.Info(fmt.Sprintf("админ перешел по URL: %v c IP: %v", ctx.Request.URL.String(), ctx.ClientIP()), "WithAdminCookieAuth", fmt.Sprint(payload.AdminId))
 
 		ctx.Next()
+	}
+}
+
+func (m Middleware) WithMetricsAuth() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		user, password, hasAuth := ctx.Request.BasicAuth()
+
+		if hasAuth && user == m.metricsLogin && password == m.metricsPassword {
+			ctx.Next()
+		} else {
+			ctx.AbortWithStatusJSON(http.StatusForbidden, errUserNotAuthentificated)
+		}
 	}
 }
