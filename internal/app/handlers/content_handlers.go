@@ -62,7 +62,7 @@ func (h Handlers) RetreiveCourses(ctx *gin.Context) {
 	}
 
 	h.logger.Info("курсы успешно получены", "RetreiveCourses",
-		fmt.Sprintf("фильтры: id - %v, name - %v, description - %v, cost - %v, discount - %v, page - %v, limit - %v",
+		fmt.Sprintf("фильтры: id - %s, name - %s, description - %s, cost - %s, discount - %s, page - %s, limit - %s",
 			params.ID,
 			params.Name,
 			params.Description,

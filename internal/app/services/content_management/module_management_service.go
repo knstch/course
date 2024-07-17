@@ -42,24 +42,11 @@ func (manager ContentManagementServcie) GetModulesInfo(ctx context.Context,
 	offset := pageInt * limitInt
 
 	var isPurchased bool
+	var err *courseError.CourseError
 	if ctx.Value("UserId") != nil && courseName != "" {
-		userCourses, err := manager.contentManager.GetUserCourses(ctx)
+		isPurchased, err = manager.checkCoursePurchase(ctx, courseName)
 		if err != nil {
 			return nil, err
-		}
-
-		course, err := manager.contentManager.GetCourseByName(ctx, courseName)
-		if err != nil {
-			return nil, err
-		}
-
-		if course != nil {
-			for _, v := range userCourses {
-				if v.CourseId == course.ID {
-					isPurchased = true
-					break
-				}
-			}
 		}
 	}
 
@@ -110,4 +97,25 @@ func (manager ContentManagementServcie) RemoveModule(ctx context.Context, module
 	}
 
 	return nil
+}
+
+func (manager ContentManagementServcie) checkCoursePurchase(ctx context.Context, courseName string) (bool, *courseError.CourseError) {
+	userCourses, err := manager.contentManager.GetUserCourses(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	course, err := manager.contentManager.GetCourseByName(ctx, courseName)
+	if err != nil {
+		return false, err
+	}
+
+	if course != nil {
+		for _, v := range userCourses {
+			if v.CourseId == course.ID {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
 }
