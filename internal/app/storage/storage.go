@@ -39,7 +39,6 @@ func NewStorage(dsn, secret string) (*Storage, error) {
 	sqlDB.SetMaxOpenConns(200)
 	sqlDB.SetMaxIdleConns(200)
 	sqlDB.SetConnMaxIdleTime(time.Minute * 30)
-	sqlDB.SetConnMaxLifetime(time.Minute * 30)
 
 	return &Storage{
 		db:     db,
