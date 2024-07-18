@@ -1,7 +1,9 @@
 package app
 
 import (
+	"net"
 	"net/http"
+	"time"
 
 	"github.com/go-redis/redis"
 	"github.com/knstch/course/internal/app/config"
@@ -41,7 +43,15 @@ func InitContainer(dir string, config *config.Config) (*Container, error) {
 
 	redisClient := redis.NewClient(dsnRedis)
 
-	httpClient := &http.Client{}
+	httpClient := &http.Client{
+		Timeout: time.Second * 5,
+		Transport: &http.Transport{
+			DialContext: (&net.Dialer{
+				Timeout: time.Second,
+			}).DialContext,
+			ResponseHeaderTimeout: time.Second,
+		},
+	}
 
 	grpcClient, err := grpc.NewGrpcClient(config)
 	if err != nil {
