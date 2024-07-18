@@ -543,7 +543,7 @@ func TestSetNewPassword(t *testing.T) {
 			want: want{
 				statusCode: http.StatusBadRequest,
 				body: `{
-					"error": "код подтверждения неверный",
+					"error": "код подтверждения не правильный",
 					"code": 11003
 				}`,
 			},
@@ -556,7 +556,7 @@ func TestSetNewPassword(t *testing.T) {
 			want: want{
 				statusCode: http.StatusBadRequest,
 				body: `{
-					"error": "код верификации передан неверно",
+					"error": "code: код верификации передан неверно.",
 					"code": 400
 				}`,
 			},
@@ -574,7 +574,7 @@ func TestSetNewPassword(t *testing.T) {
 				}`,
 			},
 			request: request{
-				body: fmt.Sprintf(`{"email": "%s", "password": "%s", "code": "1111"}`, userOne.email, newPassForUserOne),
+				body: fmt.Sprintf(`{"email": "%s", "password": "%s", "code": 1111}`, userOne.email, newPassForUserOne),
 			},
 		},
 	}
