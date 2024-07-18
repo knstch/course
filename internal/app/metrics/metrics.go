@@ -16,7 +16,7 @@ func InitMetrics() *Metrics {
 		Help: "HTTP статус коды, которые возвращает приложение",
 	}, []string{"code", "method", "function"})
 
-	prometheus.MustRegister(statusCodes)
+	prometheus.Register(statusCodes)
 
 	return &Metrics{
 		statusCodes,
