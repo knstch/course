@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"time"
 
 	"github.com/knstch/course/internal/app"
 	"github.com/knstch/course/internal/app/config"
@@ -47,8 +48,14 @@ func run() error {
 	}
 
 	srv := http.Server{
-		Addr:    ":" + config.Port,
-		Handler: router.RequestsRouter(container.Handlers, container.Middleware),
+		Addr: ":" + config.Port,
+		Handler: http.TimeoutHandler(
+			router.RequestsRouter(container.Handlers, container.Middleware),
+			time.Second,
+			"сервис временно недоступен",
+		),
+		ReadHeaderTimeout: time.Millisecond * 500,
+		ReadTimeout:       time.Second * 3,
 	}
 
 	idleConnsClosed := make(chan struct{})
