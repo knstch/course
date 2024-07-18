@@ -55,7 +55,7 @@ func run() error {
 			"сервис временно недоступен",
 		),
 		ReadHeaderTimeout: time.Millisecond * 500,
-		ReadTimeout:       time.Second * 3,
+		ReadTimeout:       time.Minute * 5,
 	}
 
 	idleConnsClosed := make(chan struct{})
