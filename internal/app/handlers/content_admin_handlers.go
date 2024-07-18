@@ -83,6 +83,12 @@ func (h Handlers) CreateNewCourse(ctx *gin.Context) {
 	h.logger.Info(fmt.Sprintf("курс был успешно размещен админом с ID: %d", ctx.Value("AdminId").(uint)),
 		"CreateNewCourse", fmt.Sprintf("courseId: %d", *id))
 
+	if err := file.Close(); err != nil {
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, courseerror.CreateError(err, 500))
+		h.metrics.RecordResponse(statusCode, "POST", "CreateNewCourse")
+	}
+
 	statusCode = http.StatusOK
 	ctx.JSON(statusCode, entity.NewId(id))
 	h.metrics.RecordResponse(statusCode, "POST", "CreateNewCourse")
@@ -220,6 +226,12 @@ func (h Handlers) UploadNewLesson(ctx *gin.Context) {
 
 	h.logger.Info(fmt.Sprintf("урок был успешно добавлен админом с ID: %d", ctx.Value("AdminId").(uint)), "UploadNewLesson", fmt.Sprintf("lessonId: %d", *lessonId))
 
+	if err := preview.Close(); err != nil {
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, courseerror.CreateError(err, http.StatusInternalServerError))
+		h.metrics.RecordResponse(statusCode, "POST", "UploadNewLesson")
+	}
+
 	statusCode = http.StatusOK
 	ctx.JSON(statusCode, entity.NewId(lessonId))
 	h.metrics.RecordResponse(statusCode, "POST", "UploadNewLesson")
@@ -292,6 +304,12 @@ func (h Handlers) UpdateCourse(ctx *gin.Context) {
 	}
 
 	h.logger.Info(fmt.Sprintf("курс был успешно обновлен админом с ID: %d", ctx.Value("AdminId").(uint)), "UpdateCourse", fmt.Sprintf("name: %v", name))
+
+	if err := file.Close(); err != nil {
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, courseerror.CreateError(err, 500))
+		h.metrics.RecordResponse(statusCode, "POST", "UpdateCourse")
+	}
 
 	statusCode = http.StatusOK
 	ctx.JSON(statusCode, entity.CreateSuccessResponse("данные о курсе успешно отредактированы"))
@@ -453,6 +471,12 @@ func (h Handlers) UpdateLesson(ctx *gin.Context) {
 	}
 
 	h.logger.Info(fmt.Sprintf("урок был успешно обновлен админом с ID: %d", ctx.Value("AdminId").(uint)), "UpdateLesson", fmt.Sprintf("name: %v", name))
+
+	if err := preview.Close(); err != nil {
+		statusCode = http.StatusInternalServerError
+		ctx.AbortWithStatusJSON(statusCode, courseerror.CreateError(err, 500))
+		h.metrics.RecordResponse(statusCode, "POST", "UpdateLesson")
+	}
 
 	statusCode = http.StatusOK
 	ctx.JSON(statusCode, entity.CreateSuccessResponse("урок успешно отредактирован"))
