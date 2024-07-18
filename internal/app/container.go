@@ -50,6 +50,7 @@ func InitContainer(dir string, config *config.Config) (*Container, error) {
 				Timeout: time.Second,
 			}).DialContext,
 			ResponseHeaderTimeout: time.Second,
+			MaxIdleConnsPerHost:   100,
 		},
 	}
 
