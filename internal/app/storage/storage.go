@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/knstch/course/internal/app/config"
 	courseError "github.com/knstch/course/internal/app/course_error"
@@ -30,6 +31,16 @@ func NewStorage(dsn, secret string) (*Storage, error) {
 	if err != nil {
 		return nil, err
 	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	sqlDB.SetMaxOpenConns(200)
+	sqlDB.SetMaxIdleConns(200)
+	sqlDB.SetConnMaxIdleTime(time.Minute * 30)
+	sqlDB.SetConnMaxLifetime(time.Minute * 30)
+
 	return &Storage{
 		db:     db,
 		secret: secret,
