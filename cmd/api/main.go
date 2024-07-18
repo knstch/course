@@ -51,7 +51,7 @@ func run() error {
 		Addr: ":" + config.Port,
 		Handler: http.TimeoutHandler(
 			router.RequestsRouter(container.Handlers, container.Middleware),
-			time.Second,
+			time.Second*5,
 			"сервис временно недоступен",
 		),
 		ReadHeaderTimeout: time.Millisecond * 500,
